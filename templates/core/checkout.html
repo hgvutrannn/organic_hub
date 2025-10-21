@@ -1,0 +1,114 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Thanh toán - Organic Hub{% endblock %}
+
+{% block content %}
+<h1>Thanh toán</h1>
+
+<!-- Cart Summary -->
+<h2>Đơn hàng của bạn</h2>
+{% if cart_items %}
+    <table border="1" cellpadding="10" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Tên sản phẩm</th>
+                <th>Giá</th>
+                <th>Số lượng</th>
+                <th>Thành tiền</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cart_items %}
+            <tr>
+                <td>
+                    <strong>{{ item.product.name }}</strong><br>
+                    <small>{{ item.product.store.store_name }}</small>
+                </td>
+                <td>{{ item.product.price|floatformat:0 }} VNĐ</td>
+                <td>{{ item.quantity }}</td>
+                <td><strong>{{ item.total_price|floatformat:0 }} VNĐ</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3"><strong>Tổng tiền hàng:</strong></td>
+                <td><strong>{{ total|floatformat:0 }} VNĐ</strong></td>
+            </tr>
+            <tr>
+                <td colspan="3"><strong>Phí vận chuyển:</strong></td>
+                <td><strong>30000 VNĐ</strong></td>
+            </tr>
+            <tr>
+                <td colspan="3"><strong>Tổng cộng:</strong></td>
+                <td><strong>{{ total|add:30000|floatformat:0 }} VNĐ</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+{% else %}
+    <p>Giỏ hàng trống.</p>
+{% endif %}
+
+<!-- Checkout Form -->
+{% if cart_items %}
+<form method="post">
+    {% csrf_token %}
+    
+    <!-- Shipping Address -->
+    <h2>Địa chỉ giao hàng</h2>
+    {% if addresses %}
+        {% for address in addresses %}
+        <div>
+            <input type="radio" name="shipping_address" value="{{ address.address_id }}" id="address_{{ address.address_id }}" {% if address.is_default %}checked{% endif %}>
+            <label for="address_{{ address.address_id }}">
+                <strong>{{ address.contact_person }}</strong><br>
+                {{ address.street }}, {{ address.ward }}, {{ address.province }}<br>
+                SĐT: {{ address.contact_phone }}
+                {% if address.is_default %} (Mặc định){% endif %}
+            </label>
+        </div>
+        <br>
+        {% endfor %}
+        
+        <p>
+            <a href="/addresses/">Quản lý địa chỉ</a>
+        </p>
+    {% else %}
+        <p>Bạn chưa có địa chỉ nào. <a href="/addresses/">Thêm địa chỉ</a></p>
+    {% endif %}
+    
+    <!-- Payment Method -->
+    <h2>Phương thức thanh toán</h2>
+    <div>
+        <input type="radio" name="payment_method" value="cod" id="cod" checked>
+        <label for="cod">Thanh toán khi nhận hàng (COD)</label>
+    </div>
+    <div>
+        <input type="radio" name="payment_method" value="bank_transfer" id="bank_transfer">
+        <label for="bank_transfer">Chuyển khoản ngân hàng</label>
+    </div>
+    <div>
+        <input type="radio" name="payment_method" value="vnpay" id="vnpay">
+        <label for="vnpay">VnPay</label>
+    </div>
+    <div>
+        <input type="radio" name="payment_method" value="zalopay" id="zalopay">
+        <label for="zalopay">ZaloPay</label>
+    </div>
+    
+    <!-- Order Notes -->
+    <h2>Ghi chú đơn hàng</h2>
+    <textarea name="notes" rows="3" cols="50" placeholder="Ghi chú cho đơn hàng (tùy chọn)"></textarea>
+    
+    <!-- Submit Button -->
+    <h2>Xác nhận đặt hàng</h2>
+    <p>
+        <strong>Tổng cộng: {{ total|add:30000|floatformat:0 }} VNĐ</strong><br>
+        <small>(Bao gồm phí vận chuyển 30,000 VNĐ)</small>
+    </p>
+    
+    <button type="submit">Đặt hàng</button>
+</form>
+{% endif %}
+
+{% endblock %}

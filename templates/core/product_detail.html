@@ -1,0 +1,149 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ product.name }} - Organic Hub{% endblock %}
+
+{% block content %}
+<h1>{{ product.name }}</h1>
+
+<!-- Breadcrumb -->
+<p>
+    <a href="/">Trang chủ</a> > 
+    <a href="/products/">Sản phẩm</a> > 
+    {% if product.category %}
+        <a href="/products/?category={{ product.category.category_id }}">{{ product.category.name }}</a> > 
+    {% endif %}
+    {{ product.name }}
+</p>
+
+<!-- Product Info -->
+<h2>Thông tin sản phẩm</h2>
+
+<table border="1" cellpadding="10" cellspacing="0">
+    <tr>
+        <td><strong>Tên sản phẩm:</strong></td>
+        <td>{{ product.name }}</td>
+    </tr>
+    <tr>
+        <td><strong>Giá:</strong></td>
+        <td><strong>{{ product.price|floatformat:0 }} VNĐ</strong></td>
+    </tr>
+    <tr>
+        <td><strong>Đơn vị:</strong></td>
+        <td>{{ product.base_unit }}</td>
+    </tr>
+    <tr>
+        <td><strong>Danh mục:</strong></td>
+        <td>{{ product.category.name|default:"Chưa phân loại" }}</td>
+    </tr>
+    <tr>
+        <td><strong>Cửa hàng:</strong></td>
+        <td>{{ product.store.store_name }}</td>
+    </tr>
+    <tr>
+        <td><strong>Mã SKU:</strong></td>
+        <td>{{ product.SKU|default:"Chưa có" }}</td>
+    </tr>
+    <tr>
+        <td><strong>Trạng thái:</strong></td>
+        <td>
+            {% if product.is_active %}
+                Đang bán
+            {% else %}
+                Ngừng bán
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <td><strong>Lượt xem:</strong></td>
+        <td>{{ product.view_count }}</td>
+    </tr>
+    <tr>
+        <td><strong>Ngày tạo:</strong></td>
+        <td>{{ product.created_at|date:"d/m/Y H:i" }}</td>
+    </tr>
+</table>
+
+{% if product.description %}
+<h3>Mô tả sản phẩm</h3>
+<p>{{ product.description|linebreaks }}</p>
+{% endif %}
+
+<!-- Store Info -->
+<h2>Thông tin cửa hàng</h2>
+<table border="1" cellpadding="10" cellspacing="0">
+    <tr>
+        <td><strong>Tên cửa hàng:</strong></td>
+        <td>{{ product.store.store_name }}</td>
+    </tr>
+    <tr>
+        <td><strong>Mô tả cửa hàng:</strong></td>
+        <td>{{ product.store.store_description|default:"Chưa có mô tả" }}</td>
+    </tr>
+    <tr>
+        <td><strong>Trạng thái xác minh:</strong></td>
+        <td>
+            {% if product.store.is_verified_status == 'verified' %}
+                Đã xác minh
+            {% elif product.store.is_verified_status == 'pending' %}
+                Đang chờ xác minh
+            {% else %}
+                Bị từ chối
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <td><strong>Ngày tạo cửa hàng:</strong></td>
+        <td>{{ product.store.created_at|date:"d/m/Y H:i" }}</td>
+    </tr>
+</table>
+
+<!-- Actions -->
+{% if user.is_authenticated %}
+<h2>Thao tác</h2>
+
+<!-- Add to Cart -->
+<form method="post" action="{% url 'add_to_cart' product.product_id %}">
+    {% csrf_token %}
+    <label for="quantity">Số lượng:</label>
+    <input type="number" name="quantity" id="quantity" value="1" min="1">
+    <button type="submit">Thêm vào giỏ hàng</button>
+</form>
+
+<p>
+    <a href="/cart/">Xem giỏ hàng</a>
+</p>
+{% else %}
+<h2>Đăng nhập để mua hàng</h2>
+<p>Bạn cần đăng nhập để thêm sản phẩm vào giỏ hàng.</p>
+<p>
+    <a href="/login/">Đăng nhập</a> | 
+    <a href="/register/">Đăng ký</a>
+</p>
+{% endif %}
+
+<!-- Reviews -->
+<h2>Đánh giá sản phẩm</h2>
+{% if reviews %}
+    {% for review in reviews %}
+    <div>
+        <h4>{{ review.title }}</h4>
+        <p><strong>Đánh giá:</strong> {{ review.rating }} sao</p>
+        <p><strong>Người đánh giá:</strong> {{ review.user.full_name }}</p>
+        <p><strong>Nội dung:</strong> {{ review.content }}</p>
+        <p><strong>Ngày đánh giá:</strong> {{ review.created_at|date:"d/m/Y H:i" }}</p>
+        {% if review.is_verified_purchase %}
+        <p><strong>✓ Đã xác minh mua hàng</strong></p>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+    <p>Chưa có đánh giá nào cho sản phẩm này.</p>
+{% endif %}
+
+<!-- Navigation -->
+<h2>Điều hướng</h2>
+<p>
+    <a href="/products/">← Quay lại danh sách sản phẩm</a> | 
+    <a href="/">← Về trang chủ</a>
+</p>
+{% endblock %}

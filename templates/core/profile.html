@@ -1,0 +1,23 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Trang cá nhân{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Trang cá nhân</h1>
+    
+    <div class="profile-info">
+        <h2>Thông tin cá nhân</h2>
+        <p><strong>Số điện thoại:</strong> {{ user.phone_number }}</p>
+        <p><strong>Họ và tên:</strong> {{ user.full_name }}</p>
+        {% if user.email %}
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        {% endif %}
+        <p><strong>Trạng thái:</strong> {{ user.get_status_display }}</p>
+        <p><strong>Ngày tham gia:</strong> {{ user.created_at|date:"d/m/Y H:i" }}</p>
+        {% if user.last_login_at %}
+        <p><strong>Lần đăng nhập cuối:</strong> {{ user.last_login_at|date:"d/m/Y H:i" }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Quản lý địa chỉ - Organic Hub{% endblock %}
+
+{% block content %}
+<h1>Quản lý địa chỉ</h1>
+
+<!-- Navigation -->
+<p>
+    <a href="/checkout/">← Quay lại thanh toán</a> | 
+    <a href="/cart/">Giỏ hàng</a> | 
+    <a href="/">← Về trang chủ</a>
+</p>
+
+<!-- Add New Address Form -->
+<h2>Thêm địa chỉ mới</h2>
+<form method="post">
+    {% csrf_token %}
+    
+    <table border="1" cellpadding="10" cellspacing="0">
+        <tr>
+            <td><strong>Tên người nhận:</strong></td>
+            <td><input type="text" name="contact_person" required></td>
+        </tr>
+        <tr>
+            <td><strong>Số điện thoại:</strong></td>
+            <td><input type="text" name="contact_phone" required></td>
+        </tr>
+        <tr>
+            <td><strong>Địa chỉ:</strong></td>
+            <td><input type="text" name="street" required placeholder="Số nhà, tên đường"></td>
+        </tr>
+        <tr>
+            <td><strong>Phường/Xã:</strong></td>
+            <td><input type="text" name="ward" required></td>
+        </tr>
+        <tr>
+            <td><strong>Tỉnh/Thành phố:</strong></td>
+            <td><input type="text" name="province" required></td>
+        </tr>
+        <tr>
+            <td><strong>Địa chỉ mặc định:</strong></td>
+            <td>
+                <input type="checkbox" name="is_default" value="1">
+                <label>Đặt làm địa chỉ mặc định</label>
+            </td>
+        </tr>
+    </table>
+    
+    <p>
+        <button type="submit">Thêm địa chỉ</button>
+    </p>
+</form>
+
+<!-- Existing Addresses -->
+<h2>Địa chỉ hiện có</h2>
+{% if addresses %}
+    {% for address in addresses %}
+    <div>
+        <h3>Địa chỉ #{{ forloop.counter }}</h3>
+        
+        <table border="1" cellpadding="10" cellspacing="0">
+            <tr>
+                <td><strong>Tên người nhận:</strong></td>
+                <td>{{ address.contact_person }}</td>
+            </tr>
+            <tr>
+                <td><strong>Số điện thoại:</strong></td>
+                <td>{{ address.contact_phone }}</td>
+            </tr>
+            <tr>
+                <td><strong>Địa chỉ:</strong></td>
+                <td>{{ address.street }}</td>
+            </tr>
+            <tr>
+                <td><strong>Phường/Xã:</strong></td>
+                <td>{{ address.ward }}</td>
+            </tr>
+            <tr>
+                <td><strong>Tỉnh/Thành phố:</strong></td>
+                <td>{{ address.province }}</td>
+            </tr>
+            <tr>
+                <td><strong>Quốc gia:</strong></td>
+                <td>{{ address.country }}</td>
+            </tr>
+            <tr>
+                <td><strong>Trạng thái:</strong></td>
+                <td>
+                    {% if address.is_default %}
+                        <strong>Địa chỉ mặc định</strong>
+                    {% else %}
+                        Địa chỉ thường
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Ngày tạo:</strong></td>
+                <td>{{ address.created_at|date:"d/m/Y H:i" }}</td>
+            </tr>
+        </table>
+        
+        <p>
+            <a href="/checkout/">Sử dụng địa chỉ này</a>
+        </p>
+        
+        {% if not forloop.last %}
+            <hr>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+    <p>Bạn chưa có địa chỉ nào.</p>
+{% endif %}
+
+<!-- Instructions -->
+<h2>Hướng dẫn</h2>
+<p>
+    <strong>Cách sử dụng:</strong>
+</p>
+<ul>
+    <li>Thêm địa chỉ mới bằng form phía trên</li>
+    <li>Chọn "Địa chỉ mặc định" nếu muốn đặt làm địa chỉ chính</li>
+    <li>Chỉ có thể có 1 địa chỉ mặc định</li>
+    <li>Sau khi thêm địa chỉ, quay lại trang thanh toán để chọn địa chỉ</li>
+</ul>
+
+<!-- Navigation -->
+<h2>Điều hướng</h2>
+<p>
+    <a href="/checkout/">← Quay lại thanh toán</a> | 
+    <a href="/cart/">Giỏ hàng</a> | 
+    <a href="/products/">Tiếp tục mua sắm</a> | 
+    <a href="/">← Về trang chủ</a>
+</p>
+{% endblock %}

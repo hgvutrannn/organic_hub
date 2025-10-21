@@ -1,0 +1,32 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Đăng nhập - Organic Hub{% endblock %}
+
+{% block content %}
+<h2>Đăng nhập</h2>
+
+<form method="post">
+    {% csrf_token %}
+    <div>
+        <label for="{{ form.phone_number.id_for_label }}">Số điện thoại:</label>
+        {{ form.phone_number }}
+        {% if form.phone_number.errors %}
+            <div>{{ form.phone_number.errors }}</div>
+        {% endif %}
+    </div>
+    
+    <div>
+        <label for="{{ form.password.id_for_label }}">Mật khẩu:</label>
+        {{ form.password }}
+        {% if form.password.errors %}
+            <div>{{ form.password.errors }}</div>
+        {% endif %}
+    </div>
+    
+    <div>
+        <button type="submit">Đăng nhập</button>
+    </div>
+</form>
+
+<p>Chưa có tài khoản? <a href="{% url 'register' %}">Đăng ký ngay</a></p>
+{% endblock %}

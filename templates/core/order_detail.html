@@ -1,0 +1,143 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Chi tiết đơn hàng #{{ order.order_id }} - Organic Hub{% endblock %}
+
+{% block content %}
+<h1>Chi tiết đơn hàng #{{ order.order_id }}</h1>
+
+<!-- Order Status -->
+<h2>Trạng thái đơn hàng</h2>
+<table border="1" cellpadding="10" cellspacing="0">
+    <tr>
+        <td><strong>Mã đơn hàng:</strong></td>
+        <td><strong>#{{ order.order_id }}</strong></td>
+    </tr>
+    <tr>
+        <td><strong>Trạng thái:</strong></td>
+        <td><strong>{{ order.get_status_display }}</strong></td>
+    </tr>
+    <tr>
+        <td><strong>Phương thức thanh toán:</strong></td>
+        <td>{{ order.get_payment_method_display }}</td>
+    </tr>
+    <tr>
+        <td><strong>Trạng thái thanh toán:</strong></td>
+        <td>{{ order.get_payment_status_display }}</td>
+    </tr>
+    <tr>
+        <td><strong>Ngày đặt hàng:</strong></td>
+        <td>{{ order.created_at|date:"d/m/Y H:i" }}</td>
+    </tr>
+    <tr>
+        <td><strong>Ngày cập nhật:</strong></td>
+        <td>{{ order.updated_at|date:"d/m/Y H:i" }}</td>
+    </tr>
+    {% if order.paid_at %}
+    <tr>
+        <td><strong>Ngày thanh toán:</strong></td>
+        <td>{{ order.paid_at|date:"d/m/Y H:i" }}</td>
+    </tr>
+    {% endif %}
+</table>
+
+<!-- Shipping Address -->
+<h2>Địa chỉ giao hàng</h2>
+{% if order.shipping_address %}
+    <table border="1" cellpadding="10" cellspacing="0">
+        <tr>
+            <td><strong>Người nhận:</strong></td>
+            <td>{{ order.shipping_address.contact_person }}</td>
+        </tr>
+        <tr>
+            <td><strong>Số điện thoại:</strong></td>
+            <td>{{ order.shipping_address.contact_phone }}</td>
+        </tr>
+        <tr>
+            <td><strong>Địa chỉ:</strong></td>
+            <td>{{ order.shipping_address.street }}</td>
+        </tr>
+        <tr>
+            <td><strong>Phường/Xã:</strong></td>
+            <td>{{ order.shipping_address.ward }}</td>
+        </tr>
+        <tr>
+            <td><strong>Tỉnh/Thành phố:</strong></td>
+            <td>{{ order.shipping_address.province }}</td>
+        </tr>
+        <tr>
+            <td><strong>Quốc gia:</strong></td>
+            <td>{{ order.shipping_address.country }}</td>
+        </tr>
+    </table>
+{% else %}
+    <p>Không có thông tin địa chỉ giao hàng.</p>
+{% endif %}
+
+<!-- Order Items -->
+<h2>Chi tiết sản phẩm</h2>
+{% if order.order_items.all %}
+    <table border="1" cellpadding="10" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Tên sản phẩm</th>
+                <th>Cửa hàng</th>
+                <th>Đơn giá</th>
+                <th>Số lượng</th>
+                <th>Thành tiền</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.order_items.all %}
+            <tr>
+                <td>
+                    <strong>{{ item.product.name }}</strong><br>
+                    <small>{{ item.product.description|truncatewords:10 }}</small>
+                </td>
+                <td>{{ item.product.store.store_name }}</td>
+                <td>{{ item.unit_price|floatformat:0 }} VNĐ</td>
+                <td>{{ item.quantity }}</td>
+                <td><strong>{{ item.total_price|floatformat:0 }} VNĐ</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>Không có sản phẩm nào trong đơn hàng.</p>
+{% endif %}
+
+<!-- Order Summary -->
+<h2>Tóm tắt đơn hàng</h2>
+<table border="1" cellpadding="10" cellspacing="0">
+    <tr>
+        <td><strong>Tổng tiền hàng:</strong></td>
+        <td>{{ order.subtotal|floatformat:0 }} VNĐ</td>
+    </tr>
+    <tr>
+        <td><strong>Giảm giá:</strong></td>
+        <td>{{ order.discount_amount|floatformat:0 }} VNĐ</td>
+    </tr>
+    <tr>
+        <td><strong>Phí vận chuyển:</strong></td>
+        <td>{{ order.shipping_cost|floatformat:0 }} VNĐ</td>
+    </tr>
+    <tr>
+        <td><strong>Tổng cộng:</strong></td>
+        <td><strong>{{ order.total_amount|floatformat:0 }} VNĐ</strong></td>
+    </tr>
+</table>
+
+<!-- Order Notes -->
+{% if order.notes %}
+<h2>Ghi chú đơn hàng</h2>
+<p>{{ order.notes }}</p>
+{% endif %}
+
+<!-- Navigation -->
+<h2>Điều hướng</h2>
+<p>
+    <a href="/orders/">← Danh sách đơn hàng</a> | 
+    <a href="/products/">Tiếp tục mua sắm</a> | 
+    <a href="/profile/">Trang cá nhân</a> | 
+    <a href="/">← Về trang chủ</a>
+</p>
+{% endblock %}

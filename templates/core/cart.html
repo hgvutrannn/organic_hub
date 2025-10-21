@@ -1,0 +1,40 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Giỏ hàng - Organic Hub{% endblock %}
+
+{% block content %}
+<h2>Giỏ hàng của bạn</h2>
+
+{% if cart_items %}
+    <div>
+        {% for item in cart_items %}
+            <div>
+                <h3>{{ item.product.name }}</h3>
+                <p><strong>Giá:</strong> {{ item.product.price|floatformat:0 }} VNĐ</p>
+                <p><strong>Cửa hàng:</strong> {{ item.product.store.store_name }}</p>
+                
+                <form method="post" action="{% url 'update_cart_quantity' item.cart_item_id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <label>Số lượng:</label>
+                    <input type="number" name="quantity" value="{{ item.quantity }}" min="1">
+                    <button type="submit">Cập nhật</button>
+                </form>
+                
+                <p><strong>Thành tiền:</strong> {{ item.total_price|floatformat:0 }} VNĐ</p>
+                
+                <form method="post" action="{% url 'remove_from_cart' item.cart_item_id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" onclick="return confirm('Bạn có chắc muốn xóa sản phẩm này?')">Xóa</button>
+                </form>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <div>
+        <h3>Tổng cộng: {{ total|floatformat:0 }} VNĐ</h3>
+        <a href="{% url 'checkout' %}">Thanh toán</a>
+    </div>
+{% else %}
+    <p>Giỏ hàng trống.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Đăng ký - Organic Hub{% endblock %}
+
+{% block content %}
+<h2>Đăng ký tài khoản</h2>
+
+<form method="post">
+    {% csrf_token %}
+    
+    <div>
+        <label for="{{ form.phone_number.id_for_label }}">Số điện thoại:</label>
+        {{ form.phone_number }}
+        {% if form.phone_number.errors %}
+            <div>{{ form.phone_number.errors }}</div>
+        {% endif %}
+    </div>
+    
+    <div>
+        <label for="{{ form.full_name.id_for_label }}">Họ và tên:</label>
+        {{ form.full_name }}
+        {% if form.full_name.errors %}
+            <div>{{ form.full_name.errors }}</div>
+        {% endif %}
+    </div>
+    
+    <div>
+        <label for="{{ form.email.id_for_label }}">Email (tùy chọn):</label>
+        {{ form.email }}
+        {% if form.email.errors %}
+            <div>{{ form.email.errors }}</div>
+        {% endif %}
+    </div>
+    
+    <div>
+        <label for="{{ form.password1.id_for_label }}">Mật khẩu:</label>
+        {{ form.password1 }}
+        {% if form.password1.errors %}
+            <div>{{ form.password1.errors }}</div>
+        {% endif %}
+    </div>
+    
+    <div>
+        <label for="{{ form.password2.id_for_label }}">Xác nhận mật khẩu:</label>
+        {{ form.password2 }}
+        {% if form.password2.errors %}
+            <div>{{ form.password2.errors }}</div>
+        {% endif %}
+    </div>
+    
+    <div>
+        <button type="submit">Đăng ký</button>
+    </div>
+</form>
+
+<p>Đã có tài khoản? <a href="{% url 'login' %}">Đăng nhập ngay</a></p>
+{% endblock %}

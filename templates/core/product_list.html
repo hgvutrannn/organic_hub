@@ -1,0 +1,64 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Danh sách sản phẩm - Organic Hub{% endblock %}
+
+{% block content %}
+<h2>Danh sách sản phẩm</h2>
+
+<!-- Search Form -->
+<form method="get">
+    <div>
+        <input type="text" name="query" placeholder="Tìm kiếm sản phẩm..." value="{{ search_form.query.value|default:'' }}">
+        <select name="category">
+            <option value="">Tất cả danh mục</option>
+            {% for category in categories %}
+                <option value="{{ category.category_id }}" 
+                        {% if search_form.category.value == category.category_id %}selected{% endif %}>
+                    {{ category.name }}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit">Tìm kiếm</button>
+    </div>
+</form>
+
+<!-- Product List -->
+<div>
+    {% for product in page_obj %}
+        <div>
+            <h3><a href="{% url 'product_detail' product.product_id %}">{{ product.name }}</a></h3>
+            <p><strong>Giá:</strong> {{ product.price|floatformat:0 }} VNĐ</p>
+            <p><strong>Danh mục:</strong> {{ product.category.name|default:"Chưa phân loại" }}</p>
+            <p><strong>Cửa hàng:</strong> {{ product.store.store_name }}</p>
+            <p><strong>Mô tả:</strong> {{ product.description|truncatewords:30 }}</p>
+            <p><strong>Lượt xem:</strong> {{ product.view_count }}</p>
+            
+            {% if user.is_authenticated %}
+                <form method="post" action="{% url 'add_to_cart' product.product_id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="number" name="quantity" value="1" min="1" style="width: 60px;">
+                    <button type="submit">Thêm vào giỏ</button>
+                </form>
+                
+            {% endif %}
+        </div>
+    {% empty %}
+        <p>Không tìm thấy sản phẩm nào.</p>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+    <div>
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}">Trước</a>
+        {% endif %}
+        
+        <span>Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">Tiếp</a>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}

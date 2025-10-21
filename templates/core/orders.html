@@ -1,0 +1,65 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Đơn hàng của tôi - Organic Hub{% endblock %}
+
+{% block content %}
+<h1>Đơn hàng của tôi</h1>
+
+<!-- Orders List -->
+{% if orders %}
+    <h2>Danh sách đơn hàng</h2>
+    
+    <table border="1" cellpadding="10" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Mã đơn hàng</th>
+                <th>Trạng thái</th>
+                <th>Tổng tiền</th>
+                <th>Phương thức thanh toán</th>
+                <th>Ngày đặt</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td><strong>#{{ order.order_id }}</strong></td>
+                <td>{{ order.get_status_display }}</td>
+                <td><strong>{{ order.total_amount|floatformat:0 }} VNĐ</strong></td>
+                <td>{{ order.get_payment_method_display }}</td>
+                <td>{{ order.created_at|date:"d/m/Y H:i" }}</td>
+                <td>
+                    <a href="{% url 'order_detail' order.order_id %}">Xem chi tiết</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <!-- Summary -->
+    <h3>Tổng kết</h3>
+    <table border="1" cellpadding="10" cellspacing="0">
+        <tr>
+            <td><strong>Tổng số đơn hàng:</strong></td>
+            <td>{{ orders.count }}</td>
+        </tr>
+        <tr>
+            <td><strong>Tổng giá trị:</strong></td>
+            <td>
+                {% with total_value=0 %}
+                    {% for order in orders %}
+                        {% with total_value=total_value|add:order.total_amount %}
+                        {% endwith %}
+                    {% endfor %}
+                    {{ total_value|floatformat:0 }} VNĐ
+                {% endwith %}
+            </td>
+        </tr>
+    </table>
+    
+{% else %}
+    <h2>Chưa có đơn hàng nào</h2>
+    <p>Bạn chưa có đơn hàng nào.</p>
+{% endif %}
+
+{% endblock %}

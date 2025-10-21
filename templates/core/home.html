@@ -1,0 +1,23 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Trang chủ - Organic Hub{% endblock %}
+
+{% block content %}
+<h2>Chào mừng đến với Organic Hub</h2>
+<p>Nơi cung cấp các sản phẩm hữu cơ chất lượng cao</p>
+
+<h3>Sản phẩm nổi bật</h3>
+<div>
+    {% for product in featured_products %}
+        <div>
+            <h4><a href="{% url 'product_detail' product.product_id %}">{{ product.name }}</a></h4>
+            <p>Giá: {{ product.price|floatformat:0 }} VNĐ</p>
+            <p>{{ product.description|truncatewords:20 }}</p>
+            <p>Cửa hàng: {{ product.store.store_name }}</p>
+        </div>
+    {% empty %}
+        <p>Chưa có sản phẩm nào.</p>
+    {% endfor %}
+</div>
+
+{% endblock %}
