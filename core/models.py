@@ -191,13 +191,11 @@ class CartItem(models.Model):
 # Order Model
 class Order(models.Model):
     STATUS_CHOICES = [
-        ('pending', 'Đang chờ xử lý'),
-        ('confirmed', 'Đã xác nhận'),
-        ('processing', 'Đang xử lý'),
-        ('shipped', 'Đã giao hàng'),
-        ('delivered', 'Đã giao thành công'),
+        ('pending', 'Đang chờ xác nhận'),
+        ('waiting_pickup', 'Đang chờ shipper đến lấy hàng'),
+        ('shipping', 'Đang giao hàng'),
+        ('delivered', 'Đã nhận hàng'),
         ('cancelled', 'Đã hủy'),
-        ('returned', 'Đã trả hàng'),
     ]
     
     PAYMENT_METHOD_CHOICES = [

@@ -1,0 +1,35 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Dashboard - {{ store.store_name }}{% endblock %}
+
+{% block content %}
+<h1>Dashboard - {{ store.store_name }}</h1>
+
+<!-- Store Info -->
+<h2>Thông tin cửa hàng</h2>
+<table border="1" cellpadding="10" cellspacing="0">
+    <tr>
+        <td><strong>Tên cửa hàng:</strong></td>
+        <td>{{ store.store_name }}</td>
+    </tr>
+    <tr>
+        <td><strong>Mô tả:</strong></td>
+        <td>{{ store.store_description|default:"Chưa có mô tả" }}</td>
+    </tr>
+    <tr>
+        <td><strong>Trạng thái xác minh:</strong></td>
+        <td>{{ store.get_is_verified_status_display }}</td>
+    </tr>
+    <tr>
+        <td><strong>Ngày tạo:</strong></td>
+        <td>{{ store.created_at|date:"d/m/Y H:i" }}</td>
+    </tr>
+</table>
+
+<!-- Quick Actions -->
+<h2>Thao tác nhanh</h2>
+<p>
+    <a href="{% url 'store_products' store.store_id %}">Quản lý sản phẩm</a> | 
+    <a href="{% url 'store_orders' store.store_id %}">Xem đơn hàng</a> | 
+</p>
+{% endblock %}

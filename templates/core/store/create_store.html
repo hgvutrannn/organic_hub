@@ -1,0 +1,48 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Tạo cửa hàng - Organic Hub{% endblock %}
+
+{% block content %}
+<h1>Tạo cửa hàng</h1>
+
+<!-- Navigation -->
+<p>
+    <a href="/profile/">← Trang cá nhân</a> | 
+    <a href="/">← Về trang chủ</a>
+</p>
+
+<!-- Create Store Form -->
+<h2>Thông tin cửa hàng</h2>
+<form method="post">
+    {% csrf_token %}
+    
+    <table border="1" cellpadding="10" cellspacing="0">
+        <tr>
+            <td><strong>Tên cửa hàng:</strong></td>
+            <td><input type="text" name="store_name" required placeholder="Nhập tên cửa hàng"></td>
+        </tr>
+        <tr>
+            <td><strong>Mô tả cửa hàng:</strong></td>
+            <td><textarea name="store_description" rows="3" cols="50" placeholder="Mô tả về cửa hàng của bạn"></textarea></td>
+        </tr>
+    </table>
+    
+    <h3>Thông tin quan trọng</h3>
+    <ul>
+        <li>Cửa hàng sẽ được tạo với trạng thái "Đang chờ xác minh"</li>
+        <li>Bạn sẽ có thể quản lý sản phẩm sau khi tạo cửa hàng</li>
+        <li>Địa chỉ cửa hàng có thể được cập nhật sau</li>
+    </ul>
+    
+    <p>
+        <button type="submit">Tạo cửa hàng</button>
+    </p>
+</form>
+
+<!-- Navigation -->
+<h2>Điều hướng</h2>
+<p>
+    <a href="/profile/">← Trang cá nhân</a> | 
+    <a href="/">← Về trang chủ</a>
+</p>
+{% endblock %}

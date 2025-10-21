@@ -289,9 +289,15 @@ def profile(request):
     user = request.user
     recent_orders = Order.objects.filter(user=user).order_by('-created_at')[:5]
     
+    # Check if user has any stores
+    user_stores = Store.objects.filter(user=user)
+    has_store = user_stores.exists()
+    
     context = {
         'user': user,
         'recent_orders': recent_orders,
+        'user_stores': user_stores,
+        'has_store': has_store,
     }
     return render(request, 'core/profile.html', context)
 
@@ -317,3 +323,192 @@ def address_management(request):
         'form': form,
     }
     return render(request, 'core/address_management.html', context)
+
+
+# Store Views
+@login_required
+def create_store(request):
+    """Tạo cửa hàng"""
+    if request.method == 'POST':
+        store_name = request.POST.get('store_name')
+        store_description = request.POST.get('store_description', '')
+        
+        if store_name:
+            store = Store.objects.create(
+                user=request.user,
+                store_name=store_name,
+                store_description=store_description,
+                is_verified_status='pending'
+            )
+            messages.success(request, f'Đã tạo cửa hàng "{store_name}" thành công!')
+            return redirect('store_dashboard', store_id=store.store_id)
+        else:
+            messages.error(request, 'Vui lòng nhập tên cửa hàng.')
+    
+    return render(request, 'core/store/create_store.html')
+
+
+@login_required
+def store_dashboard(request, store_id):
+    """Dashboard cửa hàng"""
+    store = get_object_or_404(Store, store_id=store_id, user=request.user)
+    products = Product.objects.filter(store=store)
+    orders = Order.objects.filter(order_items__product__store=store).distinct().order_by('-created_at')[:10]
+    
+    # Thống kê cơ bản
+    total_products = products.count()
+    total_orders = orders.count()
+    total_revenue = sum(order.total_amount for order in orders if order.payment_status == 'paid')
+    
+    context = {
+        'store': store,
+        'products': products[:5],  # 5 sản phẩm gần nhất
+        'orders': orders,
+        'total_products': total_products,
+        'total_orders': total_orders,
+        'total_revenue': total_revenue,
+    }
+    return render(request, 'core/store/store_dashboard.html', context)
+
+
+@login_required
+def store_products(request, store_id):
+    """Quản lý sản phẩm của cửa hàng"""
+    store = get_object_or_404(Store, store_id=store_id, user=request.user)
+    products = Product.objects.filter(store=store).order_by('-created_at')
+    
+    # Pagination
+    paginator = Paginator(products, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'store': store,
+        'products': page_obj,
+    }
+    return render(request, 'core/store/store_products.html', context)
+
+
+@login_required
+def add_product(request, store_id):
+    """Thêm sản phẩm mới"""
+    store = get_object_or_404(Store, store_id=store_id, user=request.user)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        description = request.POST.get('description', '')
+        price = request.POST.get('price')
+        sku = request.POST.get('sku', '')
+        unit = request.POST.get('unit', 'cái')
+        category_id = request.POST.get('category')
+        is_active = request.POST.get('is_active') == 'on'
+        
+        if name and price:
+            try:
+                price = float(price)
+                category = Category.objects.get(pk=category_id) if category_id else None
+                
+                product = Product.objects.create(
+                    store=store,
+                    name=name,
+                    description=description,
+                    price=price,
+                    category=category,
+                    is_active=is_active
+                )
+                messages.success(request, f'Đã thêm sản phẩm "{name}" thành công!')
+                return redirect('store_products', store_id=store.store_id)
+            except (ValueError, Category.DoesNotExist):
+                messages.error(request, 'Dữ liệu không hợp lệ.')
+        else:
+            messages.error(request, 'Vui lòng nhập đầy đủ thông tin bắt buộc.')
+    
+    categories = Category.objects.all()
+    context = {
+        'store': store,
+        'categories': categories,
+    }
+    return render(request, 'core/store/add_product.html', context)
+
+
+@login_required
+def edit_product(request, store_id, product_id):
+    """Sửa sản phẩm"""
+    store = get_object_or_404(Store, store_id=store_id, user=request.user)
+    product = get_object_or_404(Product, pk=product_id, store=store)
+    
+    if request.method == 'POST':
+        product.name = request.POST.get('name', product.name)
+        product.description = request.POST.get('description', product.description)
+        product.price = float(request.POST.get('price', product.price))
+        product.is_active = request.POST.get('is_active') == 'on'
+        
+        category_id = request.POST.get('category')
+        if category_id:
+            try:
+                product.category = Category.objects.get(pk=category_id)
+            except Category.DoesNotExist:
+                pass
+        
+        product.save()
+        messages.success(request, f'Đã cập nhật sản phẩm "{product.name}" thành công!')
+        return redirect('store_products', store_id=store.store_id)
+    
+    categories = Category.objects.all()
+    context = {
+        'store': store,
+        'product': product,
+        'categories': categories,
+    }
+    return render(request, 'core/store/edit_product.html', context)
+
+
+@login_required
+def store_orders(request, store_id):
+    """Xem đơn hàng của cửa hàng"""
+    store = get_object_or_404(Store, store_id=store_id, user=request.user)
+    orders = Order.objects.filter(order_items__product__store=store).distinct().order_by('-created_at')
+    
+    # Pagination
+    paginator = Paginator(orders, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'store': store,
+        'orders': page_obj,
+    }
+    return render(request, 'core/store/store_orders.html', context)
+
+
+@login_required
+def store_order_detail(request, store_id, order_id):
+    """Chi tiết đơn hàng của cửa hàng"""
+    store = get_object_or_404(Store, store_id=store_id, user=request.user)
+    order = get_object_or_404(Order, pk=order_id)
+    
+    # Lấy các sản phẩm của cửa hàng trong đơn hàng
+    store_order_items = order.order_items.filter(product__store=store)
+    
+    if not store_order_items.exists():
+        messages.error(request, 'Đơn hàng này không chứa sản phẩm của cửa hàng bạn.')
+        return redirect('store_orders', store_id=store.store_id)
+    
+    # Tính tổng tiền của cửa hàng trong đơn hàng
+    store_subtotal = sum(item.total_price for item in store_order_items)
+    
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        if new_status in ['pending', 'waiting_pickup', 'shipping', 'delivered', 'cancelled']:
+            order.status = new_status
+            order.save()
+            messages.success(request, f'Đã cập nhật trạng thái đơn hàng thành "{order.get_status_display()}"')
+            return redirect('store_order_detail', store_id=store.store_id, order_id=order.order_id)
+    
+    context = {
+        'store': store,
+        'order': order,
+        'store_order_items': store_order_items,
+        'store_subtotal': store_subtotal,
+    }
+    return render(request, 'core/store/store_order_detail.html', context)

@@ -18,6 +18,24 @@
         {% if user.last_login_at %}
         <p><strong>Lần đăng nhập cuối:</strong> {{ user.last_login_at|date:"d/m/Y H:i" }}</p>
         {% endif %}
+        
+        <!-- Store Management Section -->
+        <div class="store-management mt-4">
+            <h2>Quản lý cửa hàng</h2>
+            {% if not has_store %}
+                <a href="{% url 'create_store' %}" class="btn btn-primary">
+                    Trở thành nhà cung cấp
+                </a>
+            {% else %}
+                {% for store in user_stores %}
+                    <p><strong>Tên cửa hàng:</strong> {{ store.store_name }}</p>
+                    <a href="{% url 'store_dashboard' store.store_id %}" class="btn btn-success">
+                        Quản lý cửa hàng
+                    </a>
+                    {% if not forloop.last %}<hr>{% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}

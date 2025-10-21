@@ -1,0 +1,170 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Chi tiết đơn hàng #{{ order.order_id }} - {{ store.store_name }}{% endblock %}
+
+{% block content %}
+<h1>Chi tiết đơn hàng #{{ order.order_id }}</h1>
+
+<!-- Navigation -->
+<p>
+    <a href="{% url 'store_orders' store.store_id %}">← Danh sách đơn hàng</a> | 
+    <a href="{% url 'store_dashboard' store.store_id %}">← Dashboard</a>
+</p>
+
+<!-- Order Info -->
+<h2>Thông tin đơn hàng</h2>
+<table border="1" cellpadding="10" cellspacing="0">
+    <tr>
+        <td><strong>Mã đơn hàng:</strong></td>
+        <td>#{{ order.order_id }}</td>
+    </tr>
+    <tr>
+        <td><strong>Khách hàng:</strong></td>
+        <td>{{ order.user.full_name }} ({{ order.user.phone_number }})</td>
+    </tr>
+    <tr>
+        <td><strong>Trạng thái:</strong></td>
+        <td>
+            <span style="color: 
+                {% if order.status == 'pending' %}orange
+                {% elif order.status == 'waiting_pickup' %}blue
+                {% elif order.status == 'shipping' %}purple
+                {% elif order.status == 'delivered' %}green
+                {% elif order.status == 'cancelled' %}red
+                {% endif %};">
+                {{ order.get_status_display }}
+            </span>
+        </td>
+    </tr>
+    <tr>
+        <td><strong>Thanh toán:</strong></td>
+        <td>
+            <span style="color: 
+                {% if order.payment_status == 'pending' %}orange
+                {% elif order.payment_status == 'paid' %}green
+                {% elif order.payment_status == 'failed' %}red
+                {% endif %};">
+                {{ order.get_payment_status_display }}
+            </span>
+        </td>
+    </tr>
+    <tr>
+        <td><strong>Phương thức thanh toán:</strong></td>
+        <td>{{ order.get_payment_method_display }}</td>
+    </tr>
+    <tr>
+        <td><strong>Ngày đặt:</strong></td>
+        <td>{{ order.created_at|date:"d/m/Y H:i" }}</td>
+    </tr>
+</table>
+
+<!-- Update Status Form -->
+<h2>Cập nhật trạng thái đơn hàng</h2>
+<form method="post">
+    {% csrf_token %}
+    <table border="1" cellpadding="10" cellspacing="0">
+        <tr>
+            <td><strong>Trạng thái hiện tại:</strong></td>
+            <td>{{ order.get_status_display }}</td>
+        </tr>
+        <tr>
+            <td><strong>Trạng thái mới:</strong></td>
+            <td>
+                <select name="status">
+                    <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Đang chờ xác nhận</option>
+                    <option value="waiting_pickup" {% if order.status == 'waiting_pickup' %}selected{% endif %}>Đang chờ shipper đến lấy hàng</option>
+                    <option value="shipping" {% if order.status == 'shipping' %}selected{% endif %}>Đang giao hàng</option>
+                    <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Đã nhận hàng</option>
+                    <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Đã hủy</option>
+                </select>
+            </td>
+        </tr>
+    </table>
+    <p>
+        <button type="submit">Cập nhật trạng thái</button>
+    </p>
+</form>
+
+<!-- Store Products in Order -->
+<h2>Sản phẩm trong đơn hàng</h2>
+<table border="1" cellpadding="10" cellspacing="0">
+    <thead>
+        <tr>
+            <th>Tên sản phẩm</th>
+            <th>Giá</th>
+            <th>Số lượng</th>
+            <th>Thành tiền</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in store_order_items %}
+        <tr>
+            <td>
+                <strong>{{ item.product.name }}</strong><br>
+                <small>{{ item.product.store.store_name }}</small>
+            </td>
+            <td>{{ item.unit_price|floatformat:0 }} VNĐ</td>
+            <td>{{ item.quantity }}</td>
+            <td><strong>{{ item.total_price|floatformat:0 }} VNĐ</strong></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="3"><strong>Tổng tiền hàng:</strong></td>
+            <td><strong>{{ store_subtotal|floatformat:0 }} VNĐ</strong></td>
+            <tr>
+                <td colspan="3"><strong>Phí vận chuyển:</strong></td>
+                <td><strong>30000 VNĐ</strong></td>
+            </tr>
+            <tr>
+                <td colspan="3"><strong>Tổng cộng:</strong></td>
+                <td><strong>{{ store_subtotal|add:30000|floatformat:0 }} VNĐ</strong></td>
+            </tr>
+        </tr>
+    </tfoot>
+</table>
+
+<!-- Customer Address -->
+<h2>Địa chỉ giao hàng</h2>
+{% if order.shipping_address %}
+<table border="1" cellpadding="10" cellspacing="0">
+    <tr>
+        <td><strong>Người nhận:</strong></td>
+        <td>{{ order.shipping_address.contact_person }}</td>
+    </tr>
+    <tr>
+        <td><strong>Số điện thoại:</strong></td>
+        <td>{{ order.shipping_address.contact_phone }}</td>
+    </tr>
+    <tr>
+        <td><strong>Địa chỉ:</strong></td>
+        <td>{{ order.shipping_address.street }}</td>
+    </tr>
+    <tr>
+        <td><strong>Phường/Xã:</strong></td>
+        <td>{{ order.shipping_address.ward }}</td>
+    </tr>
+    <tr>
+        <td><strong>Tỉnh/Thành phố:</strong></td>
+        <td>{{ order.shipping_address.province }}</td>
+    </tr>
+    <tr>
+        <td><strong>Quốc gia:</strong></td>
+        <td>{{ order.shipping_address.country }}</td>
+    </tr>
+    <tr>
+        <td><strong>Địa chỉ mặc định:</strong></td>
+        <td>
+            {% if order.shipping_address.is_default %}
+                Có
+            {% else %}
+                Không
+            {% endif %}
+        </td>
+    </tr>
+</table>
+{% else %}
+<p><strong>Chưa có địa chỉ giao hàng</strong></p>
+{% endif %}
+{% endblock %}

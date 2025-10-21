@@ -1,0 +1,102 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Đơn hàng - {{ store.store_name }}{% endblock %}
+
+{% block content %}
+<h1>Đơn hàng - {{ store.store_name }}</h1>
+
+<!-- Navigation -->
+<p>
+    <a href="{% url 'store_dashboard' store.store_id %}">← Dashboard</a>
+</p>
+
+<!-- Orders List -->
+<h2>Danh sách đơn hàng</h2>
+{% if orders %}
+    <table border="1" cellpadding="10" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Mã đơn hàng</th>
+                <th>Khách hàng</th>
+                <th>Sản phẩm</th>
+                <th>Tổng tiền</th>
+                <th>Trạng thái</th>
+                <th>Thanh toán</th>
+                <th>Ngày đặt</th>
+                <th>Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td><strong>#{{ order.order_id }}</strong></td>
+                <td>
+                    {{ order.user.full_name }}<br>
+                    <small>{{ order.user.phone_number }}</small>
+                </td>
+                <td>
+                    {% for item in order.order_items.all %}
+                        {% if item.product.store == store %}
+                            <div>
+                                {{ item.product.name }} x{{ item.quantity }}<br>
+                                <small>{{ item.product.store.store_name }}</small>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </td>
+                <td>
+                    {% for item in order.order_items.all %}
+                        {% if item.product.store == store %}
+                            {{ item.total_price|floatformat:0 }} VNĐ<br>
+                        {% endif %}
+                    {% endfor %}
+                </td>
+                <td>
+                    <span style="color: 
+                        {% if order.status == 'pending' %}orange
+                        {% elif order.status == 'confirmed' %}blue
+                        {% elif order.status == 'shipped' %}purple
+                        {% elif order.status == 'delivered' %}green
+                        {% elif order.status == 'cancelled' %}red
+                        {% endif %};">
+                        {{ order.get_status_display }}
+                    </span>
+                </td>
+                <td>
+                    <span style="color: 
+                        {% if order.payment_status == 'pending' %}orange
+                        {% elif order.payment_status == 'paid' %}green
+                        {% elif order.payment_status == 'failed' %}red
+                        {% endif %};">
+                        {{ order.get_payment_status_display }}
+                    </span>
+                </td>
+                <td>{{ order.created_at|date:"d/m/Y H:i" }}</td>
+                <td>
+                    <a href="{% url 'store_order_detail' store.store_id order.order_id %}">Xem chi tiết</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <!-- Pagination -->
+    {% if orders.has_other_pages %}
+        <div class="pagination">
+            {% if orders.has_previous %}
+                <a href="?page=1">&laquo; Đầu</a>
+                <a href="?page={{ orders.previous_page_number }}">Trước</a>
+            {% endif %}
+            
+            <span>Trang {{ orders.number }} / {{ orders.paginator.num_pages }}</span>
+            
+            {% if orders.has_next %}
+                <a href="?page={{ orders.next_page_number }}">Tiếp</a>
+                <a href="?page={{ orders.paginator.num_pages }}">Cuối &raquo;</a>
+            {% endif %}
+        </div>
+    {% endif %}
+{% else %}
+    <p>Chưa có đơn hàng nào.</p>
+{% endif %}
+{% endblock %}

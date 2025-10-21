@@ -28,4 +28,13 @@ urlpatterns = [
     # Profile
     path('profile/', views.profile, name='profile'),
     path('addresses/', views.address_management, name='address_management'),
+    
+    # Store Management
+    path('create-store/', views.create_store, name='create_store'),
+    path('store/<int:store_id>/', views.store_dashboard, name='store_dashboard'),
+    path('store/<int:store_id>/products/', views.store_products, name='store_products'),
+    path('store/<int:store_id>/products/add/', views.add_product, name='add_product'),
+    path('store/<int:store_id>/products/<int:product_id>/edit/', views.edit_product, name='edit_product'),
+    path('store/<int:store_id>/orders/', views.store_orders, name='store_orders'),
+    path('store/<int:store_id>/orders/<int:order_id>/', views.store_order_detail, name='store_order_detail'),
 ]
