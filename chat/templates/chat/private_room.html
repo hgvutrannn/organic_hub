@@ -1,0 +1,151 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Chat với {{ other_user.full_name }} - Organic Hub{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="chat-header">
+        <h2>Chat với {{ other_user.full_name }}</h2>
+    </div>
+    
+    <div id="chat-messages" class="chat-messages">
+        <!-- Hiển thị lịch sử chat -->
+        {% for message in chat_history %}
+            <div class="message {% if message.sender.user_id == request.user.user_id %}sent{% else %}received{% endif %}">
+                <div class="message-content">{{ message.content }}</div>
+                <div class="message-info">
+                    {{ message.sender.full_name }} - {{ message.created_at|date:"H:i" }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <div class="chat-input">
+        <input id="chat-message-input" type="text" placeholder="Nhập tin nhắn...">
+        <button id="chat-message-submit">Gửi</button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+    <!-- Dùng để lấy tên phòng từ Django sang JS -->
+    {{ room_name|json_script:"room-name" }}
+    {{ request.user.user_id|json_script:"current-user-id" }}
+
+    <script>
+        const roomName = JSON.parse(document.getElementById('room-name').textContent);
+        const currentUserId = JSON.parse(document.getElementById('current-user-id').textContent);
+        const chatMessages = document.getElementById('chat-messages');
+        const messageInput = document.getElementById('chat-message-input');
+        const submitButton = document.getElementById('chat-message-submit');
+
+        // 1. Tạo kết nối WebSocket
+        const chatSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/chat/private/' + roomName + '/'
+        );
+        
+        // Kiểm tra và gửi tin nhắn về sản phẩm nếu có
+        chatSocket.onopen = function(e) {
+            console.log('WebSocket connected');
+            
+            // Kiểm tra xem có thông tin sản phẩm từ localStorage không
+            const productName = localStorage.getItem('productName');
+            const storeOwnerId = localStorage.getItem('storeOwnerId');
+            
+            console.log('Product name:', productName);
+            console.log('Store owner ID:', storeOwnerId);
+            console.log('Chat messages count:', chatMessages.children.length);
+            
+            if (productName && storeOwnerId) {
+                // Tạo tin nhắn mặc định về sản phẩm
+                const defaultMessage = `Tôi đang quan tâm tới sản phẩm '${productName}' này, bạn có thể cho tôi biết thêm về nó?`;
+                
+                console.log('Sending default message:', defaultMessage);
+                
+                // Gửi tin nhắn sau 1 giây để đảm bảo kết nối ổn định
+                setTimeout(() => {
+                    sendMessage(defaultMessage);
+                    // Xóa thông tin sản phẩm khỏi localStorage sau khi gửi
+                    localStorage.removeItem('productName');
+                    localStorage.removeItem('storeOwnerId');
+                }, 1000);
+            }
+        };
+
+        // 2. Xử lý tin nhắn nhận được
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            const message = data.message;
+            const username = data.username;
+            const senderId = data.sender_id;
+            
+            // Chỉ hiển thị tin nhắn từ người khác
+            if (senderId != currentUserId) {
+                addMessage(message, username, false); // false = received message
+            }
+        };
+
+        // 3. Gửi tin nhắn từ input
+        function sendMessageFromInput() {
+            const message = messageInput.value.trim();
+            if (message) {
+                sendMessage(message);
+                messageInput.value = '';
+            }
+        }
+        
+        // 4. Gửi tin nhắn (có thể từ input hoặc programmatically)
+        function sendMessage(message) {
+            if (message) {
+                // Hiển thị tin nhắn của mình ngay lập tức
+                addMessage(message, "Bạn", true); // true = sent message
+                
+                // Gửi qua WebSocket
+                chatSocket.send(JSON.stringify({
+                    'message': message
+                }));
+            }
+        }
+
+        // 4. Thêm tin nhắn vào giao diện
+        function addMessage(content, sender, isSent) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.textContent = content;
+            
+            const messageInfo = document.createElement('div');
+            messageInfo.className = 'message-info';
+            messageInfo.textContent = `${sender} - ${new Date().toLocaleTimeString()}`;
+            
+            messageDiv.appendChild(messageContent);
+            messageDiv.appendChild(messageInfo);
+            chatMessages.appendChild(messageDiv);
+            
+            // Scroll xuống cuối
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // 5. Event listeners
+        submitButton.onclick = sendMessageFromInput;
+        
+        messageInput.onkeyup = function(e) {
+            if (e.key === 'Enter') {
+                sendMessageFromInput();
+            }
+        };
+
+        chatSocket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly');
+        };
+
+        // Focus vào input
+        messageInput.focus();
+        
+        // Scroll xuống cuối khi load trang
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    </script>
+{% endblock %}

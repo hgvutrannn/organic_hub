@@ -97,6 +97,35 @@
     </tr>
 </table>
 
+<!-- Chat with Store Button -->
+{% if user.is_authenticated %}
+<div>
+    <h3>Liên hệ với cửa hàng</h3>
+    <p>Có câu hỏi về sản phẩm này? Hãy chat trực tiếp với chủ cửa hàng!</p>
+    <a href="{% url 'private_room' product.store.user.user_id %}" 
+       onclick="sendProductMessage('{{ product.name }}', '{{ product.store.user.user_id }}')">
+        Chat với {{ product.store.store_name }}
+    </a>
+</div>
+{% else %}
+<div>
+    <h3>Đăng nhập để chat</h3>
+    <p>Bạn cần đăng nhập để có thể chat với cửa hàng.</p>
+    <a href="/login/">Đăng nhập</a>
+    <a href="/register/">Đăng ký</a>
+</div>
+{% endif %}
+
+<script>
+function sendProductMessage(productName, storeOwnerId) {
+    // Lưu thông tin sản phẩm vào localStorage để sử dụng trong chat
+    console.log('Saving to localStorage:', productName, storeOwnerId);
+    localStorage.setItem('productName', productName);
+    localStorage.setItem('storeOwnerId', storeOwnerId);
+    console.log('Saved to localStorage');
+}
+</script>
+
 <!-- Actions -->
 {% if user.is_authenticated %}
 <h2>Thao tác</h2>

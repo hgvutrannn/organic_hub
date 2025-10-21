@@ -57,6 +57,7 @@ def user_login(request):
             if user is not None:
                 login(request, user)
                 user.last_login_at = timezone.now()
+                print(user.user_id)
                 user.save()
                 messages.success(request, f'Chào mừng {user.full_name}!')
                 return redirect('home')

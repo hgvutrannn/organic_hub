@@ -18,6 +18,8 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
+    'daphne',
+    'chat',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -54,6 +56,8 @@ TEMPLATES = [
         },
     },
 ]
+
+ASGI_APPLICATION = 'organic_hub.asgi.application'
 
 WSGI_APPLICATION = 'organic_hub.wsgi.application'
 
@@ -105,3 +109,12 @@ AUTH_USER_MODEL = 'core.CustomUser'
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    }
+}

@@ -1,0 +1,25 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Danh sách Chat - Organic Hub{% endblock %}
+
+{% block content %}
+<h1>Danh sách Chat</h1>
+
+{% if chat_rooms %}
+    <div class="chat-list">
+        {% for chat in chat_rooms %}
+        <div class="chat-item">
+            <a href="{% url 'private_room' chat.other_user.user_id %}">
+                <div class="chat-info">
+                    <h3>{{ chat.other_user.full_name }}</h3>
+                    <p>{{ chat.last_message.content|truncatechars:50 }}</p>
+                    <small>{{ chat.last_message.created_at|date:"d/m/Y H:i" }}</small>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p>Bạn chưa có cuộc chat nào.</p>
+{% endif %}
+{% endblock %}
