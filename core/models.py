@@ -137,6 +137,16 @@ class Store(models.Model):
         ],
         verbose_name='Trạng thái xác minh'
     )
+    admin_notes = models.TextField(blank=True, null=True, verbose_name='Ghi chú của admin')
+    verified_at = models.DateTimeField(null=True, blank=True, verbose_name='Thời gian xác minh')
+    verified_by = models.ForeignKey(
+        CustomUser, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='verified_stores',
+        verbose_name='Xác minh bởi'
+    )
 
     class Meta:
         verbose_name = 'Cửa hàng'
@@ -146,7 +156,92 @@ class Store(models.Model):
         return self.store_name
 
 
-# Product Model
+# Store Verification Request Model
+class StoreVerificationRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Đang chờ xem xét'),
+        ('approved', 'Đã phê duyệt'),
+        ('rejected', 'Bị từ chối'),
+    ]
+    
+    request_id = models.AutoField(primary_key=True)
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='verification_requests', verbose_name='Cửa hàng')
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name='Trạng thái'
+    )
+    submitted_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày gửi')
+    reviewed_at = models.DateTimeField(null=True, blank=True, verbose_name='Ngày xem xét')
+    reviewed_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_requests',
+        verbose_name='Người xem xét'
+    )
+    admin_notes = models.TextField(blank=True, null=True, verbose_name='Ghi chú của admin')
+    
+    class Meta:
+        verbose_name = 'Yêu cầu xác minh cửa hàng'
+        verbose_name_plural = 'Yêu cầu xác minh cửa hàng'
+        ordering = ['-submitted_at']
+    
+    def __str__(self):
+        return f"Request #{self.request_id} - {self.store.store_name} - {self.get_status_display()}"
+    
+    @property
+    def certifications_count(self):
+        """Get the number of certifications in this request"""
+        return self.certifications.count()
+
+
+# Store Certification Model
+class StoreCertification(models.Model):
+    CERTIFICATION_TYPES = [
+        ('vietgap', 'VietGAP'),
+        ('organic', 'Chứng nhận hữu cơ'),
+        ('fairtrade', 'Fair Trade'),
+        ('halal', 'Halal'),
+        ('kosher', 'Kosher'),
+        ('other', 'Chứng nhận khác'),
+    ]
+    
+    certification_id = models.AutoField(primary_key=True)
+    verification_request = models.ForeignKey(StoreVerificationRequest, on_delete=models.CASCADE, related_name='certifications', verbose_name='Yêu cầu xác minh', null=True, blank=True)
+    certification_type = models.CharField(
+        max_length=50, 
+        choices=CERTIFICATION_TYPES, 
+        verbose_name='Loại chứng nhận'
+    )
+    certification_name = models.CharField(max_length=255, blank=True, null=True, verbose_name='Tên chứng nhận')
+    document = models.FileField(upload_to='certifications/', verbose_name='Tài liệu chứng nhận')
+    uploaded_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tải lên')
+    
+    class Meta:
+        verbose_name = 'Chứng nhận cửa hàng'
+        verbose_name_plural = 'Chứng nhận cửa hàng'
+        ordering = ['-uploaded_at']
+    
+    def __str__(self):
+        return f"{self.verification_request.store.store_name} - {self.get_certification_type_display()}"
+    
+    @property
+    def file_extension(self):
+        """Get file extension for display purposes"""
+        if self.document:
+            return self.document.name.split('.')[-1].lower()
+        return None
+    
+    @property
+    def is_image(self):
+        """Check if the uploaded file is an image"""
+        image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']
+        return self.file_extension in image_extensions
+
+# Legacy Product Model (for backward compatibility during migration)
 class Product(models.Model):
     product_id = models.AutoField(primary_key=True)
     store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='products', verbose_name='Cửa hàng')

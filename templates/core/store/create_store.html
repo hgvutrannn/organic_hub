@@ -45,7 +45,7 @@
                     </h3>
                 </div>
                 <div class="card-body p-4">
-                    <form method="post">
+                    <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         
                         <div class="mb-4">
@@ -69,6 +69,48 @@
                                       name="store_description" 
                                       rows="4" 
                                       placeholder="Mô tả về cửa hàng của bạn..."></textarea>
+                        </div>
+                        
+                        <!-- Certifications Section -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-certificate me-1"></i>Chứng nhận cửa hàng
+                            </label>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Quan trọng:</strong> Vui lòng tải lên các giấy tờ chứng nhận như VietGAP, chứng nhận hữu cơ, v.v. để cửa hàng được phê duyệt.
+                            </div>
+                            
+                            <div id="certifications-container">
+                                <div class="certification-item border rounded-3 p-3 mb-3">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <label class="form-label small">Loại chứng nhận</label>
+                                            <select class="form-select" name="certification_types" required>
+                                                <option value="">Chọn loại chứng nhận</option>
+                                                <option value="vietgap">VietGAP</option>
+                                                <option value="organic">Chứng nhận hữu cơ</option>
+                                                <option value="fairtrade">Fair Trade</option>
+                                                <option value="halal">Halal</option>
+                                                <option value="kosher">Kosher</option>
+                                                <option value="other">Chứng nhận khác</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label small">Tên chứng nhận (tùy chọn)</label>
+                                            <input type="text" class="form-control" name="certification_names" placeholder="VD: VietGAP 2024">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label small">Tệp chứng nhận</label>
+                                            <input type="file" class="form-control" name="certification_files" accept="image/*,.pdf" required>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addCertification()">
+                                <i class="fas fa-plus me-1"></i>Thêm chứng nhận khác
+                            </button>
                         </div>
                         
                         <div class="d-grid">
@@ -124,4 +166,47 @@
         </div>
     </div>
 </div>
+
+<script>
+function addCertification() {
+    const container = document.getElementById('certifications-container');
+    const newCertification = document.createElement('div');
+    newCertification.className = 'certification-item border rounded-3 p-3 mb-3';
+    newCertification.innerHTML = `
+        <div class="row">
+            <div class="col-md-4">
+                <label class="form-label small">Loại chứng nhận</label>
+                <select class="form-select" name="certification_types">
+                    <option value="">Chọn loại chứng nhận</option>
+                    <option value="vietgap">VietGAP</option>
+                    <option value="organic">Chứng nhận hữu cơ</option>
+                    <option value="fairtrade">Fair Trade</option>
+                    <option value="halal">Halal</option>
+                    <option value="kosher">Kosher</option>
+                    <option value="other">Chứng nhận khác</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small">Tên chứng nhận (tùy chọn)</label>
+                <input type="text" class="form-control" name="certification_names" placeholder="VD: VietGAP 2024">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Tệp chứng nhận</label>
+                <input type="file" class="form-control" name="certification_files" accept="image/*,.pdf">
+            </div>
+            <div class="col-md-1">
+                <label class="form-label small">&nbsp;</label>
+                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeCertification(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    container.appendChild(newCertification);
+}
+
+function removeCertification(button) {
+    button.closest('.certification-item').remove();
+}
+</script>
 {% endblock %}

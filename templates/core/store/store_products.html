@@ -17,9 +17,15 @@
                         <p class="text-muted mb-0">{{ store.store_name }}</p>
                     </div>
                 </div>
+                {% if store.is_verified_status == 'verified' %}
                 <a href="{% url 'add_product' store.store_id %}" class="btn btn-primary btn-lg rounded-pill">
                     <i class="fas fa-plus me-2"></i>Thêm sản phẩm
                 </a>
+                {% else %}
+                <button class="btn btn-secondary btn-lg rounded-pill" disabled>
+                    <i class="fas fa-lock me-2"></i>Thêm sản phẩm
+                </button>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -39,6 +45,25 @@
             </nav>
         </div>
     </div>
+
+    <!-- Verification Status Alert -->
+    {% if store.is_verified_status != 'verified' %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning border-0 shadow-sm rounded-4" role="alert">
+                <div class="d-flex align-items-center">
+                    <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                        <i class="fas fa-exclamation-triangle text-warning fs-4"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h5 class="alert-heading fw-bold mb-2">Cửa hàng chưa được xác minh</h5>
+                        <p class="mb-0">Bạn cần xác minh cửa hàng trước khi có thể thêm sản phẩm mới.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     {% if products %}
         <!-- Products List -->

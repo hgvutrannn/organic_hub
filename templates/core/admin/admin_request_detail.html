@@ -1,0 +1,270 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Xem chi tiết yêu cầu xác minh - Request #{{ verification_request.request_id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
+                        <i class="fas fa-file-alt text-primary fs-1"></i>
+                    </div>
+                    <div>
+                        <h1 class="display-6 fw-bold mb-1">Request #{{ verification_request.request_id }}</h1>
+                        <p class="text-muted mb-0">{{ verification_request.store.store_name }}</p>
+                    </div>
+                </div>
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary rounded-pill">
+                    <i class="fas fa-arrow-left me-2"></i>Quay lại Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Request Information -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h3 class="mb-0 fw-bold">
+                        <i class="fas fa-info-circle me-2"></i>Thông tin yêu cầu
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-muted mb-1">Mã yêu cầu</h6>
+                                <p class="mb-0 fs-5">#{{ verification_request.request_id }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-muted mb-1">Cửa hàng</h6>
+                                <p class="mb-0">{{ verification_request.store.store_name }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-muted mb-1">Mô tả cửa hàng</h6>
+                                <p class="mb-0">{{ verification_request.store.store_description|default:"Chưa có mô tả" }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-muted mb-1">Trạng thái hiện tại</h6>
+                                <span class="badge {% if verification_request.status == 'approved' %}bg-success{% elif verification_request.status == 'rejected' %}bg-danger{% else %}bg-warning{% endif %} fs-6">
+                                    {{ verification_request.get_status_display }}
+                                </span>
+                            </div>
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-muted mb-1">Ngày gửi</h6>
+                                <p class="mb-0">{{ verification_request.submitted_at|date:"d/m/Y H:i" }}</p>
+                            </div>
+                            {% if verification_request.reviewed_at %}
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-muted mb-1">Ngày xem xét</h6>
+                                <p class="mb-0">{{ verification_request.reviewed_at|date:"d/m/Y H:i" }}</p>
+                            </div>
+                            {% endif %}
+                            {% if verification_request.reviewed_by %}
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-muted mb-1">Người xem xét</h6>
+                                <p class="mb-0">{{ verification_request.reviewed_by.full_name }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Store Owner Info -->
+                    <hr>
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="fw-bold text-muted mb-3">Thông tin chủ cửa hàng</h6>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <p class="mb-1"><strong>Tên:</strong> {{ verification_request.store.user.full_name }}</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p class="mb-1"><strong>Số điện thoại:</strong> {{ verification_request.store.user.phone_number }}</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p class="mb-1"><strong>Email:</strong> {{ verification_request.store.user.email|default:"Chưa cập nhật" }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if verification_request.admin_notes %}
+                    <hr>
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="fw-bold text-muted mb-3">Ghi chú của admin</h6>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>{{ verification_request.admin_notes }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Certifications -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h3 class="mb-0 fw-bold">
+                        <i class="fas fa-certificate me-2"></i>Chứng nhận trong yêu cầu ({{ certifications.count }})
+                    </h3>
+                </div>
+                <div class="card-body p blessed">
+                    {% if certifications %}
+                        <div class="row">
+                            {% for cert in certifications %}
+                            <div class="col-md-6 col-lg-4 mb-4">
+                                <div class="card border-0 shadow-sm rounded-3 h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <h6 class="fw-bold mb-1">{{ cert.get_certification_type_display }}</h6>
+                                        </div>
+                                        
+                                        {% if cert.certification_name %}
+                                        <p class="text-muted small mb-2">{{ cert.certification_name }}</p>
+                                        {% endif %}
+                                        
+                                        <p class="text-muted small mb-3">
+                                            <i class="fas fa-calendar me-1"></i>{{ cert.uploaded_at|date:"d/m/Y H:i" }}
+                                        </p>
+                                        
+                                        <div class="d-flex gap-2">
+                                            {% if cert.is_image %}
+                                                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#imageModal{{ cert.certification_id }}">
+                                                    <i class="fas fa-image me-1"></i>Xem ảnh
+                                                </button>
+                                            {% else %}
+                                                <a href="{{ cert.document.url }}" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill">
+                                                    <i class="fas fa-file-pdf me-1"></i>Xem PDF
+                                                </a>
+                                            {% endif %}
+                                            <a href="{{ cert.document.url }}" download class="btn btn-outline-secondary btn-sm rounded-pill">
+                                                <i class="fas fa-download me-1"></i>Tải xuống
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Image Modal -->
+                            {% if cert.is_image %}
+                            <div class="modal fade" id="imageModal{{ cert.certification_id }}" tabindex="-1">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">{{ cert.get_certification_type_display }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body text-center">
+                                            <img src="{{ cert.document.url }}" class="img-fluid rounded" alt="{{ cert.certification_name|default:cert.get_certification_type_display }}">
+                                        </div>
+                                        <div class="modal-footer">
+                                            <a href="{{ cert.document.url }}" download class="btn btn-primary">
+                                                <i class="fas fa-download me-1"></i>Tải xuống
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="bg-warning bg-opacity-10 rounded-circle p-4 mx-auto mb-3" style="width: 80px; height: 80px;">
+                                <i class="fas fa-exclamation-triangle text-warning fs-2"></i>
+                            </div>
+                            <h5 class="fw-bold">Chưa có chứng nhận nào</h5>
+                            <p class="text-muted">Yêu cầu này chưa có chứng nhận nào.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Actions -->
+    {% if verification_request.status == 'pending' %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h3 class="mb-0 fw-bold">
+                        <i class="fas fa-gavel me-2"></i>Thao tác xác minh
+站长</h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">Hành động</label>
+                                    <div class="d-flex gap-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="action" id="approve" value="approve" checked>
+                                            <label class="form-check-label fw-bold text-success" for="approve">
+                                                <i class="fas fa-check-circle me-1"></i>Phê duyệt yêu cầu
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="action" id="reject" value="reject">
+                                            <label class="form-check-label fw-bold text-danger" for="reject">
+                                                <i class="fas fa-times-circle me-1"></i>Từ chối yêu cầu
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="admin_notes" class="form-label fw-bold">Ghi chú của admin</label>
+                                    <textarea class="form-control" id="admin_notes" name="admin_notes" rows="4" placeholder="Nhập ghi chú (bắt buộc khi từ chối)"></textarea>
+                                    <div class="form-text">Ghi chú này sẽ được hiển thị cho chủ cửa hàng.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-success btn-lg rounded-pill">
+                                        <i class="fas fa-check me-2"></i>Xác nhận hành động
+                                    </button>
+                                    <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary rounded-pill">
+                                        <i class="fas fa-times me-2"></i>Hủy bỏ
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rejectRadio = document.getElementById('reject');
+    const adminNotes = document.getElementById('admin_notes');
+    
+    if (rejectRadio && adminNotes) {
+        rejectRadio.addEventListener('change', function() {
+            if (this.checked) {
+                adminNotes.required = true;
+            } else {
+                adminNotes.required = false;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

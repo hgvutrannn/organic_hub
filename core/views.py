@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Max
@@ -10,12 +10,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 
 from .models import (
-    CustomUser, Product, Category, CartItem, Order, OrderItem, 
-    Review, Address, Store, ProductImage
+    CustomUser, Product, 
+    Category, CartItem, Order, OrderItem, Review, Address, Store, 
+    ProductImage, StoreCertification, StoreVerificationRequest
 )
 from .forms import (
-    CustomUserRegistrationForm, LoginForm, ProductForm, 
-    AddressForm, ReviewForm, SearchForm, ProfileUpdateForm
+    CustomUserRegistrationForm, LoginForm, ProductForm, AddressForm, ReviewForm, SearchForm, ProfileUpdateForm,
+    StoreCertificationForm, AdminStoreReviewForm
 )
 
 
@@ -339,19 +340,61 @@ def address_management(request):
 # Store Views
 @login_required
 def create_store(request):
-    """Tạo cửa hàng"""
+    """Tạo cửa hàng với chứng nhận"""
     if request.method == 'POST':
         store_name = request.POST.get('store_name')
         store_description = request.POST.get('store_description', '')
         
         if store_name:
+            # Create store
             store = Store.objects.create(
                 user=request.user,
                 store_name=store_name,
                 store_description=store_description,
                 is_verified_status='pending'
             )
-            messages.success(request, f'Đã tạo cửa hàng "{store_name}" thành công!')
+            
+            # Handle certification uploads
+            certification_files = request.FILES.getlist('certification_files')
+            certification_types = request.POST.getlist('certification_types')
+            certification_names = request.POST.getlist('certification_names')
+            
+            # Debug: Print what we received
+            print(f"Debug - Files received: {len(certification_files)}")
+            print(f"Debug - Types received: {certification_types}")
+            print(f"Debug - Names received: {certification_names}")
+            print(f"Debug - POST data keys: {list(request.POST.keys())}")
+            print(f"Debug - FILES data keys: {list(request.FILES.keys())}")
+            
+            # Create verification request
+            verification_request = StoreVerificationRequest.objects.create(
+                store=store,
+                status='pending'
+            )
+            
+            # Create certification records - ensure we have matching data
+            if certification_files and certification_types:
+                min_length = min(len(certification_files), len(certification_types))
+                for i in range(min_length):
+                    file = certification_files[i]
+                    cert_type = certification_types[i]
+                    cert_name = certification_names[i] if i < len(certification_names) else ''
+                    
+                    if cert_type and file:  # Only create if both type and file are provided
+                        try:
+                            StoreCertification.objects.create(
+                                verification_request=verification_request,
+                                certification_type=cert_type,
+                                certification_name=cert_name,
+                                document=file
+                            )
+                            print(f"Debug - Created certification: {cert_type} for file: {file.name}")
+                        except Exception as e:
+                            print(f"Debug - Error creating certification: {e}")
+            else:
+                print("Debug - No certification files or types received")
+            
+            messages.success(request, f'Đã tạo cửa hàng "{store_name}" thành công! Yêu cầu xác minh đã được gửi.')
             return redirect('store_dashboard', store_id=store.store_id)
         else:
             messages.error(request, 'Vui lòng nhập tên cửa hàng.')
@@ -366,6 +409,10 @@ def store_dashboard(request, store_id):
     products = Product.objects.filter(store=store)
     orders = Order.objects.filter(order_items__product__store=store).distinct().order_by('-created_at')[:10]
     
+    # Get verification requests
+    verification_requests = store.verification_requests.all()
+    latest_request = verification_requests.first()
+    
     # Thống kê cơ bản
     total_products = products.count()
     total_orders = orders.count()
@@ -378,6 +425,8 @@ def store_dashboard(request, store_id):
         'total_products': total_products,
         'total_orders': total_orders,
         'total_revenue': total_revenue,
+        'verification_requests': verification_requests,
+        'latest_request': latest_request,
     }
     return render(request, 'core/store/store_dashboard.html', context)
 
@@ -404,6 +453,11 @@ def store_products(request, store_id):
 def add_product(request, store_id):
     """Thêm sản phẩm mới"""
     store = get_object_or_404(Store, store_id=store_id, user=request.user)
+    
+    # Check if store is verified
+    if store.is_verified_status != 'verified':
+        messages.error(request, 'Cửa hàng cần được xác minh trước khi có thể thêm sản phẩm.')
+        return redirect('store_dashboard', store_id=store.store_id)
     
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES)
@@ -444,6 +498,10 @@ def edit_product(request, store_id, product_id):
     """Sửa sản phẩm"""
     store = get_object_or_404(Store, store_id=store_id, user=request.user)
     product = get_object_or_404(Product, pk=product_id, store=store)
+    # Check if store is verified
+    if store.is_verified_status != 'verified':
+        messages.error(request, 'Cửa hàng cần được xác minh trước khi có thể chỉnh sửa sản phẩm.')
+        return redirect('store_dashboard', store_id=store.store_id)
     
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES, instance=product)
@@ -530,3 +588,213 @@ def store_order_detail(request, store_id, order_id):
         'store_subtotal': store_subtotal,
     }
     return render(request, 'core/store/store_order_detail.html', context)
+
+
+@login_required
+def verification_status(request, store_id):
+    """Trang trạng thái xác minh cửa hàng"""
+    store = get_object_or_404(Store, store_id=store_id, user=request.user)
+    verification_requests = store.verification_requests.all()
+    
+    context = {
+        'store': store,
+        'verification_requests': verification_requests,
+    }
+    return render(request, 'core/store/verification_status.html', context)
+
+
+@login_required
+def verification_management(request, store_id):
+    """Trang quản lý xác minh cửa hàng"""
+    store = get_object_or_404(Store, store_id=store_id, user=request.user)
+    verification_requests = store.verification_requests.all()
+    latest_request = verification_requests.first()
+    
+    # Check if user can send new request
+    can_send_new_request = True
+    if latest_request and latest_request.status == 'pending':
+        can_send_new_request = False
+    
+    if request.method == 'POST':
+        # Handle new verification request
+        if can_send_new_request:
+            certification_files = request.FILES.getlist('certification_files')
+            certification_types = request.POST.getlist('certification_types')
+            certification_names = request.POST.getlist('certification_names')
+            
+            if certification_files and certification_types:
+                # Create new verification request
+                verification_request = StoreVerificationRequest.objects.create(
+                    store=store,
+                    status='pending'
+                )
+                
+                # Create certification records
+                min_length = min(len(certification_files), len(certification_types))
+                for i in range(min_length):
+                    file = certification_files[i]
+                    cert_type = certification_types[i]
+                    cert_name = certification_names[i] if i < len(certification_names) else ''
+                    
+                    if cert_type and file:
+                        try:
+                            StoreCertification.objects.create(
+                                verification_request=verification_request,
+                                certification_type=cert_type,
+                                certification_name=cert_name,
+                                document=file
+                            )
+                        except Exception as e:
+                            print(f"Error creating certification: {e}")
+                
+                messages.success(request, f'Đã gửi yêu cầu xác minh mới #{verification_request.request_id} thành công!')
+                return redirect('verification_management', store_id=store.store_id)
+            else:
+                messages.error(request, 'Vui lòng tải lên ít nhất một chứng nhận.')
+        else:
+            messages.error(request, 'Bạn không thể gửi yêu cầu mới khi đang có yêu cầu đang chờ xem xét.')
+    
+    context = {
+        'store': store,
+        'verification_requests': verification_requests,
+        'latest_request': latest_request,
+        'can_send_new_request': can_send_new_request,
+    }
+    return render(request, 'core/store/verification_management.html', context)
+
+
+# Admin Views
+def admin_required(user):
+    """Check if user is admin (staff or superuser)"""
+    return user.is_authenticated and (user.is_staff or user.is_superuser)
+
+
+@login_required
+@user_passes_test(admin_required)
+def admin_dashboard(request):
+    """Admin dashboard for reviewing stores"""
+    # Get verification requests with different statuses
+    pending_requests = StoreVerificationRequest.objects.filter(status='pending').order_by('-submitted_at')
+    all_requests = StoreVerificationRequest.objects.all().order_by('-submitted_at')
+    
+    # Statistics
+    total_requests = StoreVerificationRequest.objects.count()
+    pending_count = pending_requests.count()
+    approved_count = StoreVerificationRequest.objects.filter(status='approved').count()
+    rejected_count = StoreVerificationRequest.objects.filter(status='rejected').count()
+    
+    # Pagination for all requests
+    paginator = Paginator(all_requests, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'pending_requests': pending_requests,
+        'all_requests': page_obj,
+        'total_requests': total_requests,
+        'pending_count': pending_count,
+        'approved_count': approved_count,
+        'rejected_count': rejected_count,
+    }
+    return render(request, 'core/admin/admin_dashboard.html', context)
+
+
+@login_required
+@user_passes_test(admin_required)
+def admin_store_detail(request, store_id):
+    """Admin view for reviewing a specific store and its verification requests"""
+    store = get_object_or_404(Store, store_id=store_id)
+    verification_requests = store.verification_requests.all()
+    
+    context = {
+        'store': store,
+        'verification_requests': verification_requests,
+    }
+    return render(request, 'core/admin/admin_store_detail.html', context)
+
+
+@login_required
+@user_passes_test(admin_required)
+def admin_request_detail(request, request_id):
+    """Admin view for reviewing a specific verification request"""
+    verification_request = get_object_or_404(StoreVerificationRequest, request_id=request_id)
+    certifications = verification_request.certifications.all()
+    
+    if request.method == 'POST':
+        form = AdminStoreReviewForm(request.POST)
+        if form.is_valid():
+            action = form.cleaned_data['action']
+            admin_notes = form.cleaned_data['admin_notes']
+            
+            if action == 'approve':
+                verification_request.status = 'approved'
+                verification_request.reviewed_at = timezone.now()
+                verification_request.reviewed_by = request.user
+                verification_request.admin_notes = admin_notes
+                verification_request.save()
+                
+                # Update store status
+                store = verification_request.store
+                store.is_verified_status = 'verified'
+                store.verified_at = timezone.now()
+                store.verified_by = request.user
+                store.save()
+                
+                messages.success(request, f'Đã phê duyệt yêu cầu xác minh cho cửa hàng "{store.store_name}"')
+            else:  # reject
+                verification_request.status = 'rejected'
+                verification_request.reviewed_at = timezone.now()
+                verification_request.reviewed_by = request.user
+                verification_request.admin_notes = admin_notes
+                verification_request.save()
+                
+                messages.success(request, f'Đã từ chối yêu cầu xác minh cho cửa hàng "{verification_request.store.store_name}"')
+            
+            return redirect('admin_request_detail', request_id=verification_request.request_id)
+    else:
+        form = AdminStoreReviewForm()
+    
+    context = {
+        'verification_request': verification_request,
+        'certifications': certifications,
+        'form': form,
+    }
+    return render(request, 'core/admin/admin_request_detail.html', context)
+
+
+@login_required
+@user_passes_test(admin_required)
+@require_POST
+def admin_approve_store(request, store_id):
+    """Approve a store"""
+    store = get_object_or_404(Store, store_id=store_id)
+    store.is_verified_status = 'verified'
+    store.verified_at = timezone.now()
+    store.verified_by = request.user
+    store.save()
+    
+    # Mark all certifications as verified
+    store.certifications.update(is_verified=True)
+    
+    messages.success(request, f'Đã phê duyệt cửa hàng "{store.store_name}"')
+    return redirect('admin_store_detail', store_id=store.store_id)
+
+
+@login_required
+@user_passes_test(admin_required)
+@require_POST
+def admin_reject_store(request, store_id):
+    """Reject a store with notes"""
+    store = get_object_or_404(Store, store_id=store_id)
+    admin_notes = request.POST.get('admin_notes', '')
+    
+    if not admin_notes:
+        messages.error(request, 'Vui lòng nhập lý do từ chối.')
+        return redirect('admin_store_detail', store_id=store.store_id)
+    
+    store.is_verified_status = 'rejected'
+    store.admin_notes = admin_notes
+    store.save()
+    
+    messages.success(request, f'Đã từ chối cửa hàng "{store.store_name}"')
+    return redirect('admin_store_detail', store_id=store.store_id)

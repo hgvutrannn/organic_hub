@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
-from .models import CustomUser, Product, Order, Review, Address, ProductImage
+from .models import CustomUser, Product, Order, Review, Address, ProductImage, StoreCertification
 
 
 class CustomUserRegistrationForm(UserCreationForm):
@@ -143,3 +143,52 @@ class SearchForm(forms.Form):
         super().__init__(*args, **kwargs)
         from .models import Category
         self.fields['category'].queryset = Category.objects.all()
+
+
+class StoreCertificationForm(forms.ModelForm):
+    class Meta:
+        model = StoreCertification
+        fields = ['certification_type', 'certification_name', 'document']
+        widgets = {
+            'certification_type': forms.Select(attrs={'class': 'form-select form-select-lg rounded-3'}),
+            'certification_name': forms.TextInput(attrs={'placeholder': 'Tên chứng nhận (tùy chọn)', 'class': 'form-control rounded-3'}),
+            'document': forms.FileInput(attrs={
+                'accept': 'image/*,.pdf',
+                'class': 'form-control form-control-lg rounded-3',
+                'multiple': False
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['certification_name'].required = False
+
+
+class AdminStoreReviewForm(forms.Form):
+    """Form for admin to review and approve/reject stores"""
+    action = forms.ChoiceField(
+        choices=[
+            ('approve', 'Phê duyệt'),
+            ('reject', 'Từ chối'),
+        ],
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'})
+    )
+    admin_notes = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'rows': 4,
+            'placeholder': 'Ghi chú của admin (bắt buộc khi từ chối)',
+            'class': 'form-control rounded-3'
+        }),
+        required=False,
+        help_text="Ghi chú này sẽ được hiển thị cho chủ cửa hàng."
+    )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        action = cleaned_data.get('action')
+        admin_notes = cleaned_data.get('admin_notes')
+        
+        if action == 'reject' and not admin_notes:
+            raise forms.ValidationError('Vui lòng nhập lý do từ chối.')
+        
+        return cleaned_data
