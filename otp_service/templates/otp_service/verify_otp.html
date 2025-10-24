@@ -1,0 +1,194 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Xác thực Email - Organic Hub{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-envelope-open-text fa-3x text-primary mb-3"></i>
+                        <h2 class="card-title">Xác thực Email</h2>
+                        <p class="text-muted">Chúng tôi đã gửi mã xác thực 6 số đến email <strong>{{ user.email }}</strong></p>
+                    </div>
+
+                    <form method="post" id="otpForm">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            {{ form.otp_code }}
+                            {% if form.otp_code.errors %}
+                                <div class="text-danger mt-2">
+                                    {% for error in form.otp_code.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="verifyBtn">
+                                <i class="fas fa-check me-2"></i>Xác thực
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <p class="text-muted mb-3">Không nhận được mã?</p>
+                        <button type="button" class="btn btn-outline-secondary" id="resendBtn" 
+                                {% if remaining_seconds > 0 %}disabled{% endif %}>
+                            <i class="fas fa-redo me-2"></i>
+                            <span id="resendText">
+                                {% if remaining_seconds > 0 %}
+                                    Gửi lại sau {{ remaining_seconds }}s
+                                {% else %}
+                                    Gửi lại mã OTP
+                                {% endif %}
+                            </span>
+                        </button>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <div class="alert alert-info">
+                            <i class="fas fa-clock me-2"></i>
+                            <span id="timerText">Mã OTP sẽ hết hạn sau <span id="countdown">{{ expiry_minutes }}:00</span></span>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            Mã OTP chỉ có hiệu lực trong {{ expiry_minutes }} phút và chỉ sử dụng được một lần.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const otpInput = document.querySelector('input[name="otp_code"]');
+    const verifyBtn = document.getElementById('verifyBtn');
+    const resendBtn = document.getElementById('resendBtn');
+    const resendText = document.getElementById('resendText');
+    const countdownElement = document.getElementById('countdown');
+    const timerText = document.getElementById('timerText');
+    
+    let remainingSeconds = {{ remaining_seconds }};
+    let expirySeconds = {{ expiry_minutes }} * 60;
+    let countdownInterval;
+    
+    // Auto-focus on OTP input
+    otpInput.focus();
+    
+    // Auto-submit when 6 digits are entered
+    otpInput.addEventListener('input', function() {
+        if (this.value.length === 6) {
+            document.getElementById('otpForm').submit();
+        }
+    });
+    
+    // Countdown timer for expiry
+    function startCountdown() {
+        countdownInterval = setInterval(function() {
+            expirySeconds--;
+            const minutes = Math.floor(expirySeconds / 60);
+            const seconds = expirySeconds % 60;
+            countdownElement.textContent = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+            
+            if (expirySeconds <= 0) {
+                clearInterval(countdownInterval);
+                timerText.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Mã OTP đã hết hạn. Vui lòng gửi lại mã mới.';
+                timerText.className = 'alert alert-warning';
+            }
+        }, 1000);
+    }
+    
+    // Resend cooldown timer
+    function updateResendButton() {
+        if (remainingSeconds > 0) {
+            resendBtn.disabled = true;
+            resendText.textContent = `Gửi lại sau ${remainingSeconds}s`;
+            remainingSeconds--;
+            setTimeout(updateResendButton, 1000);
+        } else {
+            resendBtn.disabled = false;
+            resendText.textContent = 'Gửi lại mã OTP';
+        }
+    }
+    
+    // Resend OTP
+    resendBtn.addEventListener('click', function() {
+        if (resendBtn.disabled) return;
+        
+        resendBtn.disabled = true;
+        resendText.textContent = 'Đang gửi...';
+        
+        fetch('{% url "otp_service:resend" user.user_id %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reset countdown
+                expirySeconds = {{ expiry_minutes }} * 60;
+                timerText.innerHTML = '<i class="fas fa-clock me-2"></i>Mã OTP sẽ hết hạn sau <span id="countdown">{{ expiry_minutes }}:00</span>';
+                countdownElement = document.getElementById('countdown');
+                startCountdown();
+                
+                // Set cooldown
+                remainingSeconds = data.remaining_seconds || 60;
+                updateResendButton();
+                
+                // Show success message
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success alert-dismissible fade show mt-3';
+                alert.innerHTML = `
+                    <i class="fas fa-check me-2"></i>${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.querySelector('.card-body').insertBefore(alert, document.querySelector('.card-body').firstChild);
+            } else {
+                // Show error message
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-danger alert-dismissible fade show mt-3';
+                alert.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.querySelector('.card-body').insertBefore(alert, document.querySelector('.card-body').firstChild);
+                
+                // Reset button
+                remainingSeconds = data.remaining_seconds || 0;
+                updateResendButton();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-danger alert-dismissible fade show mt-3';
+            alert.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>Có lỗi xảy ra. Vui lòng thử lại.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.card-body').insertBefore(alert, document.querySelector('.card-body').firstChild);
+            
+            resendBtn.disabled = false;
+            resendText.textContent = 'Gửi lại mã OTP';
+        });
+    });
+    
+    // Start timers
+    startCountdown();
+    updateResendButton();
+});
+</script>
+{% endblock %}

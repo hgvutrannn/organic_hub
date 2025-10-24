@@ -37,9 +37,20 @@ def register(request):
     if request.method == 'POST':
         form = CustomUserRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            messages.success(request, 'Đăng ký tài khoản thành công!')
-            return redirect('login')
+            # Create user with email_verified=False
+            user = form.save(commit=False)
+            user.email_verified = False
+            user.save()
+            
+            # Generate and send OTP via OTP Service
+            from otp_service.service import OTPService
+            result = OTPService.generate_and_send_otp(user, purpose='registration')
+            
+            if result['success']:
+                messages.success(request, 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.')
+                return redirect('otp_service:verify', user_id=user.user_id)
+            else:
+                messages.error(request, 'Có lỗi khi gửi OTP. Vui lòng thử lại.')
     else:
         form = CustomUserRegistrationForm()
     
@@ -56,6 +67,12 @@ def user_login(request):
             user = authenticate(request, username=phone_number, password=password)
             
             if user is not None:
+                # Check if email is verified
+                if not user.email_verified:
+                    messages.warning(request, 'Vui lòng xác thực email trước khi đăng nhập.')
+                    return redirect('otp_service:verify', user_id=user.user_id)
+                
+                # Email verified, allow login
                 login(request, user)
                 user.last_login_at = timezone.now()
                 print(user.user_id)

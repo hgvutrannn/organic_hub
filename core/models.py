@@ -9,10 +9,12 @@ class CustomUserManager(BaseUserManager):
     def create_user(self, phone_number, password=None, email=None, full_name=None, **extra_fields):
         if not phone_number:
             raise ValueError('Số điện thoại là bắt buộc')
+        if not email:
+            raise ValueError('Email là bắt buộc')
         
         user = self.model(
             phone_number=phone_number,
-            email=self.normalize_email(email) if email else None,
+            email=self.normalize_email(email),
             full_name=full_name,
             **extra_fields
         )
@@ -24,6 +26,7 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
+        extra_fields.setdefault('email_verified', True)
 
         if extra_fields.get('is_staff') is not True:
             raise ValueError('Superuser must have is_staff=True.')
@@ -49,6 +52,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     )
     full_name = models.CharField(max_length=100, verbose_name='Họ và tên')
     email = models.EmailField(max_length=255, unique=True, null=True, blank=True)
+    email_verified = models.BooleanField(default=False, verbose_name='Email đã xác thực')
     created_at = models.DateTimeField(default=timezone.now)
     status = models.CharField(
         max_length=50,

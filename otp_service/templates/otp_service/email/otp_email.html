@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mã xác thực OTP - Organic Hub</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .otp-code {
+            background-color: #f8f9fa;
+            border: 2px dashed #28a745;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        .otp-code .code {
+            font-size: 36px;
+            font-weight: bold;
+            color: #28a745;
+            letter-spacing: 8px;
+            font-family: 'Courier New', monospace;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .warning-icon {
+            color: #856404;
+            margin-right: 8px;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .expiry-info {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .security-note {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌱 Organic Hub</h1>
+            <p style="margin: 10px 0 0 0; font-size: 16px;">Mã xác thực OTP</p>
+        </div>
+        
+        <div class="content">
+            <h2>Xin chào {{ user.full_name }}!</h2>
+            
+            <p>Chúng tôi đã nhận được yêu cầu xác thực email cho tài khoản của bạn tại Organic Hub.</p>
+            
+            <div class="otp-code">
+                <p style="margin: 0 0 10px 0; font-size: 16px; color: #666;">Mã xác thực của bạn:</p>
+                <div class="code">{{ otp_code }}</div>
+            </div>
+            
+            <div class="expiry-info">
+                <strong>⏰ Thời gian hiệu lực:</strong> Mã OTP này sẽ hết hạn sau {{ expiry_minutes }} phút.
+            </div>
+            
+            <div class="warning">
+                <span class="warning-icon">⚠️</span>
+                <strong>Lưu ý quan trọng:</strong>
+                <ul style="margin: 10px 0 0 20px;">
+                    <li>Mã OTP chỉ có hiệu lực trong {{ expiry_minutes }} phút</li>
+                    <li>Mã chỉ có thể sử dụng một lần duy nhất</li>
+                    <li>Không chia sẻ mã này với bất kỳ ai</li>
+                </ul>
+            </div>
+            
+            <div class="security-note">
+                <strong>🔒 Bảo mật:</strong> Nếu bạn không yêu cầu mã xác thực này, vui lòng bỏ qua email này. Tài khoản của bạn vẫn an toàn.
+            </div>
+            
+            <p>Nếu bạn gặp khó khăn trong việc xác thực, vui lòng liên hệ với chúng tôi qua email hỗ trợ.</p>
+            
+            <p>Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của Organic Hub!</p>
+            
+            <p style="margin-top: 30px;">
+                <strong>Đội ngũ Organic Hub</strong><br>
+                <em>Kết nối nông sản sạch với người tiêu dùng</em>
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>© 2024 Organic Hub. Tất cả quyền được bảo lưu.</p>
+            <p>Email này được gửi tự động, vui lòng không trả lời.</p>
+        </div>
+    </div>
+</body>
+</html>

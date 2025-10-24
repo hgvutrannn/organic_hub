@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
+    'otp_service',
 ]
 
 MIDDLEWARE = [
@@ -118,3 +119,36 @@ CHANNEL_LAYERS = {
         },
     }
 }
+
+# Redis Configuration for OTP caching
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+
+# Celery Configuration
+CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672//'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/2'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Ho_Chi_Minh'
+
+# Email Configuration (AWS SES)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'email-smtp.ap-southeast-2.amazonaws.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'AKIAS3JFE6DYIOAM7DZU'
+EMAIL_HOST_PASSWORD = 'BDdu0Gt6j22zmca7neJRW1/o2bbzY3H42j/WLnY1vMCY'
+DEFAULT_FROM_EMAIL = 'vuthgcs220851@fpt.edu.vn'
+AWS_SES_REGION_NAME = 'ap-southeast-2'
+
+# OTP Settings
+OTP_EXPIRY_MINUTES = 5
+OTP_RESEND_COOLDOWN_MINUTES = 1  # 1 minute cooldown between resends

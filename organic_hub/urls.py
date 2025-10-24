@@ -10,6 +10,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')),
     path('chat/', include('chat.urls')),
+    path('otp/', include('otp_service.urls')),
 ]
 
 # Serve media files in development

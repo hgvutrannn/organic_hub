@@ -20,8 +20,8 @@ class CustomUserRegistrationForm(UserCreationForm):
         widget=forms.TextInput(attrs={'placeholder': 'Họ và tên'})
     )
     email = forms.EmailField(
-        required=False,
-        widget=forms.EmailInput(attrs={'placeholder': 'Email (tùy chọn)'})
+        required=True,
+        widget=forms.EmailInput(attrs={'placeholder': 'Email'})
     )
 
     class Meta:
