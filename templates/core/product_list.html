@@ -3,62 +3,247 @@
 {% block title %}Danh sách sản phẩm - Organic Hub{% endblock %}
 
 {% block content %}
-<h2>Danh sách sản phẩm</h2>
-
-<!-- Search Form -->
-<form method="get">
-    <div>
-        <input type="text" name="query" placeholder="Tìm kiếm sản phẩm..." value="{{ search_form.query.value|default:'' }}">
-        <select name="category">
-            <option value="">Tất cả danh mục</option>
-            {% for category in categories %}
-                <option value="{{ category.category_id }}" 
-                        {% if search_form.category.value == category.category_id %}selected{% endif %}>
-                    {{ category.name }}
-                </option>
-            {% endfor %}
-        </select>
-        <button type="submit">Tìm kiếm</button>
-    </div>
-</form>
-
-<!-- Product List -->
-<div>
-    {% for product in page_obj %}
-        <div>
-            <h3><a href="{% url 'product_detail' product.product_id %}">{{ product.name }}</a></h3>
-            <p><strong>Giá:</strong> {{ product.price|floatformat:0 }} VNĐ</p>
-            <p><strong>Danh mục:</strong> {{ product.category.name|default:"Chưa phân loại" }}</p>
-            <p><strong>Cửa hàng:</strong> {{ product.store.store_name }}</p>
-            <p><strong>Mô tả:</strong> {{ product.description|truncatewords:30 }}</p>
-            <p><strong>Lượt xem:</strong> {{ product.view_count }}</p>
-            
-            {% if user.is_authenticated %}
-                <form method="post" action="{% url 'add_to_cart' product.product_id %}" style="display: inline;">
-                    {% csrf_token %}
-                    <input type="number" name="quantity" value="1" min="1" style="width: 60px;">
-                    <button type="submit">Thêm vào giỏ</button>
-                </form>
-                
-            {% endif %}
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h1 class="display-6 fw-bold mb-1">Danh sách sản phẩm</h1>
+                    <p class="text-muted mb-0">Khám phá các sản phẩm organic chất lượng</p>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-primary fs-6 px-3 py-2 rounded-pill">
+                        {{ page_obj.paginator.count }} sản phẩm
+                    </span>
+                </div>
+            </div>
         </div>
-    {% empty %}
-        <p>Không tìm thấy sản phẩm nào.</p>
-    {% endfor %}
-</div>
-
-<!-- Pagination -->
-{% if page_obj.has_other_pages %}
-    <div>
-        {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}">Trước</a>
-        {% endif %}
-        
-        <span>Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
-        
-        {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}">Tiếp</a>
-        {% endif %}
     </div>
-{% endif %}
+
+    <!-- Search and Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <form method="get" class="row g-3 align-items-end">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-search me-1"></i>Tìm kiếm sản phẩm
+                            </label>
+                            <input type="text" 
+                                   name="query" 
+                                   class="form-control form-control-lg" 
+                                   placeholder="Nhập tên sản phẩm..." 
+                                   value="{{ search_form.query.value|default:'' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-tags me-1"></i>Danh mục
+                            </label>
+                            <select name="category" class="form-select form-select-lg">
+                                <option value="">Tất cả danh mục</option>
+                                {% for category in categories %}
+                                    <option value="{{ category.category_id }}" 
+                                            {% if search_form.category.value == category.category_id %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill">
+                                <i class="fas fa-search me-1"></i>Tìm kiếm
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Grid -->
+    {% if page_obj %}
+        <div class="row g-4">
+            {% for product in page_obj %}
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 product-card">
+                        <!-- Product Image -->
+                        <div class="position-relative">
+                            {% if product.get_primary_image %}
+                                <img src="{{ product.get_primary_image.url }}" 
+                                     alt="{{ product.name }}" 
+                                     class="card-img-top" 
+                                     style="height: 200px; object-fit: cover;">
+                            {% else %}
+                                <img src="/static/images/no-image.jpg" 
+                                     alt="{{ product.name }}" 
+                                     class="card-img-top" 
+                                     style="height: 200px; object-fit: cover;">
+                            {% endif %}
+                            
+                            <!-- Status Badge -->
+                            <div class="position-absolute top-0 end-0 m-2">
+                                {% if product.is_active %}
+                                    <span class="badge bg-success rounded-pill">
+                                        <i class="fas fa-check me-1"></i>Đang bán
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger rounded-pill">
+                                        <i class="fas fa-times me-1"></i>Ngừng bán
+                                    </span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- View Count -->
+                            <div class="position-absolute top-0 start-0 m-2">
+                                <span class="badge bg-dark bg-opacity-75 rounded-pill">
+                                    <i class="fas fa-eye me-1"></i>{{ product.view_count }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Product Info -->
+                        <div class="card-body d-flex flex-column">
+                            <!-- Category Badge -->
+                            <div class="mb-2">
+                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill">
+                                    {{ product.category.name|default:"Chưa phân loại" }}
+                                </span>
+                            </div>
+                            
+                            <!-- Product Title -->
+                            <h5 class="card-title fw-bold mb-2">
+                                <a href="{% url 'product_detail' product.product_id %}" 
+                                   class="text-decoration-none text-dark stretched-link">
+                                    {{ product.name|truncatechars:50 }}
+                                </a>
+                            </h5>
+                            
+                            <!-- Store Info -->
+                            <div class="mb-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-store me-1"></i>{{ product.store.store_name }}
+                                </small>
+                            </div>
+                            
+                            <!-- Price -->
+                            <div class="mb-3">
+                                <span class="h5 fw-bold text-success mb-0">
+                                    {{ product.price|floatformat:0 }} VNĐ
+                                </span>
+                                <small class="text-muted d-block">/ {{ product.base_unit }}</small>
+                            </div>
+                            
+                            <!-- Description -->
+                            {% if product.description %}
+                                <p class="card-text text-muted small flex-grow-1">
+                                    {{ product.description|truncatewords:15 }}
+                                </p>
+                            {% endif %}
+                            
+                            <!-- Add to Cart Button -->
+                            {% if user.is_authenticated %}
+                                <form method="post" action="{% url 'add_to_cart' product.product_id %}" class="mt-auto">
+                                    {% csrf_token %}
+                                    <div class="d-grid gap-2">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">SL:</span>
+                                            <input type="number" 
+                                                   name="quantity" 
+                                                   class="form-control" 
+                                                   value="1" 
+                                                   min="1" 
+                                                   max="99">
+                                        </div>
+                                        <button type="submit" class="btn btn-success btn-sm rounded-pill">
+                                            <i class="fas fa-cart-plus me-1"></i>Thêm vào giỏ
+                                        </button>
+                                    </div>
+                                </form>
+                            {% else %}
+                                <div class="mt-auto">
+                                    <div class="alert alert-warning alert-sm mb-0">
+                                        <small>
+                                            <i class="fas fa-lock me-1"></i>
+                                            <a href="/login/" class="text-decoration-none">Đăng nhập</a> để mua hàng
+                                        </small>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+            <div class="row mt-5">
+                <div class="col-12">
+                    <nav aria-label="Product pagination">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link rounded-pill me-1" 
+                                       href="?page={{ page_obj.previous_page_number }}{% if search_form.query.value %}&query={{ search_form.query.value }}{% endif %}{% if search_form.category.value %}&category={{ search_form.category.value }}{% endif %}">
+                                        <i class="fas fa-chevron-left"></i> Trước
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link rounded-pill mx-1">{{ num }}</span>
+                                    </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link rounded-pill mx-1" 
+                                           href="?page={{ num }}{% if search_form.query.value %}&query={{ search_form.query.value }}{% endif %}{% if search_form.category.value %}&category={{ search_form.category.value }}{% endif %}">
+                                            {{ num }}
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link rounded-pill ms-1" 
+                                       href="?page={{ page_obj.next_page_number }}{% if search_form.query.value %}&query={{ search_form.query.value }}{% endif %}{% if search_form.category.value %}&category={{ search_form.category.value }}{% endif %}">
+                                        Tiếp <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                        
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} 
+                                ({{ page_obj.paginator.count }} sản phẩm)
+                            </small>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        {% endif %}
+    {% else %}
+        <!-- No Products Found -->
+        <div class="row">
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <div class="bg-light bg-opacity-50 rounded-circle d-inline-flex align-items-center justify-content-center mb-4" 
+                         style="width: 120px; height: 120px;">
+                        <i class="fas fa-search text-muted" style="font-size: 4rem;"></i>
+                    </div>
+                    <h4 class="fw-bold text-muted mb-3">Không tìm thấy sản phẩm</h4>
+                    <p class="text-muted mb-4">Hãy thử thay đổi từ khóa tìm kiếm hoặc danh mục</p>
+                    <a href="/products/" class="btn btn-primary rounded-pill px-4">
+                        <i class="fas fa-refresh me-2"></i>Xem tất cả sản phẩm
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

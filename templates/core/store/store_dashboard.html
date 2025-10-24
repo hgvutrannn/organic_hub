@@ -3,33 +3,94 @@
 {% block title %}Dashboard - {{ store.store_name }}{% endblock %}
 
 {% block content %}
-<h1>Dashboard - {{ store.store_name }}</h1>
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center">
+                <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
+                    <i class="fas fa-tachometer-alt text-primary fs-1"></i>
+                </div>
+                <div>
+                    <h1 class="display-6 fw-bold mb-1">Dashboard - {{ store.store_name }}</h1>
+                    <p class="text-muted mb-0">Quản lý cửa hàng của bạn</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!-- Store Info -->
-<h2>Thông tin cửa hàng</h2>
-<table border="1" cellpadding="10" cellspacing="0">
-    <tr>
-        <td><strong>Tên cửa hàng:</strong></td>
-        <td>{{ store.store_name }}</td>
-    </tr>
-    <tr>
-        <td><strong>Mô tả:</strong></td>
-        <td>{{ store.store_description|default:"Chưa có mô tả" }}</td>
-    </tr>
-    <tr>
-        <td><strong>Trạng thái xác minh:</strong></td>
-        <td>{{ store.get_is_verified_status_display }}</td>
-    </tr>
-    <tr>
-        <td><strong>Ngày tạo:</strong></td>
-        <td>{{ store.created_at|date:"d/m/Y H:i" }}</td>
-    </tr>
-</table>
+    <!-- Store Info -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h3 class="mb-0 fw-bold">
+                        <i class="fas fa-info-circle me-2"></i>Thông tin cửa hàng
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-muted mb-1">Tên cửa hàng</h6>
+                                <p class="mb-0 fs-5">{{ store.store_name }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-muted mb-1">Mô tả</h6>
+                                <p class="mb-0">{{ store.store_description|default:"Chưa có mô tả" }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-muted mb-1">Trạng thái xác minh</h6>
+                                <span class="badge {% if store.is_verified %}bg-success{% else %}bg-warning{% endif %} fs-6">
+                                    {{ store.get_is_verified_status_display }}
+                                </span>
+                            </div>
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-muted mb-1">Ngày tạo</h6>
+                                <p class="mb-0">{{ store.created_at|date:"d/m/Y H:i" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!-- Quick Actions -->
-<h2>Thao tác nhanh</h2>
-<p>
-    <a href="{% url 'store_products' store.store_id %}">Quản lý sản phẩm</a> | 
-    <a href="{% url 'store_orders' store.store_id %}">Xem đơn hàng</a> | 
-</p>
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h3 class="mb-0 fw-bold">
+                        <i class="fas fa-bolt me-2"></i>Thao tác nhanh
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6 col-lg-4">
+                            <a href="{% url 'store_products' store.store_id %}" 
+                               class="btn btn-outline-primary btn-lg w-100 rounded-pill">
+                                <i class="fas fa-box me-2"></i>Quản lý sản phẩm
+                            </a>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <a href="{% url 'store_orders' store.store_id %}" 
+                               class="btn btn-outline-success btn-lg w-100 rounded-pill">
+                                <i class="fas fa-shopping-cart me-2"></i>Xem đơn hàng
+                            </a>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <a href="{% url 'add_product' store.store_id %}" 
+                               class="btn btn-outline-info btn-lg w-100 rounded-pill">
+                                <i class="fas fa-plus me-2"></i>Thêm sản phẩm
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

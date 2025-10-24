@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
-from .models import CustomUser, Product, Order, Review, Address
+from .models import CustomUser, Product, Order, Review, Address, ProductImage
 
 
 class CustomUserRegistrationForm(UserCreationForm):
@@ -44,16 +44,54 @@ class LoginForm(forms.Form):
     )
 
 
+class ProfileUpdateForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ['full_name', 'phone_number', 'email', 'avatar']
+        widgets = {
+            'full_name': forms.TextInput(attrs={'placeholder': 'Họ và tên'}),
+            'phone_number': forms.TextInput(attrs={'placeholder': 'Số điện thoại'}),
+            'email': forms.EmailInput(attrs={'placeholder': 'Email'}),
+            'avatar': forms.FileInput(attrs={'accept': 'image/*'}),
+        }
+
+
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['name', 'description', 'price', 'base_unit', 'category', 'store']
+        fields = ['name', 'description', 'price', 'base_unit', 'category', 'image']
         widgets = {
-            'name': forms.TextInput(attrs={'placeholder': 'Tên sản phẩm'}),
-            'description': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Mô tả sản phẩm'}),
-            'price': forms.NumberInput(attrs={'placeholder': 'Giá sản phẩm', 'step': '0.01'}),
-            'base_unit': forms.TextInput(attrs={'placeholder': 'Đơn vị (kg, gói, chiếc...)'}),
+            'name': forms.TextInput(attrs={'placeholder': 'Tên sản phẩm', 'class': 'form-control form-control-lg rounded-3'}),
+            'description': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Mô tả sản phẩm', 'class': 'form-control rounded-3'}),
+            'price': forms.NumberInput(attrs={'placeholder': 'Giá sản phẩm', 'step': '0.01', 'class': 'form-control form-control-lg rounded-3'}),
+            'base_unit': forms.TextInput(attrs={'placeholder': 'Đơn vị (kg, gói, chiếc...)', 'class': 'form-control form-control-lg rounded-3'}),
+            'category': forms.Select(attrs={'class': 'form-select form-select-lg rounded-3'}),
+            'image': forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control form-control-lg rounded-3'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make image field optional
+        self.fields['image'].required = False
+        self.fields['category'].required = False
+        self.fields['base_unit'].required = False
+
+
+class ProductImageForm(forms.ModelForm):
+    class Meta:
+        model = ProductImage
+        fields = ['image', 'alt_text', 'is_primary', 'order']
+        widgets = {
+            'image': forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control form-control-lg rounded-3'}),
+            'alt_text': forms.TextInput(attrs={'placeholder': 'Mô tả hình ảnh', 'class': 'form-control rounded-3'}),
+            'is_primary': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'order': forms.NumberInput(attrs={'placeholder': 'Thứ tự hiển thị', 'class': 'form-control rounded-3'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['alt_text'].required = False
+        self.fields['order'].required = False
 
 
 class AddressForm(forms.ModelForm):

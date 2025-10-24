@@ -3,141 +3,282 @@
 {% block title %}Chi tiết đơn hàng #{{ order.order_id }} - Organic Hub{% endblock %}
 
 {% block content %}
-<h1>Chi tiết đơn hàng #{{ order.order_id }}</h1>
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
+                        <i class="fas fa-receipt text-primary fs-1"></i>
+                    </div>
+                    <div>
+                        <h1 class="display-6 fw-bold mb-1">Chi tiết đơn hàng #{{ order.order_id }}</h1>
+                        <p class="text-muted mb-0">Thông tin chi tiết về đơn hàng của bạn</p>
+                    </div>
+                </div>
+                <div>
+                    <a href="/orders/" class="btn btn-outline-primary rounded-pill">
+                        <i class="fas fa-arrow-left me-2"></i>Danh sách đơn hàng
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!-- Order Status -->
-<h2>Trạng thái đơn hàng</h2>
-<table border="1" cellpadding="10" cellspacing="0">
-    <tr>
-        <td><strong>Mã đơn hàng:</strong></td>
-        <td><strong>#{{ order.order_id }}</strong></td>
-    </tr>
-    <tr>
-        <td><strong>Trạng thái:</strong></td>
-        <td><strong>{{ order.get_status_display }}</strong></td>
-    </tr>
-    <tr>
-        <td><strong>Phương thức thanh toán:</strong></td>
-        <td>{{ order.get_payment_method_display }}</td>
-    </tr>
-    <tr>
-        <td><strong>Trạng thái thanh toán:</strong></td>
-        <td>{{ order.get_payment_status_display }}</td>
-    </tr>
-    <tr>
-        <td><strong>Ngày đặt hàng:</strong></td>
-        <td>{{ order.created_at|date:"d/m/Y H:i" }}</td>
-    </tr>
-    <tr>
-        <td><strong>Ngày cập nhật:</strong></td>
-        <td>{{ order.updated_at|date:"d/m/Y H:i" }}</td>
-    </tr>
-    {% if order.paid_at %}
-    <tr>
-        <td><strong>Ngày thanh toán:</strong></td>
-        <td>{{ order.paid_at|date:"d/m/Y H:i" }}</td>
-    </tr>
+    <div class="row g-4">
+        <!-- Order Status -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h3 class="mb-0 fw-bold">
+                        <i class="fas fa-info-circle me-2"></i>Thông tin đơn hàng
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                    <i class="fas fa-hashtag text-primary"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Mã đơn hàng</small>
+                                    <strong>#{{ order.order_id }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-warning bg-opacity-10 rounded-circle p-2 me-3">
+                                    <i class="fas fa-clock text-warning"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Trạng thái</small>
+                                    {% if order.status == 'pending' %}
+                                        <span class="badge bg-warning rounded-pill">{{ order.get_status_display }}</span>
+                                    {% elif order.status == 'waiting_pickup' %}
+                                        <span class="badge bg-info rounded-pill">{{ order.get_status_display }}</span>
+                                    {% elif order.status == 'shipping' %}
+                                        <span class="badge bg-primary rounded-pill">{{ order.get_status_display }}</span>
+                                    {% elif order.status == 'delivered' %}
+                                        <span class="badge bg-success rounded-pill">{{ order.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-danger rounded-pill">{{ order.get_status_display }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                                    <i class="fas fa-credit-card text-success"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Thanh toán</small>
+                                    <strong>{{ order.get_payment_method_display }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3">
+                                    <i class="fas fa-calendar text-info"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Ngày đặt</small>
+                                    <strong>{{ order.created_at|date:"d/m/Y H:i" }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if order.paid_at %}
+                        <div class="col-12">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                                    <i class="fas fa-check-circle text-success"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Ngày thanh toán</small>
+                                    <strong>{{ order.paid_at|date:"d/m/Y H:i" }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shipping Address -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h3 class="mb-0 fw-bold">
+                        <i class="fas fa-map-marker-alt me-2"></i>Địa chỉ giao hàng
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% if order.shipping_address %}
+                        <div class="d-flex align-items-start">
+                            <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                <i class="fas fa-user text-primary"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">{{ order.shipping_address.contact_person }}</h6>
+                                <p class="text-muted small mb-1">
+                                    <i class="fas fa-phone me-1"></i>{{ order.shipping_address.contact_phone }}
+                                </p>
+                                <p class="text-muted small mb-0">
+                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                    {{ order.shipping_address.street }}, {{ order.shipping_address.ward }}, {{ order.shipping_address.province }}
+                                </p>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted">
+                            <i class="fas fa-exclamation-triangle fs-1 mb-3"></i>
+                            <p>Không có thông tin địa chỉ giao hàng</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h3 class="mb-0 fw-bold">
+                        <i class="fas fa-calculator me-2"></i>Tóm tắt đơn hàng
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tổng tiền hàng:</span>
+                        <span>{{ order.subtotal|floatformat:0 }} VNĐ</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Giảm giá:</span>
+                        <span class="text-success">-{{ order.discount_amount|floatformat:0 }} VNĐ</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Phí vận chuyển:</span>
+                        <span>{{ order.shipping_cost|floatformat:0 }} VNĐ</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="h5 fw-bold">Tổng cộng:</span>
+                        <span class="h5 fw-bold text-success">{{ order.total_amount|floatformat:0 }} VNĐ</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Items -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h3 class="mb-0 fw-bold">
+                        <i class="fas fa-box me-2"></i>Chi tiết sản phẩm
+                    </h3>
+                </div>
+                <div class="card-body p-0">
+                    {% if order.order_items.all %}
+                        {% for item in order.order_items.all %}
+                            <div class="border-bottom p-4 {% if forloop.last %}border-0{% endif %}">
+                                <div class="row align-items-center">
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                {% if item.product.image %}
+                                                    <img src="{{ item.product.image.url }}" 
+                                                         alt="{{ item.product.name }}" 
+                                                         class="rounded-3" 
+                                                         style="width: 60px; height: 60px; object-fit: cover;">
+                                                {% else %}
+                                                    <img src="/static/images/no-image.jpg" 
+                                                         alt="{{ item.product.name }}" 
+                                                         class="rounded-3" 
+                                                         style="width: 60px; height: 60px; object-fit: cover;">
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <h6 class="fw-bold mb-1">{{ item.product.name }}</h6>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-store me-1"></i>{{ item.product.store.store_name }}
+                                                </small>
+                                                {% if item.product.description %}
+                                                    <p class="text-muted small mb-0 mt-1">{{ item.product.description|truncatewords:15 }}</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 text-center">
+                                        <span class="fw-bold">{{ item.unit_price|floatformat:0 }} VNĐ</span>
+                                        <small class="text-muted d-block">/ đơn vị</small>
+                                    </div>
+                                    <div class="col-md-2 text-center">
+                                        <span class="badge bg-primary rounded-pill fs-6">{{ item.quantity }}</span>
+                                    </div>
+                                    <div class="col-md-2 text-end">
+                                        <span class="h6 fw-bold text-success">{{ item.total_price|floatformat:0 }} VNĐ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-box text-muted fs-1 mb-3"></i>
+                            <p class="text-muted">Không có sản phẩm nào trong đơn hàng</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Notes -->
+    {% if order.notes %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h3 class="mb-0 fw-bold">
+                        <i class="fas fa-sticky-note me-2"></i>Ghi chú đơn hàng
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ order.notes }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
     {% endif %}
-</table>
 
-<!-- Shipping Address -->
-<h2>Địa chỉ giao hàng</h2>
-{% if order.shipping_address %}
-    <table border="1" cellpadding="10" cellspacing="0">
-        <tr>
-            <td><strong>Người nhận:</strong></td>
-            <td>{{ order.shipping_address.contact_person }}</td>
-        </tr>
-        <tr>
-            <td><strong>Số điện thoại:</strong></td>
-            <td>{{ order.shipping_address.contact_phone }}</td>
-        </tr>
-        <tr>
-            <td><strong>Địa chỉ:</strong></td>
-            <td>{{ order.shipping_address.street }}</td>
-        </tr>
-        <tr>
-            <td><strong>Phường/Xã:</strong></td>
-            <td>{{ order.shipping_address.ward }}</td>
-        </tr>
-        <tr>
-            <td><strong>Tỉnh/Thành phố:</strong></td>
-            <td>{{ order.shipping_address.province }}</td>
-        </tr>
-        <tr>
-            <td><strong>Quốc gia:</strong></td>
-            <td>{{ order.shipping_address.country }}</td>
-        </tr>
-    </table>
-{% else %}
-    <p>Không có thông tin địa chỉ giao hàng.</p>
-{% endif %}
-
-<!-- Order Items -->
-<h2>Chi tiết sản phẩm</h2>
-{% if order.order_items.all %}
-    <table border="1" cellpadding="10" cellspacing="0">
-        <thead>
-            <tr>
-                <th>Tên sản phẩm</th>
-                <th>Cửa hàng</th>
-                <th>Đơn giá</th>
-                <th>Số lượng</th>
-                <th>Thành tiền</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in order.order_items.all %}
-            <tr>
-                <td>
-                    <strong>{{ item.product.name }}</strong><br>
-                    <small>{{ item.product.description|truncatewords:10 }}</small>
-                </td>
-                <td>{{ item.product.store.store_name }}</td>
-                <td>{{ item.unit_price|floatformat:0 }} VNĐ</td>
-                <td>{{ item.quantity }}</td>
-                <td><strong>{{ item.total_price|floatformat:0 }} VNĐ</strong></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-{% else %}
-    <p>Không có sản phẩm nào trong đơn hàng.</p>
-{% endif %}
-
-<!-- Order Summary -->
-<h2>Tóm tắt đơn hàng</h2>
-<table border="1" cellpadding="10" cellspacing="0">
-    <tr>
-        <td><strong>Tổng tiền hàng:</strong></td>
-        <td>{{ order.subtotal|floatformat:0 }} VNĐ</td>
-    </tr>
-    <tr>
-        <td><strong>Giảm giá:</strong></td>
-        <td>{{ order.discount_amount|floatformat:0 }} VNĐ</td>
-    </tr>
-    <tr>
-        <td><strong>Phí vận chuyển:</strong></td>
-        <td>{{ order.shipping_cost|floatformat:0 }} VNĐ</td>
-    </tr>
-    <tr>
-        <td><strong>Tổng cộng:</strong></td>
-        <td><strong>{{ order.total_amount|floatformat:0 }} VNĐ</strong></td>
-    </tr>
-</table>
-
-<!-- Order Notes -->
-{% if order.notes %}
-<h2>Ghi chú đơn hàng</h2>
-<p>{{ order.notes }}</p>
-{% endif %}
-
-<!-- Navigation -->
-<h2>Điều hướng</h2>
-<p>
-    <a href="/orders/">← Danh sách đơn hàng</a> | 
-    <a href="/products/">Tiếp tục mua sắm</a> | 
-    <a href="/profile/">Trang cá nhân</a> | 
-    <a href="/">← Về trang chủ</a>
-</p>
+    <!-- Navigation -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="d-flex gap-2 flex-wrap">
+                <a href="/orders/" class="btn btn-outline-primary rounded-pill">
+                    <i class="fas fa-arrow-left me-2"></i>Danh sách đơn hàng
+                </a>
+                <a href="/products/" class="btn btn-outline-success rounded-pill">
+                    <i class="fas fa-shopping-bag me-2"></i>Tiếp tục mua sắm
+                </a>
+                <a href="/profile/" class="btn btn-outline-info rounded-pill">
+                    <i class="fas fa-user me-2"></i>Trang cá nhân
+                </a>
+                <a href="/" class="btn btn-outline-secondary rounded-pill">
+                    <i class="fas fa-home me-2"></i>Về trang chủ
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

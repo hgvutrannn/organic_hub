@@ -3,7 +3,7 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
@@ -11,11 +11,11 @@ from django.utils import timezone
 
 from .models import (
     CustomUser, Product, Category, CartItem, Order, OrderItem, 
-    Review, Address, Store
+    Review, Address, Store, ProductImage
 )
 from .forms import (
     CustomUserRegistrationForm, LoginForm, ProductForm, 
-    AddressForm, ReviewForm, SearchForm
+    AddressForm, ReviewForm, SearchForm, ProfileUpdateForm
 )
 
 
@@ -294,11 +294,21 @@ def profile(request):
     user_stores = Store.objects.filter(user=user)
     has_store = user_stores.exists()
     
+    if request.method == 'POST':
+        form = ProfileUpdateForm(request.POST, request.FILES, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Cập nhật thông tin thành công!')
+            return redirect('profile')
+    else:
+        form = ProfileUpdateForm(instance=user)
+    
     context = {
         'user': user,
         'recent_orders': recent_orders,
         'user_stores': user_stores,
         'has_store': has_store,
+        'form': form,
     }
     return render(request, 'core/profile.html', context)
 
@@ -396,40 +406,37 @@ def add_product(request, store_id):
     store = get_object_or_404(Store, store_id=store_id, user=request.user)
     
     if request.method == 'POST':
-        name = request.POST.get('name')
-        description = request.POST.get('description', '')
-        price = request.POST.get('price')
-        sku = request.POST.get('sku', '')
-        unit = request.POST.get('unit', 'cái')
-        category_id = request.POST.get('category')
-        is_active = request.POST.get('is_active') == 'on'
-        
-        if name and price:
-            try:
-                price = float(price)
-                category = Category.objects.get(pk=category_id) if category_id else None
-                
-                product = Product.objects.create(
-                    store=store,
-                    name=name,
-                    description=description,
-                    price=price,
-                    category=category,
-                    is_active=is_active
+        form = ProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            product = form.save(commit=False)
+            product.store = store
+            product.save()
+            
+            # Handle multiple gallery images
+            gallery_images = request.FILES.getlist('gallery_images')
+            for i, image in enumerate(gallery_images[:10]):  # Limit to 10 images
+                ProductImage.objects.create(
+                    product=product,
+                    image=image,
+                    alt_text=f"{product.name} - Hình {i+1}",
+                    order=i
                 )
-                messages.success(request, f'Đã thêm sản phẩm "{name}" thành công!')
-                return redirect('store_products', store_id=store.store_id)
-            except (ValueError, Category.DoesNotExist):
-                messages.error(request, 'Dữ liệu không hợp lệ.')
+            
+            messages.success(request, f'Đã thêm sản phẩm "{product.name}" thành công!')
+            return redirect('store_products', store_id=store.store_id)
         else:
-            messages.error(request, 'Vui lòng nhập đầy đủ thông tin bắt buộc.')
+            messages.error(request, 'Vui lòng kiểm tra lại thông tin.')
+    else:
+        form = ProductForm()
     
     categories = Category.objects.all()
     context = {
         'store': store,
         'categories': categories,
+        'form': form,
+        'product': None,  # For template logic
     }
-    return render(request, 'core/store/add_product.html', context)
+    return render(request, 'core/store/product_form.html', context)
 
 
 @login_required
@@ -439,29 +446,39 @@ def edit_product(request, store_id, product_id):
     product = get_object_or_404(Product, pk=product_id, store=store)
     
     if request.method == 'POST':
-        product.name = request.POST.get('name', product.name)
-        product.description = request.POST.get('description', product.description)
-        product.price = float(request.POST.get('price', product.price))
-        product.is_active = request.POST.get('is_active') == 'on'
-        
-        category_id = request.POST.get('category')
-        if category_id:
-            try:
-                product.category = Category.objects.get(pk=category_id)
-            except Category.DoesNotExist:
-                pass
-        
-        product.save()
-        messages.success(request, f'Đã cập nhật sản phẩm "{product.name}" thành công!')
-        return redirect('store_products', store_id=store.store_id)
+        form = ProductForm(request.POST, request.FILES, instance=product)
+        if form.is_valid():
+            form.save()
+            
+            # Handle additional gallery images
+            gallery_images = request.FILES.getlist('gallery_images')
+            if gallery_images:
+                # Get current max order
+                max_order = product.images.aggregate(Max('order'))['order__max'] or -1
+                
+                for i, image in enumerate(gallery_images[:10]):  # Limit to 10 images
+                    ProductImage.objects.create(
+                        product=product,
+                        image=image,
+                        alt_text=f"{product.name} - Hình {max_order + i + 2}",
+                        order=max_order + i + 1
+                    )
+            
+            messages.success(request, f'Đã cập nhật sản phẩm "{product.name}" thành công!')
+            return redirect('store_products', store_id=store.store_id)
+        else:
+            messages.error(request, 'Vui lòng kiểm tra lại thông tin.')
+    else:
+        form = ProductForm(instance=product)
     
     categories = Category.objects.all()
     context = {
         'store': store,
         'product': product,
         'categories': categories,
+        'form': form,
     }
-    return render(request, 'core/store/edit_product.html', context)
+    return render(request, 'core/store/product_form.html', context)
 
 
 @login_required

@@ -3,46 +3,125 @@
 {% block title %}Tạo cửa hàng - Organic Hub{% endblock %}
 
 {% block content %}
-<h1>Tạo cửa hàng</h1>
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center">
+                <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
+                    <i class="fas fa-store text-primary fs-1"></i>
+                </div>
+                <div>
+                    <h1 class="display-6 fw-bold mb-1">Tạo cửa hàng</h1>
+                    <p class="text-muted mb-0">Bắt đầu kinh doanh với Organic Hub</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!-- Navigation -->
-<p>
-    <a href="/profile/">← Trang cá nhân</a> | 
-    <a href="/">← Về trang chủ</a>
-</p>
+    <!-- Navigation -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'profile' %}" class="text-decoration-none">
+                            <i class="fas fa-user me-1"></i>Trang cá nhân
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Tạo cửa hàng</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
 
-<!-- Create Store Form -->
-<h2>Thông tin cửa hàng</h2>
-<form method="post">
-    {% csrf_token %}
-    
-    <table border="1" cellpadding="10" cellspacing="0">
-        <tr>
-            <td><strong>Tên cửa hàng:</strong></td>
-            <td><input type="text" name="store_name" required placeholder="Nhập tên cửa hàng"></td>
-        </tr>
-        <tr>
-            <td><strong>Mô tả cửa hàng:</strong></td>
-            <td><textarea name="store_description" rows="3" cols="50" placeholder="Mô tả về cửa hàng của bạn"></textarea></td>
-        </tr>
-    </table>
-    
-    <h3>Thông tin quan trọng</h3>
-    <ul>
-        <li>Cửa hàng sẽ được tạo với trạng thái "Đang chờ xác minh"</li>
-        <li>Bạn sẽ có thể quản lý sản phẩm sau khi tạo cửa hàng</li>
-        <li>Địa chỉ cửa hàng có thể được cập nhật sau</li>
-    </ul>
-    
-    <p>
-        <button type="submit">Tạo cửa hàng</button>
-    </p>
-</form>
-
-<!-- Navigation -->
-<h2>Điều hướng</h2>
-<p>
-    <a href="/profile/">← Trang cá nhân</a> | 
-    <a href="/">← Về trang chủ</a>
-</p>
+    <div class="row">
+        <div class="col-lg-8 col-xl-6">
+            <!-- Create Store Form -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h3 class="mb-0 fw-bold">
+                        <i class="fas fa-info-circle me-2"></i>Thông tin cửa hàng
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="store_name" class="form-label fw-bold">
+                                <i class="fas fa-store me-1"></i>Tên cửa hàng <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control form-control-lg rounded-3" 
+                                   id="store_name" 
+                                   name="store_name" 
+                                   required 
+                                   placeholder="Nhập tên cửa hàng">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="store_description" class="form-label fw-bold">
+                                <i class="fas fa-align-left me-1"></i>Mô tả cửa hàng
+                            </label>
+                            <textarea class="form-control rounded-3" 
+                                      id="store_description" 
+                                      name="store_description" 
+                                      rows="4" 
+                                      placeholder="Mô tả về cửa hàng của bạn..."></textarea>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill">
+                                <i class="fas fa-plus me-2"></i>Tạo cửa hàng
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 col-xl-6">
+            <!-- Important Info -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h4 class="mb-0 fw-bold">
+                        <i class="fas fa-info-circle me-2"></i>Thông tin quan trọng
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex mb-3">
+                        <div class="bg-warning bg-opacity-10 rounded-circle p-2 me-3">
+                            <i class="fas fa-clock text-warning"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Trạng thái xác minh</h6>
+                            <p class="text-muted small mb-0">Cửa hàng sẽ được tạo với trạng thái "Đang chờ xác minh"</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex mb-3">
+                        <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                            <i class="fas fa-box text-success"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Quản lý sản phẩm</h6>
+                            <p class="text-muted small mb-0">Bạn sẽ có thể quản lý sản phẩm sau khi tạo cửa hàng</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex">
+                        <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3">
+                            <i class="fas fa-map-marker-alt text-info"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Địa chỉ cửa hàng</h6>
+                            <p class="text-muted small mb-0">Địa chỉ cửa hàng có thể được cập nhật sau</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

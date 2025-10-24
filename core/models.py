@@ -60,6 +60,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         ]
     )
     last_login_at = models.DateTimeField(null=True, blank=True)
+    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True, verbose_name='Ảnh đại diện')
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
@@ -156,6 +157,7 @@ class Product(models.Model):
     base_unit = models.CharField(max_length=50, verbose_name='Đơn vị')
     SKU = models.CharField(max_length=255, unique=True, blank=True, null=True, verbose_name='Mã SKU')
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
+    image = models.ImageField(upload_to='products/', null=True, blank=True, verbose_name='Ảnh sản phẩm chính')
     view_count = models.PositiveIntegerField(default=0, verbose_name='Số lượt xem')
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
 
@@ -165,6 +167,34 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+    
+    @property
+    def get_primary_image(self):
+        """Lấy ảnh chính hoặc ảnh đầu tiên"""
+        if self.image:
+            return self.image
+        first_image = self.images.first()
+        if first_image:
+            return first_image.image
+        return None
+
+
+class ProductImage(models.Model):
+    product_image_id = models.AutoField(primary_key=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images', verbose_name='Sản phẩm')
+    image = models.ImageField(upload_to='products/gallery/', verbose_name='Hình ảnh')
+    alt_text = models.CharField(max_length=255, blank=True, null=True, verbose_name='Mô tả ảnh')
+    is_primary = models.BooleanField(default=False, verbose_name='Ảnh chính')
+    order = models.PositiveIntegerField(default=0, verbose_name='Thứ tự')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
+
+    class Meta:
+        verbose_name = 'Hình ảnh sản phẩm'
+        verbose_name_plural = 'Hình ảnh sản phẩm'
+        ordering = ['order', 'created_at']
+
+    def __str__(self):
+        return f"{self.product.name} - {self.alt_text or 'Image'}"
 
 
 # Cart Item Model

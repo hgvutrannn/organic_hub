@@ -3,168 +3,236 @@
 {% block title %}Chi tiết đơn hàng #{{ order.order_id }} - {{ store.store_name }}{% endblock %}
 
 {% block content %}
-<h1>Chi tiết đơn hàng #{{ order.order_id }}</h1>
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center">
+                <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
+                    <i class="fas fa-receipt text-primary fs-1"></i>
+                </div>
+                <div>
+                    <h1 class="display-6 fw-bold mb-1">Chi tiết đơn hàng #{{ order.order_id }}</h1>
+                    <p class="text-muted mb-0">{{ store.store_name }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!-- Navigation -->
-<p>
-    <a href="{% url 'store_orders' store.store_id %}">← Danh sách đơn hàng</a> | 
-    <a href="{% url 'store_dashboard' store.store_id %}">← Dashboard</a>
-</p>
+    <!-- Navigation -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'store_dashboard' store.store_id %}" class="text-decoration-none">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'store_orders' store.store_id %}" class="text-decoration-none">
+                            <i class="fas fa-shopping-cart me-1"></i>Danh sách đơn hàng
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">Chi tiết đơn hàng</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
 
-<!-- Order Info -->
-<h2>Thông tin đơn hàng</h2>
-<table border="1" cellpadding="10" cellspacing="0">
-    <tr>
-        <td><strong>Mã đơn hàng:</strong></td>
-        <td>#{{ order.order_id }}</td>
-    </tr>
-    <tr>
-        <td><strong>Khách hàng:</strong></td>
-        <td>{{ order.user.full_name }} ({{ order.user.phone_number }})</td>
-    </tr>
-    <tr>
-        <td><strong>Trạng thái:</strong></td>
-        <td>
-            <span style="color: 
-                {% if order.status == 'pending' %}orange
-                {% elif order.status == 'waiting_pickup' %}blue
-                {% elif order.status == 'shipping' %}purple
-                {% elif order.status == 'delivered' %}green
-                {% elif order.status == 'cancelled' %}red
-                {% endif %};">
-                {{ order.get_status_display }}
-            </span>
-        </td>
-    </tr>
-    <tr>
-        <td><strong>Thanh toán:</strong></td>
-        <td>
-            <span style="color: 
-                {% if order.payment_status == 'pending' %}orange
-                {% elif order.payment_status == 'paid' %}green
-                {% elif order.payment_status == 'failed' %}red
-                {% endif %};">
-                {{ order.get_payment_status_display }}
-            </span>
-        </td>
-    </tr>
-    <tr>
-        <td><strong>Phương thức thanh toán:</strong></td>
-        <td>{{ order.get_payment_method_display }}</td>
-    </tr>
-    <tr>
-        <td><strong>Ngày đặt:</strong></td>
-        <td>{{ order.created_at|date:"d/m/Y H:i" }}</td>
-    </tr>
-</table>
+    <div class="row">
+        <!-- Order Info -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h3 class="mb-0 fw-bold">
+                        <i class="fas fa-info-circle me-2"></i>Thông tin đơn hàng
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-muted mb-1">Mã đơn hàng</h6>
+                                <p class="mb-0 fs-5 fw-bold text-primary">#{{ order.order_id }}</p>
+                            </div>
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-muted mb-1">Khách hàng</h6>
+                                <p class="mb-0">{{ order.user.full_name }}</p>
+                                <small class="text-muted">{{ order.user.phone_number }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-muted mb-1">Trạng thái</h6>
+                                <span class="badge {% if order.status == 'pending' %}bg-warning{% elif order.status == 'waiting_pickup' %}bg-info{% elif order.status == 'shipping' %}bg-primary{% elif order.status == 'delivered' %}bg-success{% elif order.status == 'cancelled' %}bg-danger{% endif %} fs-6">
+                                    {{ order.get_status_display }}
+                                </span>
+                            </div>
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-muted mb-1">Thanh toán</h6>
+                                <span class="badge {% if order.payment_status == 'pending' %}bg-warning{% elif order.payment_status == 'paid' %}bg-success{% elif order.payment_status == 'failed' %}bg-danger{% endif %} fs-6">
+                                    {{ order.get_payment_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-muted mb-1">Phương thức thanh toán</h6>
+                                <p class="mb-0">{{ order.get_payment_method_display }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <h6 class="fw-bold text-muted mb-1">Ngày đặt</h6>
+                                <p class="mb-0">{{ order.created_at|date:"d/m/Y H:i" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-<!-- Update Status Form -->
-<h2>Cập nhật trạng thái đơn hàng</h2>
-<form method="post">
-    {% csrf_token %}
-    <table border="1" cellpadding="10" cellspacing="0">
-        <tr>
-            <td><strong>Trạng thái hiện tại:</strong></td>
-            <td>{{ order.get_status_display }}</td>
-        </tr>
-        <tr>
-            <td><strong>Trạng thái mới:</strong></td>
-            <td>
-                <select name="status">
-                    <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Đang chờ xác nhận</option>
-                    <option value="waiting_pickup" {% if order.status == 'waiting_pickup' %}selected{% endif %}>Đang chờ shipper đến lấy hàng</option>
-                    <option value="shipping" {% if order.status == 'shipping' %}selected{% endif %}>Đang giao hàng</option>
-                    <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Đã nhận hàng</option>
-                    <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Đã hủy</option>
-                </select>
-            </td>
-        </tr>
-    </table>
-    <p>
-        <button type="submit">Cập nhật trạng thái</button>
-    </p>
-</form>
+            <!-- Update Status Form -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h3 class="mb-0 fw-bold">
+                        <i class="fas fa-edit me-2"></i>Cập nhật trạng thái đơn hàng
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Trạng thái hiện tại</label>
+                                    <p class="form-control-plaintext">{{ order.get_status_display }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="status" class="form-label fw-bold">Trạng thái mới</label>
+                                    <select class="form-select form-select-lg rounded-3" id="status" name="status">
+                                        <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Đang chờ xác nhận</option>
+                                        <option value="waiting_pickup" {% if order.status == 'waiting_pickup' %}selected{% endif %}>Đang chờ shipper đến lấy hàng</option>
+                                        <option value="shipping" {% if order.status == 'shipping' %}selected{% endif %}>Đang giao hàng</option>
+                                        <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Đã nhận hàng</option>
+                                        <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Đã hủy</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill">
+                                <i class="fas fa-save me-2"></i>Cập nhật trạng thái
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
-<!-- Store Products in Order -->
-<h2>Sản phẩm trong đơn hàng</h2>
-<table border="1" cellpadding="10" cellspacing="0">
-    <thead>
-        <tr>
-            <th>Tên sản phẩm</th>
-            <th>Giá</th>
-            <th>Số lượng</th>
-            <th>Thành tiền</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for item in store_order_items %}
-        <tr>
-            <td>
-                <strong>{{ item.product.name }}</strong><br>
-                <small>{{ item.product.store.store_name }}</small>
-            </td>
-            <td>{{ item.unit_price|floatformat:0 }} VNĐ</td>
-            <td>{{ item.quantity }}</td>
-            <td><strong>{{ item.total_price|floatformat:0 }} VNĐ</strong></td>
-        </tr>
-        {% endfor %}
-    </tbody>
-    <tfoot>
-        <tr>
-            <td colspan="3"><strong>Tổng tiền hàng:</strong></td>
-            <td><strong>{{ store_subtotal|floatformat:0 }} VNĐ</strong></td>
-            <tr>
-                <td colspan="3"><strong>Phí vận chuyển:</strong></td>
-                <td><strong>30000 VNĐ</strong></td>
-            </tr>
-            <tr>
-                <td colspan="3"><strong>Tổng cộng:</strong></td>
-                <td><strong>{{ store_subtotal|add:30000|floatformat:0 }} VNĐ</strong></td>
-            </tr>
-        </tr>
-    </tfoot>
-</table>
+            <!-- Store Products in Order -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h3 class="mb-0 fw-bold">
+                        <i class="fas fa-box me-2"></i>Sản phẩm trong đơn hàng
+                    </h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="border-0">Tên sản phẩm</th>
+                                    <th class="border-0">Giá</th>
+                                    <th class="border-0">Số lượng</th>
+                                    <th class="border-0">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in store_order_items %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ item.product.name }}</strong><br>
+                                        <small class="text-muted">{{ item.product.store.store_name }}</small>
+                                    </td>
+                                    <td>{{ item.unit_price|floatformat:0 }} VNĐ</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td><strong>{{ item.total_price|floatformat:0 }} VNĐ</strong></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="3"><strong>Tổng tiền hàng:</strong></td>
+                                    <td><strong>{{ store_subtotal|floatformat:0 }} VNĐ</strong></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3"><strong>Phí vận chuyển:</strong></td>
+                                    <td><strong>30,000 VNĐ</strong></td>
+                                </tr>
+                                <tr class="table-primary">
+                                    <td colspan="3"><strong>Tổng cộng:</strong></td>
+                                    <td><strong>{{ store_subtotal|add:30000|floatformat:0 }} VNĐ</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<!-- Customer Address -->
-<h2>Địa chỉ giao hàng</h2>
-{% if order.shipping_address %}
-<table border="1" cellpadding="10" cellspacing="0">
-    <tr>
-        <td><strong>Người nhận:</strong></td>
-        <td>{{ order.shipping_address.contact_person }}</td>
-    </tr>
-    <tr>
-        <td><strong>Số điện thoại:</strong></td>
-        <td>{{ order.shipping_address.contact_phone }}</td>
-    </tr>
-    <tr>
-        <td><strong>Địa chỉ:</strong></td>
-        <td>{{ order.shipping_address.street }}</td>
-    </tr>
-    <tr>
-        <td><strong>Phường/Xã:</strong></td>
-        <td>{{ order.shipping_address.ward }}</td>
-    </tr>
-    <tr>
-        <td><strong>Tỉnh/Thành phố:</strong></td>
-        <td>{{ order.shipping_address.province }}</td>
-    </tr>
-    <tr>
-        <td><strong>Quốc gia:</strong></td>
-        <td>{{ order.shipping_address.country }}</td>
-    </tr>
-    <tr>
-        <td><strong>Địa chỉ mặc định:</strong></td>
-        <td>
-            {% if order.shipping_address.is_default %}
-                Có
-            {% else %}
-                Không
-            {% endif %}
-        </td>
-    </tr>
-</table>
-{% else %}
-<p><strong>Chưa có địa chỉ giao hàng</strong></p>
-{% endif %}
+        <!-- Customer Address -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h3 class="mb-0 fw-bold">
+                        <i class="fas fa-map-marker-alt me-2"></i>Địa chỉ giao hàng
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    {% if order.shipping_address %}
+                        <div class="mb-3">
+                            <h6 class="fw-bold text-muted mb-1">Người nhận</h6>
+                            <p class="mb-0">{{ order.shipping_address.contact_person }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="fw-bold text-muted mb-1">Số điện thoại</h6>
+                            <p class="mb-0">{{ order.shipping_address.contact_phone }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="fw-bold text-muted mb-1">Địa chỉ</h6>
+                            <p class="mb-0">{{ order.shipping_address.street }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="fw-bold text-muted mb-1">Phường/Xã</h6>
+                            <p class="mb-0">{{ order.shipping_address.ward }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="fw-bold text-muted mb-1">Tỉnh/Thành phố</h6>
+                            <p class="mb-0">{{ order.shipping_address.province }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="fw-bold text-muted mb-1">Quốc gia</h6>
+                            <p class="mb-0">{{ order.shipping_address.country }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="fw-bold text-muted mb-1">Địa chỉ mặc định</h6>
+                            <span class="badge {% if order.shipping_address.is_default %}bg-success{% else %}bg-secondary{% endif %}">
+                                {% if order.shipping_address.is_default %}Có{% else %}Không{% endif %}
+                            </span>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-map-marker-alt text-muted mb-3" style="font-size: 3rem;"></i>
+                            <h5 class="fw-bold text-muted">Chưa có địa chỉ giao hàng</h5>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

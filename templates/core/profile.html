@@ -3,39 +3,246 @@
 {% block title %}Trang cá nhân{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>Trang cá nhân</h1>
-    
-    <div class="profile-info">
-        <h2>Thông tin cá nhân</h2>
-        <p><strong>Số điện thoại:</strong> {{ user.phone_number }}</p>
-        <p><strong>Họ và tên:</strong> {{ user.full_name }}</p>
-        {% if user.email %}
-        <p><strong>Email:</strong> {{ user.email }}</p>
-        {% endif %}
-        <p><strong>Trạng thái:</strong> {{ user.get_status_display }}</p>
-        <p><strong>Ngày tham gia:</strong> {{ user.created_at|date:"d/m/Y H:i" }}</p>
-        {% if user.last_login_at %}
-        <p><strong>Lần đăng nhập cuối:</strong> {{ user.last_login_at|date:"d/m/Y H:i" }}</p>
-        {% endif %}
-        
-        <!-- Store Management Section -->
-        <div class="store-management mt-4">
-            <h2>Quản lý cửa hàng</h2>
-            {% if not has_store %}
-                <a href="{% url 'create_store' %}" class="btn btn-primary">
-                    Trở thành nhà cung cấp
-                </a>
-            {% else %}
-                {% for store in user_stores %}
-                    <p><strong>Tên cửa hàng:</strong> {{ store.store_name }}</p>
-                    <a href="{% url 'store_dashboard' store.store_id %}" class="btn btn-success">
-                        Quản lý cửa hàng
-                    </a>
-                    {% if not forloop.last %}<hr>{% endif %}
-                {% endfor %}
-            {% endif %}
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center">
+                <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
+                    <i class="fas fa-user-circle text-primary fs-1"></i>
+                </div>
+                <div>
+                    <h1 class="display-6 fw-bold mb-1">Trang cá nhân</h1>
+                    <p class="text-muted mb-0">Quản lý thông tin tài khoản và cửa hàng</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Profile Info Card -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-lg rounded-4 h-100">
+                <div class="card-body p-4">
+                    <!-- Avatar Section -->
+                    <div class="text-center mb-4">
+                        <div class="position-relative d-inline-block">
+                            {% if user.avatar %}
+                                <img src="{{ user.avatar.url }}" alt="Avatar" 
+                                     class="rounded-circle border border-4 border-white shadow" 
+                                     style="width: 150px; height: 150px; object-fit: cover;">
+                            {% else %}
+                                <img src="/static/images/default-avatar.jpg" alt="Avatar" 
+                                     class="rounded-circle border border-4 border-white shadow" 
+                                     style="width: 150px; height: 150px; object-fit: cover;">
+                            {% endif %}
+                            <span class="position-absolute bottom-0 end-0 bg-success rounded-circle p-2 border border-3 border-white">
+                                <i class="fas fa-check text-white"></i>
+                            </span>
+                        </div>
+                        <h4 class="fw-bold mt-3 mb-1">{{ user.full_name }}</h4>
+                        <p class="text-muted">{{ user.phone_number }}</p>
+                        
+                        <!-- Status Badge -->
+                        <span class="badge bg-success fs-6 px-3 py-2 rounded-pill">
+                            <i class="fas fa-user-check me-1"></i>{{ user.get_status_display }}
+                        </span>
+                    </div>
+
+                    <!-- User Info -->
+                    <div class="border-top pt-4">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3">
+                                        <i class="fas fa-phone text-info"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">Số điện thoại</small>
+                                        <strong>{{ user.phone_number }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if user.email %}
+                            <div class="col-12">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-warning bg-opacity-10 rounded-circle p-2 me-3">
+                                        <i class="fas fa-envelope text-warning"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">Email</small>
+                                        <strong>{{ user.email }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="col-12">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                                        <i class="fas fa-calendar text-success"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">Ngày tham gia</small>
+                                        <strong>{{ user.created_at|date:"d/m/Y" }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if user.last_login_at %}
+                            <div class="col-12">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                        <i class="fas fa-clock text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">Lần đăng nhập cuối</small>
+                                        <strong>{{ user.last_login_at|date:"d/m/Y H:i" }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Update Profile Form -->
+            <div class="card border-0 shadow-lg rounded-4 mb-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h3 class="mb-0 fw-bold">
+                        <i class="fas fa-edit text-primary me-2"></i>Cập nhật thông tin
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.full_name.id_for_label }}" class="form-label fw-semibold">
+                                    <i class="fas fa-user me-1"></i>Họ và tên
+                                </label>
+                                <input type="text" 
+                                       class="form-control form-control-lg" 
+                                       id="{{ form.full_name.id_for_label }}"
+                                       name="{{ form.full_name.name }}"
+                                       value="{{ form.full_name.value|default:'' }}"
+                                       placeholder="Nhập họ và tên">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.phone_number.id_for_label }}" class="form-label fw-semibold">
+                                    <i class="fas fa-phone me-1"></i>Số điện thoại
+                                </label>
+                                <input type="text" 
+                                       class="form-control form-control-lg" 
+                                       id="{{ form.phone_number.id_for_label }}"
+                                       name="{{ form.phone_number.name }}"
+                                       value="{{ form.phone_number.value|default:'' }}"
+                                       placeholder="Nhập số điện thoại">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.email.id_for_label }}" class="form-label fw-semibold">
+                                    <i class="fas fa-envelope me-1"></i>Email
+                                </label>
+                                <input type="email" 
+                                       class="form-control form-control-lg" 
+                                       id="{{ form.email.id_for_label }}"
+                                       name="{{ form.email.name }}"
+                                       value="{{ form.email.value|default:'' }}"
+                                       placeholder="Nhập email">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.avatar.id_for_label }}" class="form-label fw-semibold">
+                                    <i class="fas fa-camera me-1"></i>Ảnh đại diện
+                                </label>
+                                <input type="file" 
+                                       class="form-control form-control-lg" 
+                                       id="{{ form.avatar.id_for_label }}"
+                                       name="{{ form.avatar.name }}"
+                                       accept="image/*">
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg px-4 rounded-pill">
+                                <i class="fas fa-save me-2"></i>Cập nhật thông tin
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Store Management Section -->
+            <div class="card border-0 shadow-lg rounded-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h3 class="mb-0 fw-bold">
+                        <i class="fas fa-store text-primary me-2"></i>Quản lý cửa hàng
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    {% if not has_store %}
+                        <div class="text-center py-5">
+                            <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-4" 
+                                 style="width: 100px; height: 100px;">
+                                <i class="fas fa-store text-warning" style="font-size: 3rem;"></i>
+                            </div>
+                            <h4 class="fw-bold mb-3">Bạn chưa có cửa hàng</h4>
+                            <p class="text-muted mb-4">Tạo cửa hàng để bắt đầu kinh doanh và bán sản phẩm organic của bạn.</p>
+                            <a href="{% url 'create_store' %}" class="btn btn-warning btn-lg rounded-pill px-4">
+                                <i class="fas fa-plus me-2"></i>Trở thành nhà cung cấp
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="row g-4">
+                            {% for store in user_stores %}
+                            <div class="col-12">
+                                <div class="border border-2 border-primary border-opacity-25 rounded-4 p-4 bg-light bg-opacity-50">
+                                    <div class="d-flex align-items-center justify-content-between mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
+                                                <i class="fas fa-store text-primary fs-4"></i>
+                                            </div>
+                                            <div>
+                                                <h5 class="fw-bold mb-1">{{ store.store_name }}</h5>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    {% if store.is_verified_status == 'verified' %}
+                                                        <span class="badge bg-success rounded-pill">
+                                                            <i class="fas fa-check-circle me-1"></i>Đã xác minh
+                                                        </span>
+                                                    {% elif store.is_verified_status == 'pending' %}
+                                                        <span class="badge bg-warning rounded-pill">
+                                                            <i class="fas fa-clock me-1"></i>Đang chờ xác minh
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-danger rounded-pill">
+                                                            <i class="fas fa-times-circle me-1"></i>Bị từ chối
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <a href="{% url 'store_dashboard' store.store_id %}" 
+                                           class="btn btn-primary rounded-pill px-4">
+                                            <i class="fas fa-cog me-2"></i>Quản lý cửa hàng
+                                        </a>
+                                    </div>
+                                    
+                                    {% if store.store_description %}
+                                        <p class="text-muted mb-0">{{ store.store_description|truncatewords:20 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
 {% endblock %}

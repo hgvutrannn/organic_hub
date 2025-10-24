@@ -3,23 +3,92 @@
 {% block title %}Danh sách Chat - Organic Hub{% endblock %}
 
 {% block content %}
-<h1>Danh sách Chat</h1>
-
-{% if chat_rooms %}
-    <div class="chat-list">
-        {% for chat in chat_rooms %}
-        <div class="chat-item">
-            <a href="{% url 'private_room' chat.other_user.user_id %}">
-                <div class="chat-info">
-                    <h3>{{ chat.other_user.full_name }}</h3>
-                    <p>{{ chat.last_message.content|truncatechars:50 }}</p>
-                    <small>{{ chat.last_message.created_at|date:"d/m/Y H:i" }}</small>
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center">
+                <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
+                    <i class="fas fa-comments text-primary fs-1"></i>
                 </div>
-            </a>
+                <div>
+                    <h1 class="display-6 fw-bold mb-1">Danh sách Chat</h1>
+                    <p class="text-muted mb-0">Quản lý các cuộc trò chuyện của bạn</p>
+                </div>
+            </div>
         </div>
-        {% endfor %}
     </div>
-{% else %}
-    <p>Bạn chưa có cuộc chat nào.</p>
-{% endif %}
+
+    {% if chat_rooms %}
+        <div class="row">
+            <div class="col-lg-8 col-xl-6">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-gradient bg-opacity-10 border-0">
+                        <h3 class="mb-0 fw-bold">
+                            <i class="fas fa-list me-2"></i>Cuộc trò chuyện
+                        </h3>
+                    </div>
+                    <div class="card-body p-0">
+                        {% for chat in chat_rooms %}
+                            <div class="border-bottom p-4 {% if forloop.last %}border-0{% endif %}">
+                                <a href="{% url 'private_room' chat.other_user.user_id %}" 
+                                   class="text-decoration-none text-dark d-block">
+                                    <div class="d-flex align-items-center">
+                                        <!-- Avatar -->
+                                        <div class="me-3">
+                                            {% if chat.other_user.avatar %}
+                                                <img src="{{ chat.other_user.avatar.url }}" 
+                                                     alt="{{ chat.other_user.full_name }}" 
+                                                     class="rounded-circle" 
+                                                     style="width: 50px; height: 50px; object-fit: cover;">
+                                            {% else %}
+                                                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" 
+                                                     style="width: 50px; height: 50px;">
+                                                    <i class="fas fa-user text-primary"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- Chat Info -->
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                                <h6 class="fw-bold mb-0">{{ chat.other_user.full_name }}</h6>
+                                                <small class="text-muted">{{ chat.last_message.created_at|date:"H:i" }}</small>
+                                            </div>
+                                            <p class="text-muted small mb-0">
+                                                {{ chat.last_message.content|truncatechars:60 }}
+                                            </p>
+                                        </div>
+                                        
+                                        <!-- Arrow -->
+                                        <div class="ms-3">
+                                            <i class="fas fa-chevron-right text-muted"></i>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <!-- No Chats -->
+        <div class="row">
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <div class="bg-light bg-opacity-50 rounded-circle d-inline-flex align-items-center justify-content-center mb-4" 
+                         style="width: 120px; height: 120px;">
+                        <i class="fas fa-comments text-muted" style="font-size: 4rem;"></i>
+                    </div>
+                    <h4 class="fw-bold text-muted mb-3">Chưa có cuộc chat nào</h4>
+                    <p class="text-muted mb-4">Bạn chưa có cuộc trò chuyện nào. Hãy bắt đầu chat với cửa hàng!</p>
+                    <a href="{% url 'product_list' %}" class="btn btn-primary rounded-pill px-4">
+                        <i class="fas fa-shopping-bag me-2"></i>Xem sản phẩm
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}
