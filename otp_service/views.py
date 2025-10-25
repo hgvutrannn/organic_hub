@@ -21,12 +21,21 @@ def verify_otp(request, user_id):
         return redirect('home')
     
     if request.method == 'POST':
+        print(f"🔐 OTP VERIFICATION DEBUG:")
+        print(f"   👤 User ID: {user_id}")
+        print(f"   📧 User Email: {user.email}")
+        print(f"   📝 POST Data: {request.POST}")
+        
         form = EmailOTPVerificationForm(request.POST)
+        print(f"   ✅ Form Valid: {form.is_valid()}")
+        
         if form.is_valid():
             otp_code = form.cleaned_data['otp_code']
+            print(f"   🔢 OTP Code: {otp_code}")
             
             # Verify OTP using service
-            result = OTPService.verify_otp(user_id, otp_code)
+            result = OTPService.verify_otp(user_id, otp_code, purpose='registration')
+            print(f"   🎯 Verification Result: {result}")
             
             if result['success']:
                 # Mark user as verified
@@ -40,6 +49,9 @@ def verify_otp(request, user_id):
                 return redirect('home')
             else:
                 messages.error(request, result['message'])
+        else:
+            print(f"   ❌ Form Errors: {form.errors}")
+            messages.error(request, 'Dữ liệu không hợp lệ.')
     else:
         form = EmailOTPVerificationForm()
     

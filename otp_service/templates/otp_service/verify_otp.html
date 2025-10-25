@@ -85,12 +85,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Auto-focus on OTP input
     otpInput.focus();
     
-    // Auto-submit when 6 digits are entered
-    otpInput.addEventListener('input', function() {
-        if (this.value.length === 6) {
-            document.getElementById('otpForm').submit();
-        }
-    });
+    // Auto-submit when 6 digits are entered (disabled for debugging)
+    // otpInput.addEventListener('input', function() {
+    //     if (this.value.length === 6) {
+    //         document.getElementById('otpForm').submit();
+    //     }
+    // });
     
     // Countdown timer for expiry
     function startCountdown() {

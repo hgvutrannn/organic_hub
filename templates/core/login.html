@@ -60,6 +60,13 @@
                                 <i class="fas fa-sign-in-alt me-2"></i>Đăng nhập
                             </button>
                         </div>
+                        
+                        <!-- Forgot Password Link -->
+                        <div class="text-center mt-3">
+                            <a href="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">
+                                <i class="fas fa-question-circle me-1"></i>Quên mật khẩu?
+                            </a>
+                        </div>
                     </form>
                 </div>
                 
@@ -76,4 +83,357 @@
         </div>
     </div>
 </div>
+
+<!-- Forgot Password Modal -->
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="forgotPasswordModalLabel">
+                    <i class="fas fa-key text-primary me-2"></i>Quên mật khẩu
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 80px; height: 80px;">
+                        <i class="fas fa-question-circle text-warning fs-2"></i>
+                    </div>
+                    <h6 class="fw-bold">Đặt lại mật khẩu</h6>
+                    <p class="text-muted">Nhập email của bạn để nhận mã OTP</p>
+                </div>
+                <form id="forgotPasswordForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="email" class="form-label fw-semibold">
+                            <i class="fas fa-envelope me-1"></i>Email
+                        </label>
+                        <input type="email" class="form-control form-control-lg" id="email" name="email" 
+                               placeholder="Nhập email của bạn" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="requestPasswordResetOTP">
+                    <i class="fas fa-paper-plane me-1"></i>Gửi OTP
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- OTP Verification Modal -->
+<div class="modal fade" id="otpVerificationModal" tabindex="-1" aria-labelledby="otpVerificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="otpVerificationModalLabel">
+                    <i class="fas fa-shield-alt text-primary me-2"></i>Xác thực OTP
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                         style="width: 80px; height: 80px;">
+                        <i class="fas fa-envelope text-primary fs-2"></i>
+                    </div>
+                    <h6 class="fw-bold">Nhập mã OTP</h6>
+                    <p class="text-muted">Mã OTP đã được gửi đến email của bạn</p>
+                </div>
+                <form id="otpVerificationForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="otp_code" class="form-label fw-semibold">Mã OTP</label>
+                        <input type="text" class="form-control form-control-lg text-center" id="otp_code" name="otp_code" 
+                               placeholder="Nhập mã OTP 6 số" maxlength="6" pattern="[0-9]{6}" required>
+                        <div class="invalid-feedback"></div>
+                        <div class="form-text">Nhập mã 6 số đã được gửi đến email của bạn</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" id="resendOTP" disabled>
+                    <i class="fas fa-redo me-1"></i>Gửi lại (<span id="countdown">60</span>s)
+                </button>
+                <button type="button" class="btn btn-primary" id="verifyOTP">
+                    <i class="fas fa-check me-1"></i>Xác thực
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-labelledby="resetPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resetPasswordModalLabel">
+                    <i class="fas fa-lock text-primary me-2"></i>Đặt mật khẩu mới
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="resetPasswordForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="new_password1" class="form-label fw-semibold">
+                            <i class="fas fa-lock me-1"></i>Mật khẩu mới
+                        </label>
+                        <input type="password" class="form-control form-control-lg" id="new_password1" name="new_password1" 
+                               placeholder="Nhập mật khẩu mới" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new_password2" class="form-label fw-semibold">
+                            <i class="fas fa-lock me-1"></i>Xác nhận mật khẩu mới
+                        </label>
+                        <input type="password" class="form-control form-control-lg" id="new_password2" name="new_password2" 
+                               placeholder="Xác nhận mật khẩu mới" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="confirmPasswordReset">
+                    <i class="fas fa-check me-1"></i>Đặt mật khẩu
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let countdownTimer;
+    let countdownSeconds = 60;
+    
+    // Forgot Password Form Submission
+    document.getElementById('requestPasswordResetOTP').addEventListener('click', function() {
+        const form = document.getElementById('forgotPasswordForm');
+        const formData = new FormData(form);
+        
+        // Clear previous errors
+        form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        form.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+        
+        fetch('{% url "request_password_reset_otp" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Close forgot password modal
+                const forgotModal = bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal'));
+                forgotModal.hide();
+                
+                // Show OTP modal
+                const otpModal = new bootstrap.Modal(document.getElementById('otpVerificationModal'));
+                otpModal.show();
+                
+                // Start countdown
+                startCountdown();
+                
+                // Show success message
+                showAlert('success', data.message);
+            } else {
+                // Show form errors
+                if (data.errors) {
+                    Object.keys(data.errors).forEach(field => {
+                        const input = form.querySelector(`[name="${field}"]`);
+                        const feedback = input.nextElementSibling;
+                        input.classList.add('is-invalid');
+                        feedback.textContent = data.errors[field];
+                    });
+                } else {
+                    showAlert('danger', data.message);
+                }
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Có lỗi xảy ra. Vui lòng thử lại.');
+        });
+    });
+    
+    // OTP Verification
+    document.getElementById('verifyOTP').addEventListener('click', function() {
+        const form = document.getElementById('otpVerificationForm');
+        const formData = new FormData(form);
+        
+        // Clear previous errors
+        form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        form.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+        
+        fetch('{% url "verify_password_reset_otp" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Close OTP modal
+                const otpModal = bootstrap.Modal.getInstance(document.getElementById('otpVerificationModal'));
+                otpModal.hide();
+                
+                // Show reset password modal
+                const resetModal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+                resetModal.show();
+                
+                // Show success message
+                showAlert('success', data.message);
+            } else {
+                // Show error
+                const input = form.querySelector('#otp_code');
+                const feedback = input.nextElementSibling;
+                input.classList.add('is-invalid');
+                feedback.textContent = data.message;
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Có lỗi xảy ra. Vui lòng thử lại.');
+        });
+    });
+    
+    // Confirm Password Reset
+    document.getElementById('confirmPasswordReset').addEventListener('click', function() {
+        const form = document.getElementById('resetPasswordForm');
+        const formData = new FormData(form);
+        
+        // Clear previous errors
+        form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        form.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+        
+        fetch('{% url "confirm_password_reset" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Close reset password modal
+                const resetModal = bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal'));
+                resetModal.hide();
+                
+                // Show success message and redirect to login
+                showAlert('success', data.message);
+                
+                // Clear forms
+                document.getElementById('forgotPasswordForm').reset();
+                document.getElementById('otpVerificationForm').reset();
+                document.getElementById('resetPasswordForm').reset();
+                
+                // Redirect to login after 3 seconds
+                setTimeout(() => {
+                    window.location.href = '{% url "login" %}';
+                }, 3000);
+            } else {
+                // Show form errors
+                if (data.errors) {
+                    Object.keys(data.errors).forEach(field => {
+                        const input = form.querySelector(`[name="${field}"]`);
+                        const feedback = input.nextElementSibling;
+                        input.classList.add('is-invalid');
+                        feedback.textContent = data.errors[field];
+                    });
+                } else {
+                    showAlert('danger', data.message);
+                }
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Có lỗi xảy ra. Vui lòng thử lại.');
+        });
+    });
+    
+    // Resend OTP
+    document.getElementById('resendOTP').addEventListener('click', function() {
+        const form = document.getElementById('forgotPasswordForm');
+        const formData = new FormData(form);
+        
+        fetch('{% url "request_password_reset_otp" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message);
+                startCountdown();
+            } else {
+                showAlert('danger', data.message);
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Có lỗi xảy ra. Vui lòng thử lại.');
+        });
+    });
+    
+    // Countdown timer
+    function startCountdown() {
+        countdownSeconds = 60;
+        const resendBtn = document.getElementById('resendOTP');
+        const countdownSpan = document.getElementById('countdown');
+        
+        resendBtn.disabled = true;
+        
+        countdownTimer = setInterval(() => {
+            countdownSeconds--;
+            countdownSpan.textContent = countdownSeconds;
+            
+            if (countdownSeconds <= 0) {
+                clearInterval(countdownTimer);
+                resendBtn.disabled = false;
+                resendBtn.innerHTML = '<i class="fas fa-redo me-1"></i>Gửi lại';
+            }
+        }, 1000);
+    }
+    
+    // Show alert function
+    function showAlert(type, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Insert at the top of the main content
+        const mainContent = document.querySelector('.container-fluid');
+        mainContent.insertBefore(alertDiv, mainContent.firstChild);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+    
+    // Clean up timer when modal is hidden
+    document.getElementById('otpVerificationModal').addEventListener('hidden.bs.modal', function() {
+        if (countdownTimer) {
+            clearInterval(countdownTimer);
+        }
+    });
+});
+</script>
+
 {% endblock %}

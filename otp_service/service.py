@@ -57,7 +57,7 @@ class OTPService:
             }
     
     @staticmethod
-    def verify_otp(user_id: int, otp_code: str) -> dict:
+    def verify_otp(user_id: int, otp_code: str, purpose='registration') -> dict:
         """
         Verify OTP from Redis, mark as used in DB
         Returns: {'success': bool, 'message': str}
@@ -67,11 +67,11 @@ class OTPService:
             if RedisOTPManager.verify_otp(user_id, otp_code):
                 # Mark as used in database
                 user = User.objects.get(user_id=user_id)
-                otp_record = EmailOTP.get_valid_otp(user, 'registration')
+                otp_record = EmailOTP.get_valid_otp(user, purpose)
                 if otp_record:
                     otp_record.mark_as_used()
                 
-                logger.info(f"OTP verified successfully for user {user_id}")
+                logger.info(f"OTP verified successfully for user {user_id} with purpose {purpose}")
                 return {
                     'success': True,
                     'message': 'Mã OTP hợp lệ.'

@@ -46,4 +46,12 @@ urlpatterns = [
     path('admin-dashboard/request/<int:request_id>/', views.admin_request_detail, name='admin_request_detail'),
     path('admin-dashboard/store/<int:store_id>/approve/', views.admin_approve_store, name='admin_approve_store'),
     path('admin-dashboard/store/<int:store_id>/reject/', views.admin_reject_store, name='admin_reject_store'),
+    
+    # Password Change & Reset URLs
+    path('password/change/request-otp/', views.request_password_change_otp, name='request_password_change_otp'),
+    path('password/change/verify-otp/', views.verify_password_change_otp, name='verify_password_change_otp'),
+    path('password/forgot/', views.forgot_password, name='forgot_password'),
+    path('password/reset/request-otp/', views.request_password_reset_otp, name='request_password_reset_otp'),
+    path('password/reset/verify-otp/', views.verify_password_reset_otp, name='verify_password_reset_otp'),
+    path('password/reset/confirm/', views.confirm_password_reset, name='confirm_password_reset'),
 ]

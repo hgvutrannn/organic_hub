@@ -16,7 +16,8 @@ from .models import (
 )
 from .forms import (
     CustomUserRegistrationForm, LoginForm, ProductForm, AddressForm, ReviewForm, SearchForm, ProfileUpdateForm,
-    StoreCertificationForm, AdminStoreReviewForm
+    StoreCertificationForm, AdminStoreReviewForm, PasswordChangeForm, ForgotPasswordForm, 
+    PasswordResetConfirmForm, OTPVerificationForm
 )
 
 
@@ -815,3 +816,275 @@ def admin_reject_store(request, store_id):
     
     messages.success(request, f'Đã từ chối cửa hàng "{store.store_name}"')
     return redirect('admin_store_detail', store_id=store.store_id)
+
+
+# Password Change & Reset Views
+@login_required
+@require_POST
+def request_password_change_otp(request):
+    """Request OTP for password change from profile"""
+    try:
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            # Store new password in session temporarily
+            request.session['new_password'] = form.cleaned_data['new_password1']
+            
+            # Generate and send OTP
+            from otp_service.service import OTPService
+            result = OTPService.generate_and_send_otp(request.user, purpose='password_reset')
+            
+            if result['success']:
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Mã OTP đã được gửi đến email của bạn.'
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': result['message']
+                })
+        else:
+            # Return form errors
+            errors = {}
+            for field, field_errors in form.errors.items():
+                errors[field] = field_errors[0]
+            return JsonResponse({
+                'success': False,
+                'message': 'Dữ liệu không hợp lệ.',
+                'errors': errors
+            })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Có lỗi xảy ra. Vui lòng thử lại.'
+        })
+
+
+@login_required
+@require_POST
+def verify_password_change_otp(request):
+    """Verify OTP and change password"""
+    try:
+        form = OTPVerificationForm(request.POST)
+        if form.is_valid():
+            otp_code = form.cleaned_data['otp_code']
+            
+            # Verify OTP
+            from otp_service.service import OTPService
+            result = OTPService.verify_otp(request.user.user_id, otp_code, purpose='password_reset')
+            
+            if result['success']:
+                # Get new password from session
+                new_password = request.session.get('new_password')
+                if new_password:
+                    # Change password
+                    request.user.set_password(new_password)
+                    request.user.save()
+                    
+                    # Clear session
+                    if 'new_password' in request.session:
+                        del request.session['new_password']
+                    
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Đổi mật khẩu thành công!'
+                    })
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'Phiên làm việc đã hết hạn. Vui lòng thử lại.'
+                    })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': result['message']
+                })
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Mã OTP không hợp lệ.'
+            })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Có lỗi xảy ra. Vui lòng thử lại.'
+        })
+
+
+def forgot_password(request):
+    """Display forgot password form"""
+    if request.method == 'POST':
+        form = ForgotPasswordForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            try:
+                user = CustomUser.objects.get(email=email)
+                # Generate and send OTP
+                from otp_service.service import OTPService
+                result = OTPService.generate_and_send_otp(user, purpose='password_reset')
+                
+                if result['success']:
+                    # Store user ID in session for verification
+                    request.session['password_reset_user_id'] = user.user_id
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Mã OTP đã được gửi đến email của bạn.'
+                    })
+                else:
+                    return JsonResponse({
+                        'success': False,
+                        'message': result['message']
+                    })
+            except CustomUser.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Email không tồn tại trong hệ thống.'
+                })
+        else:
+            errors = {}
+            for field, field_errors in form.errors.items():
+                errors[field] = field_errors[0]
+            return JsonResponse({
+                'success': False,
+                'message': 'Dữ liệu không hợp lệ.',
+                'errors': errors
+            })
+    else:
+        form = ForgotPasswordForm()
+    
+    return render(request, 'core/forgot_password.html', {'form': form})
+
+
+@require_POST
+def request_password_reset_otp(request):
+    """Request OTP for password reset (AJAX)"""
+    try:
+        form = ForgotPasswordForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            user = CustomUser.objects.get(email=email)
+            
+            # Generate and send OTP
+            from otp_service.service import OTPService
+            result = OTPService.generate_and_send_otp(user, purpose='password_reset')
+            
+            if result['success']:
+                # Store user ID in session for verification
+                request.session['password_reset_user_id'] = user.user_id
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Mã OTP đã được gửi đến email của bạn.'
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': result['message']
+                })
+        else:
+            errors = {}
+            for field, field_errors in form.errors.items():
+                errors[field] = field_errors[0]
+            return JsonResponse({
+                'success': False,
+                'message': 'Dữ liệu không hợp lệ.',
+                'errors': errors
+            })
+    except CustomUser.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Email không tồn tại trong hệ thống.'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Có lỗi xảy ra. Vui lòng thử lại.'
+        })
+
+
+@require_POST
+def verify_password_reset_otp(request):
+    """Verify OTP for password reset"""
+    try:
+        form = OTPVerificationForm(request.POST)
+        if form.is_valid():
+            otp_code = form.cleaned_data['otp_code']
+            user_id = request.session.get('password_reset_user_id')
+            
+            if not user_id:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Phiên làm việc đã hết hạn. Vui lòng thử lại.'
+                })
+            
+            # Verify OTP
+            from otp_service.service import OTPService
+            result = OTPService.verify_otp(user_id, otp_code, purpose='password_reset')
+            
+            if result['success']:
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Xác thực OTP thành công. Vui lòng nhập mật khẩu mới.'
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': result['message']
+                })
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Mã OTP không hợp lệ.'
+            })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Có lỗi xảy ra. Vui lòng thử lại.'
+        })
+
+
+@require_POST
+def confirm_password_reset(request):
+    """Set new password after OTP verification"""
+    try:
+        form = PasswordResetConfirmForm(request.POST)
+        if form.is_valid():
+            user_id = request.session.get('password_reset_user_id')
+            
+            if not user_id:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Phiên làm việc đã hết hạn. Vui lòng thử lại.'
+                })
+            
+            # Get user and set new password
+            user = CustomUser.objects.get(user_id=user_id)
+            user.set_password(form.cleaned_data['new_password1'])
+            user.save()
+            
+            # Clear session
+            if 'password_reset_user_id' in request.session:
+                del request.session['password_reset_user_id']
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới.'
+            })
+        else:
+            errors = {}
+            for field, field_errors in form.errors.items():
+                errors[field] = field_errors[0]
+            return JsonResponse({
+                'success': False,
+                'message': 'Dữ liệu không hợp lệ.',
+                'errors': errors
+            })
+    except CustomUser.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Người dùng không tồn tại.'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': 'Có lỗi xảy ra. Vui lòng thử lại.'
+        })

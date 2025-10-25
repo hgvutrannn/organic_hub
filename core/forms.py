@@ -192,3 +192,128 @@ class AdminStoreReviewForm(forms.Form):
             raise forms.ValidationError('Vui lòng nhập lý do từ chối.')
         
         return cleaned_data
+
+
+# Password Change & Reset Forms
+class PasswordChangeForm(forms.Form):
+    """Form for changing password from profile page"""
+    old_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'placeholder': 'Nhập mật khẩu hiện tại',
+            'class': 'form-control form-control-lg'
+        }),
+        label='Mật khẩu hiện tại'
+    )
+    new_password1 = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'placeholder': 'Nhập mật khẩu mới',
+            'class': 'form-control form-control-lg'
+        }),
+        label='Mật khẩu mới'
+    )
+    new_password2 = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'placeholder': 'Xác nhận mật khẩu mới',
+            'class': 'form-control form-control-lg'
+        }),
+        label='Xác nhận mật khẩu mới'
+    )
+    
+    def __init__(self, user=None, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+    
+    def clean_old_password(self):
+        old_password = self.cleaned_data.get('old_password')
+        if old_password and not self.user.check_password(old_password):
+            raise forms.ValidationError('Mật khẩu hiện tại không đúng.')
+        return old_password
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        new_password1 = cleaned_data.get('new_password1')
+        new_password2 = cleaned_data.get('new_password2')
+        
+        if new_password1 and new_password2:
+            if new_password1 != new_password2:
+                raise forms.ValidationError('Mật khẩu mới không khớp.')
+            if len(new_password1) < 8:
+                raise forms.ValidationError('Mật khẩu mới phải có ít nhất 8 ký tự.')
+        
+        return cleaned_data
+
+
+class ForgotPasswordForm(forms.Form):
+    """Form for requesting password reset"""
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={
+            'placeholder': 'Nhập email của bạn',
+            'class': 'form-control form-control-lg'
+        }),
+        label='Email'
+    )
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email:
+            from .models import CustomUser
+            try:
+                user = CustomUser.objects.get(email=email)
+                if not user.email_verified:
+                    raise forms.ValidationError('Email chưa được xác thực. Vui lòng xác thực email trước.')
+            except CustomUser.DoesNotExist:
+                raise forms.ValidationError('Email không tồn tại trong hệ thống.')
+        return email
+
+
+class PasswordResetConfirmForm(forms.Form):
+    """Form for setting new password after OTP verification"""
+    new_password1 = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'placeholder': 'Nhập mật khẩu mới',
+            'class': 'form-control form-control-lg'
+        }),
+        label='Mật khẩu mới'
+    )
+    new_password2 = forms.CharField(
+        widget=forms.PasswordInput(attrs={
+            'placeholder': 'Xác nhận mật khẩu mới',
+            'class': 'form-control form-control-lg'
+        }),
+        label='Xác nhận mật khẩu mới'
+    )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        new_password1 = cleaned_data.get('new_password1')
+        new_password2 = cleaned_data.get('new_password2')
+        
+        if new_password1 and new_password2:
+            if new_password1 != new_password2:
+                raise forms.ValidationError('Mật khẩu mới không khớp.')
+            if len(new_password1) < 8:
+                raise forms.ValidationError('Mật khẩu mới phải có ít nhất 8 ký tự.')
+        
+        return cleaned_data
+
+
+class OTPVerificationForm(forms.Form):
+    """Reusable OTP verification form"""
+    otp_code = forms.CharField(
+        max_length=6,
+        min_length=6,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Nhập mã OTP 6 số',
+            'class': 'form-control form-control-lg text-center',
+            'maxlength': '6',
+            'pattern': '[0-9]{6}'
+        }),
+        label='Mã OTP',
+        help_text='Nhập mã 6 số đã được gửi đến email của bạn'
+    )
+    
+    def clean_otp_code(self):
+        otp_code = self.cleaned_data.get('otp_code')
+        if otp_code and not otp_code.isdigit():
+            raise forms.ValidationError('Mã OTP chỉ chứa số.')
+        return otp_code
