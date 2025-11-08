@@ -28,3 +28,6 @@ celery==5.3.4
 redis==5.0.1
 kombu==5.3.4
 django-redis==5.4.0
+channels==4.0.0
+channels-redis==4.2.0
+psycopg2-binary>=2.9.9  # Installed: 2.9.11

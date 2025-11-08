@@ -18,7 +18,7 @@ def private_room(request, user_id):
     
     # Nếu người dùng cố gắng chat với chính mình
     if request.user.user_id == user_id:
-        return redirect('some_other_safe_page') # Hoặc xử lý lỗi
+        return redirect('chat_list')
     
     # Lấy lịch sử chat từ database
     chat_history = Message.objects.filter(
