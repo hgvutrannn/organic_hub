@@ -19,6 +19,8 @@ from .forms import (
     StoreCertificationForm, AdminStoreReviewForm, PasswordChangeForm, ForgotPasswordForm, 
     PasswordResetConfirmForm, OTPVerificationForm
 )
+from chat.models import Message
+from notifications.tasks import create_order_status_notifications
 
 
 # Home Page
@@ -594,9 +596,18 @@ def store_order_detail(request, store_id, order_id):
     if request.method == 'POST':
         new_status = request.POST.get('status')
         if new_status in ['pending', 'waiting_pickup', 'shipping', 'delivered', 'cancelled']:
-            order.status = new_status
-            order.save()
-            messages.success(request, f'Đã cập nhật trạng thái đơn hàng thành "{order.get_status_display()}"')
+            previous_status = order.status
+            if previous_status != new_status:
+                order.status = new_status
+                order.save(update_fields=['status'])
+                create_order_status_notifications.delay(
+                    order_id=order.order_id,
+                    new_status=new_status,
+                    triggered_by_id=request.user.user_id,
+                )
+                messages.success(request, f'Đã cập nhật trạng thái đơn hàng thành "{order.get_status_display()}"')
+            else:
+                messages.info(request, 'Trạng thái đơn hàng không thay đổi.')
             return redirect('store_order_detail', store_id=store.store_id, order_id=order.order_id)
     
     context = {

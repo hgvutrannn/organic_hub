@@ -11,6 +11,7 @@ urlpatterns = [
     path('', include('core.urls')),
     path('chat/', include('chat.urls')),
     path('otp/', include('otp_service.urls')),
+    path('notifications/', include(('notifications.urls', 'notifications'), namespace='notifications')),
 ]
 
 # Serve media files in development
