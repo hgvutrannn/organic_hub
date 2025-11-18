@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import (
     CustomUser, Category, Address, Store, Product, CartItem, 
-    Order, OrderItem, Review, ProductComment, ReviewMedia, StoreReviewStats
+    Order, OrderItem, Review, ProductComment, ReviewMedia, StoreReviewStats, ProductVariant
 )
 
 
@@ -44,26 +44,76 @@ class StoreAdmin(admin.ModelAdmin):
     list_select_related = ('user',)
 
 
+class ProductVariantInline(admin.TabularInline):
+    model = ProductVariant
+    extra = 0
+    fields = ('variant_name', 'sku_code', 'price', 'stock', 'is_active', 'sort_order')
+    readonly_fields = ('created_at',)
+
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'store', 'category', 'price', 'is_active', 'view_count', 'created_at')
-    list_filter = ('is_active', 'category', 'store', 'created_at')
+    list_display = ('name', 'store', 'category', 'price', 'has_variants', 'variants_count', 'is_active', 'view_count', 'created_at')
+    list_filter = ('is_active', 'has_variants', 'category', 'store', 'created_at')
     search_fields = ('name', 'description', 'SKU')
     list_select_related = ('store', 'category')
-    readonly_fields = ('view_count', 'created_at')
+    readonly_fields = ('view_count', 'created_at', 'variants_count_display')
+    inlines = [ProductVariantInline]
+    
+    def variants_count(self, obj):
+        """Hiển thị số lượng variants"""
+        count = obj.variants.count()
+        if count > 0:
+            return f"{count} variants"
+        return "0 variants"
+    variants_count.short_description = 'Số phân loại'
+    
+    def variants_count_display(self, obj):
+        """Hiển thị chi tiết variants trong edit form"""
+        if obj.pk:
+            variants = obj.variants.all()
+            if variants.exists():
+                html = f"<strong>Tổng số: {variants.count()}</strong><ul>"
+                for v in variants:
+                    status = "✓" if v.is_active else "✗"
+                    html += f"<li>{status} {v.variant_name} - {v.price} VNĐ (Stock: {v.stock})</li>"
+                html += "</ul>"
+                return html
+            return "Chưa có phân loại nào"
+        return "Lưu sản phẩm trước để thêm phân loại"
+    variants_count_display.short_description = 'Danh sách phân loại'
+    variants_count_display.allow_tags = True
+    
+    def save_model(self, request, obj, form, change):
+        """Tự động bật has_variants nếu có variants"""
+        super().save_model(request, obj, form, change)
+        # Nếu có variants nhưng has_variants=False, tự động bật
+        if obj.variants.exists() and not obj.has_variants:
+            obj.has_variants = True
+            obj.save(update_fields=['has_variants'])
 
 
 @admin.register(CartItem)
 class CartItemAdmin(admin.ModelAdmin):
-    list_display = ('user', 'product', 'quantity', 'total_price', 'created_at')
+    list_display = ('user', 'product', 'variant', 'quantity', 'total_price', 'created_at')
     list_filter = ('created_at',)
-    search_fields = ('user__phone_number', 'product__name')
-    list_select_related = ('user', 'product')
+    search_fields = ('user__phone_number', 'product__name', 'variant__variant_name')
+    list_select_related = ('user', 'product', 'variant')
+
+
+@admin.register(ProductVariant)
+class ProductVariantAdmin(admin.ModelAdmin):
+    list_display = ('variant_name', 'product', 'sku_code', 'price', 'stock', 'is_active', 'sort_order', 'created_at')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('variant_name', 'sku_code', 'product__name')
+    list_select_related = ('product',)
+    readonly_fields = ('created_at', 'updated_at')
 
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
+    fields = ('product', 'variant', 'quantity', 'unit_price', 'total_price')
     readonly_fields = ('total_price',)
 
 

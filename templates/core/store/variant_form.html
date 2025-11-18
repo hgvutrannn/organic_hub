@@ -1,0 +1,224 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{% if variant %}Sửa phân loại{% else %}Thêm phân loại{% endif %} - {{ product.name }} - {{ store.store_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center">
+                <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
+                    <i class="fas {% if variant %}fa-edit{% else %}fa-plus{% endif %} text-primary fs-1"></i>
+                </div>
+                <div>
+                    <h1 class="display-6 fw-bold mb-1">
+                        {% if variant %}Sửa phân loại{% else %}Thêm phân loại{% endif %}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        {{ product.name }} - {{ store.store_name }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'store_dashboard' store.store_id %}" class="text-decoration-none">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'store_products' store.store_id %}" class="text-decoration-none">
+                            <i class="fas fa-box me-1"></i>Quản lý sản phẩm
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'edit_product' store.store_id product.product_id %}" class="text-decoration-none">
+                            {{ product.name }}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        {% if variant %}Sửa phân loại{% else %}Thêm phân loại{% endif %}
+                    </li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 col-xl-6">
+            <!-- Variant Form -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <h3 class="mb-0 fw-bold">
+                        <i class="fas fa-info-circle me-2"></i>Thông tin phân loại
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="variant_name" class="form-label fw-bold">
+                                <i class="fas fa-tag me-1"></i>Tên phân loại <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="variant_name" 
+                                   name="variant_name" 
+                                   value="{% if variant %}{{ variant.variant_name }}{% endif %}" 
+                                   required 
+                                   placeholder="Ví dụ: 500g, Size M - Màu Đỏ">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="variant_description" class="form-label fw-bold">
+                                <i class="fas fa-align-left me-1"></i>Mô tả phân loại
+                            </label>
+                            <textarea class="form-control" 
+                                      id="variant_description" 
+                                      name="variant_description" 
+                                      rows="2" 
+                                      placeholder="Mô tả chi tiết về phân loại...">{% if variant %}{{ variant.variant_description }}{% endif %}</textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label for="sku_code" class="form-label fw-bold">
+                                        <i class="fas fa-barcode me-1"></i>Mã SKU
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="sku_code" 
+                                           name="sku_code" 
+                                           value="{% if variant %}{{ variant.sku_code }}{% endif %}" 
+                                           placeholder="Tự động nếu để trống">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label for="price" class="form-label fw-bold">
+                                        <i class="fas fa-dollar-sign me-1"></i>Giá <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="price" 
+                                               name="price" 
+                                               step="0.01" 
+                                               value="{% if variant %}{{ variant.price|floatformat:0 }}{% endif %}" 
+                                               required 
+                                               placeholder="0.00">
+                                        <span class="input-group-text">VNĐ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label for="stock" class="form-label fw-bold">
+                                        <i class="fas fa-boxes me-1"></i>Số lượng tồn kho
+                                    </label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="stock" 
+                                           name="stock" 
+                                           min="0"
+                                           value="{% if variant %}{{ variant.stock }}{% else %}0{% endif %}" 
+                                           placeholder="0">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label for="sort_order" class="form-label fw-bold">
+                                        <i class="fas fa-sort-numeric-down me-1"></i>Thứ tự hiển thị
+                                    </label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="sort_order" 
+                                           name="sort_order" 
+                                           min="0"
+                                           value="{% if variant %}{{ variant.sort_order }}{% else %}0{% endif %}" 
+                                           placeholder="0">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="image" class="form-label fw-bold">
+                                <i class="fas fa-image me-1"></i>Hình ảnh phân loại
+                            </label>
+                            
+                            {% if variant and variant.image %}
+                                <div class="mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ variant.image.url }}" 
+                                             alt="{{ variant.variant_name }}" 
+                                             class="rounded-3 me-3" 
+                                             style="width: 100px; height: 100px; object-fit: cover;">
+                                        <div>
+                                            <h6 class="mb-1">Ảnh hiện tại</h6>
+                                            <small class="text-muted">Chọn ảnh mới để thay thế</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            
+                            <input type="file" 
+                                   class="form-control" 
+                                   id="image" 
+                                   name="image" 
+                                   accept="image/*">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="attributes" class="form-label fw-bold">
+                                <i class="fas fa-code me-1"></i>Thuộc tính (JSON)
+                            </label>
+                            <textarea class="form-control" 
+                                      id="attributes" 
+                                      name="attributes" 
+                                      rows="2"
+                                      placeholder='{"Size": "M", "Color": "Đỏ"}'>{% if variant and variant.attributes %}{{ variant.attributes|safe }}{% endif %}</textarea>
+                            <small class="text-muted">Ví dụ: {"Size": "M", "Color": "Đỏ"}</small>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="is_active" 
+                                       name="is_active" 
+                                       {% if not variant or variant.is_active %}checked{% endif %}>
+                                <label class="form-check-label fw-bold" for="is_active">
+                                    Đang hoạt động
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill">
+                                <i class="fas {% if variant %}fa-save{% else %}fa-plus{% endif %} me-2"></i>
+                                {% if variant %}Cập nhật phân loại{% else %}Thêm phân loại{% endif %}
+                            </button>
+                            <a href="{% url 'edit_product' store.store_id product.product_id %}" class="btn btn-outline-secondary rounded-pill">
+                                <i class="fas fa-arrow-left me-2"></i>Quay lại
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

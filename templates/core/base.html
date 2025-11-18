@@ -12,6 +12,31 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     {% load static %}
+    
+    <!-- Global Square Image Styles -->
+    <style>
+        /* Make all product images, avatars, and review images square with center crop */
+        .square-image,
+        img[src*="products/"],
+        img[src*="avatars/"],
+        img[src*="reviews/"],
+        .card-img-top,
+        .product-image,
+        .thumbnail-img {
+            aspect-ratio: 1 / 1 !important;
+            object-fit: cover !important;
+            object-position: center !important;
+        }
+        
+        /* Override any height constraints */
+        img[src*="products/"],
+        img[src*="avatars/"],
+        img[src*="reviews/"],
+        .card-img-top {
+            height: auto !important;
+        }
+    </style>
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body>

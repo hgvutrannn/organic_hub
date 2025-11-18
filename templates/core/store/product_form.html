@@ -155,6 +155,29 @@
                             </div>
                         </div>
                         
+                        <!-- Variant Settings -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="has_variants" 
+                                       name="has_variants"
+                                       {% if product and product.has_variants %}checked{% endif %}
+                                       {% if product and product.variants.exists %}disabled{% endif %}>
+                                <label class="form-check-label fw-bold" for="has_variants">
+                                    <i class="fas fa-tags me-1"></i>Có phân loại sản phẩm
+                                </label>
+                            </div>
+                            {% if product and product.variants.exists %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Không thể tắt chế độ phân loại khi còn phân loại. Vui lòng xóa hết phân loại trước.
+                                </div>
+                            {% else %}
+                                <small class="text-muted d-block mb-3">Bật tính năng này nếu sản phẩm có nhiều phân loại với giá và hình ảnh khác nhau. Sau khi bật, bạn sẽ được chuyển đến trang thêm phân loại.</small>
+                            {% endif %}
+                        </div>
+                        
                         <!-- Primary Image Upload Section -->
                         <div class="mb-4">
                             <label for="image" class="form-label fw-bold">
@@ -238,6 +261,87 @@
                     </form>
                 </div>
             </div>
+            
+            <!-- Variant Management Section -->
+            {% if product %}
+            <div class="card border-0 shadow-sm rounded-4 mt-4" id="variants-section" style="display: {% if product.has_variants %}block{% else %}none{% endif %};">
+                <div class="card-header bg-gradient bg-opacity-10 border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0 fw-bold">
+                            <i class="fas fa-tags me-2"></i>Quản lý phân loại
+                        </h3>
+                        <a href="{% url 'add_variant' store.store_id product.product_id %}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i>Thêm phân loại
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    {% if variants %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Tên phân loại</th>
+                                        <th>Giá</th>
+                                        <th>Tồn kho</th>
+                                        <th>SKU</th>
+                                        <th>Trạng thái</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for variant in variants %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ variant.variant_name }}</strong>
+                                            {% if variant.image %}
+                                                <br><img src="{{ variant.image.url }}" alt="{{ variant.variant_name }}" class="img-thumbnail mt-1" style="max-height: 50px;">
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ variant.price|floatformat:0 }} VNĐ</td>
+                                        <td>
+                                            {% if variant.stock > 0 %}
+                                                <span class="badge bg-success">{{ variant.stock }}</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Hết hàng</span>
+                                            {% endif %}
+                                        </td>
+                                        <td><code>{{ variant.sku_code|default:"-" }}</code></td>
+                                        <td>
+                                            {% if variant.is_active %}
+                                                <span class="badge bg-success">Hoạt động</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Tạm ngưng</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'edit_variant' store.store_id product.product_id variant.variant_id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form method="post" action="{% url 'delete_variant' store.store_id product.product_id variant.variant_id %}" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa phân loại này?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-tags fa-3x mb-3"></i>
+                            <p>Chưa có phân loại nào. Hãy thêm phân loại đầu tiên!</p>
+                            <a href="{% url 'add_variant' store.store_id product.product_id %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>Thêm phân loại
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
         </div>
         
         <!-- Image Preview -->
@@ -298,6 +402,22 @@ document.getElementById('image').addEventListener('change', function(e) {
                 </div>
             </div>
         `;
+    }
+});
+
+// Toggle variants section visibility
+document.addEventListener('DOMContentLoaded', function() {
+    const hasVariantsCheckbox = document.getElementById('has_variants');
+    const variantsSection = document.getElementById('variants-section');
+    
+    if (hasVariantsCheckbox && variantsSection) {
+        hasVariantsCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                variantsSection.style.display = 'block';
+            } else {
+                variantsSection.style.display = 'none';
+            }
+        });
     }
 });
 </script>

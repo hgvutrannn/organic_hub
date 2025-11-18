@@ -13,13 +13,13 @@ from .models import (
     CustomUser, Product, 
     Category, CartItem, Order, OrderItem, Review, Address, Store, 
     ProductImage, StoreCertification, StoreVerificationRequest,
-    ProductComment, ReviewMedia, StoreReviewStats
+    ProductComment, ReviewMedia, StoreReviewStats, ProductVariant
 )
 from .forms import (
     CustomUserRegistrationForm, LoginForm, ProductForm, AddressForm, ReviewForm, SearchForm, ProfileUpdateForm,
     StoreCertificationForm, AdminStoreReviewForm, PasswordChangeForm, ForgotPasswordForm, 
     PasswordResetConfirmForm, OTPVerificationForm,
-    ProductCommentForm, ProductCommentReplyForm, ReviewReplyForm, StoreReviewFilterForm
+    ProductCommentForm, ProductCommentReplyForm, ReviewReplyForm, StoreReviewFilterForm, ProductVariantForm
 )
 from chat.models import Message
 from notifications.tasks import create_order_status_notifications
@@ -252,16 +252,65 @@ def product_detail(request, product_id):
     product.view_count += 1
     product.save()
     
+    # Lấy variants nếu có
+    variants = []
+    default_variant = None
+    
+    if product.has_variants:
+        variants_queryset = ProductVariant.objects.filter(product=product, is_active=True).order_by('sort_order', 'created_at')
+        if variants_queryset.exists():
+            variants = list(variants_queryset)
+            default_variant = variants[0]  # Lấy variant đầu tiên làm mặc định
+    
+    # Tạo danh sách hình ảnh bao gồm cả hình variants
+    gallery_images = []
+    image_index = 1
+    
+    # Thêm hình chính của sản phẩm (nếu có)
+    if product.image:
+        gallery_images.append({
+            'type': 'product',
+            'url': product.image.url,
+            'alt': product.name,
+            'index': image_index,
+        })
+        image_index += 1
+    
+    # Thêm các hình trong gallery của sản phẩm
+    for img in product.images.all().order_by('order', 'created_at'):
+        gallery_images.append({
+            'type': 'product',
+            'url': img.image.url,
+            'alt': img.alt_text or product.name,
+            'index': image_index,
+        })
+        image_index += 1
+    
+    # Thêm hình của các variants (chỉ variant có hình riêng)
+    variant_images_map = {}  # Map để tìm variant từ image index
+    for variant in variants:
+        if variant.image:
+            gallery_images.append({
+                'type': 'variant',
+                'url': variant.image.url,
+                'alt': f"{product.name} - {variant.variant_name}",
+                'index': image_index,
+                'variant_id': variant.variant_id,
+                'variant_name': variant.variant_name,
+            })
+            variant_images_map[image_index] = variant.variant_id
+            image_index += 1
+    
     # Lấy đánh giá
     reviews = Review.objects.filter(product=product, is_approved=True).select_related('user').prefetch_related('media_files').order_by('-created_at')
     
-    # Check if user can comment
-    can_comment = can_comment_product(request.user, product) if request.user.is_authenticated else False
-    
     context = {
         'product': product,
+        'variants': variants,
+        'default_variant': default_variant,
+        'gallery_images': gallery_images,
+        'variant_images_map': variant_images_map,
         'reviews': reviews,
-        'can_comment': can_comment,
     }
     return render(request, 'core/product_detail.html', context)
 
@@ -286,10 +335,20 @@ def add_to_cart(request, product_id):
     """Thêm sản phẩm vào giỏ hàng"""
     product = get_object_or_404(Product, pk=product_id, is_active=True)
     quantity = int(request.POST.get('quantity', 1))
+    variant_id = request.POST.get('variant_id')
+    
+    variant = None
+    if variant_id:
+        variant = get_object_or_404(ProductVariant, pk=variant_id, product=product, is_active=True)
+        # Check stock
+        if variant.stock < quantity:
+            messages.error(request, f'Chỉ còn {variant.stock} sản phẩm trong kho.')
+            return redirect('product_detail', product_id=product_id)
     
     cart_item, created = CartItem.objects.get_or_create(
         user=request.user,
         product=product,
+        variant=variant,
         defaults={'quantity': quantity}
     )
     
@@ -374,8 +433,9 @@ def checkout(request):
             OrderItem.objects.create(
                 order=order,
                 product=cart_item.product,
+                variant=cart_item.variant,
                 quantity=cart_item.quantity,
-                unit_price=cart_item.product.price,
+                unit_price=cart_item.unit_price,
                 total_price=cart_item.total_price
             )
         
@@ -609,6 +669,8 @@ def add_product(request, store_id):
         if form.is_valid():
             product = form.save(commit=False)
             product.store = store
+            has_variants = form.cleaned_data.get('has_variants', False)
+            product.has_variants = has_variants
             product.save()
             
             # Handle multiple gallery images
@@ -620,6 +682,11 @@ def add_product(request, store_id):
                     alt_text=f"{product.name} - Hình {i+1}",
                     order=i
                 )
+            
+            # If has_variants is enabled, redirect to add variant page
+            if has_variants:
+                messages.success(request, f'Đã thêm sản phẩm "{product.name}" thành công! Vui lòng thêm phân loại đầu tiên.')
+                return redirect('add_variant', store_id=store.store_id, product_id=product.product_id)
             
             messages.success(request, f'Đã thêm sản phẩm "{product.name}" thành công!')
             return redirect('store_products', store_id=store.store_id)
@@ -651,6 +718,27 @@ def edit_product(request, store_id, product_id):
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES, instance=product)
         if form.is_valid():
+            has_variants = form.cleaned_data.get('has_variants', False)
+            
+            # If enabling has_variants and no variants exist, redirect to add variant
+            if has_variants and not product.variants.exists():
+                form.save()
+                # Handle additional gallery images
+                gallery_images = request.FILES.getlist('gallery_images')
+                if gallery_images:
+                    # Get current max order
+                    max_order = product.images.aggregate(Max('order'))['order__max'] or -1
+                    
+                    for i, image in enumerate(gallery_images[:10]):  # Limit to 10 images
+                        ProductImage.objects.create(
+                            product=product,
+                            image=image,
+                            alt_text=f"{product.name} - Hình {max_order + i + 2}",
+                            order=max_order + i + 1
+                        )
+                messages.success(request, f'Đã cập nhật sản phẩm "{product.name}" thành công! Vui lòng thêm phân loại đầu tiên.')
+                return redirect('add_variant', store_id=store.store_id, product_id=product.product_id)
+            
             form.save()
             
             # Handle additional gallery images
@@ -675,13 +763,167 @@ def edit_product(request, store_id, product_id):
         form = ProductForm(instance=product)
     
     categories = Category.objects.all()
+    variants = ProductVariant.objects.filter(product=product).order_by('sort_order', 'created_at')
     context = {
         'store': store,
         'product': product,
         'categories': categories,
         'form': form,
+        'variants': variants,
     }
     return render(request, 'core/store/product_form.html', context)
+
+
+# Variant Management Views
+@login_required
+def get_variant_info(request, variant_id):
+    """AJAX endpoint để lấy thông tin variant"""
+    variant = get_object_or_404(ProductVariant, pk=variant_id, is_active=True)
+    
+    return JsonResponse({
+        'success': True,
+        'variant_id': variant.variant_id,
+        'variant_name': variant.variant_name,
+        'price': str(variant.price),
+        'stock': variant.stock,
+        'image_url': variant.display_image.url if variant.display_image else None,
+        'is_in_stock': variant.is_in_stock,
+    })
+
+
+@login_required
+def get_product_variants(request, product_id):
+    """AJAX endpoint để lấy danh sách variants của sản phẩm"""
+    product = get_object_or_404(Product, pk=product_id, is_active=True)
+    
+    if not product.has_variants:
+        return JsonResponse({'success': False, 'message': 'Sản phẩm không có phân loại'})
+    
+    variants = ProductVariant.objects.filter(product=product, is_active=True).order_by('sort_order', 'created_at')
+    variants_data = []
+    
+    for variant in variants:
+        variants_data.append({
+            'variant_id': variant.variant_id,
+            'variant_name': variant.variant_name,
+            'price': str(variant.price),
+            'stock': variant.stock,
+            'image_url': variant.display_image.url if variant.display_image else None,
+            'is_in_stock': variant.is_in_stock,
+        })
+    
+    return JsonResponse({
+        'success': True,
+        'variants': variants_data,
+    })
+
+
+@login_required
+def add_variant(request, store_id, product_id):
+    """Thêm variant mới cho sản phẩm"""
+    store = get_object_or_404(Store, store_id=store_id, user=request.user)
+    product = get_object_or_404(Product, pk=product_id, store=store)
+    
+    if request.method == 'POST':
+        form = ProductVariantForm(request.POST, request.FILES, product=product)
+        if form.is_valid():
+            variant = form.save(commit=False)
+            variant.product = product
+            
+            # Auto-generate SKU if not provided
+            if not variant.sku_code:
+                import uuid
+                variant.sku_code = f"{product.SKU or product.product_id}-{uuid.uuid4().hex[:8].upper()}"
+            
+            variant.save()
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Đã thêm phân loại thành công',
+                    'variant_id': variant.variant_id,
+                })
+            
+            messages.success(request, f'Đã thêm phân loại "{variant.variant_name}" thành công!')
+            return redirect('edit_product', store_id=store.store_id, product_id=product.product_id)
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Dữ liệu không hợp lệ',
+                    'errors': form.errors,
+                })
+            messages.error(request, 'Vui lòng kiểm tra lại thông tin.')
+    else:
+        form = ProductVariantForm(product=product)
+    
+    context = {
+        'store': store,
+        'product': product,
+        'form': form,
+    }
+    return render(request, 'core/store/variant_form.html', context)
+
+
+@login_required
+def edit_variant(request, store_id, product_id, variant_id):
+    """Sửa variant"""
+    store = get_object_or_404(Store, store_id=store_id, user=request.user)
+    product = get_object_or_404(Product, pk=product_id, store=store)
+    variant = get_object_or_404(ProductVariant, pk=variant_id, product=product)
+    
+    if request.method == 'POST':
+        form = ProductVariantForm(request.POST, request.FILES, instance=variant, product=product)
+        if form.is_valid():
+            form.save()
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Đã cập nhật phân loại thành công',
+                })
+            
+            messages.success(request, f'Đã cập nhật phân loại "{variant.variant_name}" thành công!')
+            return redirect('edit_product', store_id=store.store_id, product_id=product.product_id)
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Dữ liệu không hợp lệ',
+                    'errors': form.errors,
+                })
+            messages.error(request, 'Vui lòng kiểm tra lại thông tin.')
+    else:
+        form = ProductVariantForm(instance=variant, product=product)
+    
+    context = {
+        'store': store,
+        'product': product,
+        'variant': variant,
+        'form': form,
+    }
+    return render(request, 'core/store/variant_form.html', context)
+
+
+@login_required
+@require_POST
+def delete_variant(request, store_id, product_id, variant_id):
+    """Xóa variant"""
+    store = get_object_or_404(Store, store_id=store_id, user=request.user)
+    product = get_object_or_404(Product, pk=product_id, store=store)
+    variant = get_object_or_404(ProductVariant, pk=variant_id, product=product)
+    
+    variant_name = variant.variant_name
+    variant.delete()
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': True,
+            'message': f'Đã xóa phân loại "{variant_name}" thành công',
+        })
+    
+    messages.success(request, f'Đã xóa phân loại "{variant_name}" thành công!')
+    return redirect('edit_product', store_id=store.store_id, product_id=product.product_id)
 
 
 @login_required

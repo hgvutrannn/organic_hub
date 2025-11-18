@@ -73,13 +73,13 @@
                             {% if product.get_primary_image %}
                                 <img src="{{ product.get_primary_image.url }}" 
                                      alt="{{ product.name }}" 
-                                     class="card-img-top" 
-                                     style="height: 200px; object-fit: cover;">
+                                     class="card-img-top square-image" 
+                                     style="width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: center;">
                             {% else %}
                                 <img src="/static/images/no-image.jpg" 
                                      alt="{{ product.name }}" 
-                                     class="card-img-top" 
-                                     style="height: 200px; object-fit: cover;">
+                                     class="card-img-top square-image" 
+                                     style="width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: center;">
                             {% endif %}
                             
                             <!-- Status Badge -->

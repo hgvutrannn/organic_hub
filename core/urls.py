@@ -14,6 +14,10 @@ urlpatterns = [
     path('products/', views.product_list, name='product_list'),
     path('products/<int:product_id>/', views.product_detail, name='product_detail'),
     
+    # Product Variants
+    path('products/<int:product_id>/variants/', views.get_product_variants, name='get_product_variants'),
+    path('variants/<int:variant_id>/info/', views.get_variant_info, name='get_variant_info'),
+    
     # Product Comments
     path('products/<int:product_id>/comments/', views.get_product_comments, name='product_comments'),
     path('products/<int:product_id>/comments/add/', views.add_product_comment, name='add_product_comment'),
@@ -45,6 +49,9 @@ urlpatterns = [
     path('store/<int:store_id>/products/', views.store_products, name='store_products'),
     path('store/<int:store_id>/products/add/', views.add_product, name='add_product'),
     path('store/<int:store_id>/products/<int:product_id>/edit/', views.edit_product, name='edit_product'),
+    path('store/<int:store_id>/products/<int:product_id>/variants/add/', views.add_variant, name='add_variant'),
+    path('store/<int:store_id>/products/<int:product_id>/variants/<int:variant_id>/edit/', views.edit_variant, name='edit_variant'),
+    path('store/<int:store_id>/products/<int:product_id>/variants/<int:variant_id>/delete/', views.delete_variant, name='delete_variant'),
     path('store/<int:store_id>/orders/', views.store_orders, name='store_orders'),
     path('store/<int:store_id>/orders/<int:order_id>/', views.store_order_detail, name='store_order_detail'),
     path('store/<int:store_id>/verification/', views.verification_status, name='verification_status'),

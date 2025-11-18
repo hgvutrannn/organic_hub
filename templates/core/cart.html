@@ -56,6 +56,11 @@
                                                 {{ item.product.name }}
                                             </a>
                                         </h5>
+                                        {% if item.variant %}
+                                            <p class="text-primary small mb-1">
+                                                <i class="fas fa-tag me-1"></i>{{ item.variant.variant_name }}
+                                            </p>
+                                        {% endif %}
                                         <p class="text-muted small mb-1">
                                             <i class="fas fa-store me-1"></i>{{ item.product.store.store_name }}
                                         </p>
@@ -67,7 +72,7 @@
                                     <!-- Price -->
                                     <div class="col-md-2 text-center">
                                         <span class="h6 fw-bold text-success">
-                                            {{ item.product.price|floatformat:0 }} VNĐ
+                                            {{ item.unit_price|floatformat:0 }} VNĐ
                                         </span>
                                         <small class="text-muted d-block">/ {{ item.product.base_unit }}</small>
                                     </div>

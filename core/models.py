@@ -259,6 +259,9 @@ class Product(models.Model):
     image = models.ImageField(upload_to='products/', null=True, blank=True, verbose_name='Ảnh sản phẩm chính')
     view_count = models.PositiveIntegerField(default=0, verbose_name='Số lượt xem')
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
+    
+    # Variant support fields
+    has_variants = models.BooleanField(default=False, verbose_name='Có phân loại')
 
     class Meta:
         verbose_name = 'Sản phẩm'
@@ -275,6 +278,27 @@ class Product(models.Model):
         first_image = self.images.first()
         if first_image:
             return first_image.image
+        return None
+    
+    @property
+    def min_price(self):
+        """Lấy giá thấp nhất từ variants hoặc giá sản phẩm"""
+        if self.has_variants and self.variants.exists():
+            return min(v.price for v in self.variants.filter(is_active=True))
+        return self.price
+    
+    @property
+    def max_price(self):
+        """Lấy giá cao nhất từ variants hoặc giá sản phẩm"""
+        if self.has_variants and self.variants.exists():
+            return max(v.price for v in self.variants.filter(is_active=True))
+        return self.price
+    
+    @property
+    def default_variant(self):
+        """Lấy variant mặc định (variant đầu tiên hoặc variant có giá thấp nhất)"""
+        if self.has_variants and self.variants.exists():
+            return self.variants.filter(is_active=True).order_by('sort_order', 'price').first()
         return None
 
 
@@ -296,25 +320,88 @@ class ProductImage(models.Model):
         return f"{self.product.name} - {self.alt_text or 'Image'}"
 
 
+# Product Variant Model (SKU)
+class ProductVariant(models.Model):
+    variant_id = models.AutoField(primary_key=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants', verbose_name='Sản phẩm')
+    variant_name = models.CharField(max_length=255, verbose_name='Tên phân loại', help_text='Ví dụ: 500g, 1kg, Size M - Màu Đỏ')
+    variant_description = models.TextField(blank=True, null=True, verbose_name='Mô tả phân loại')
+    sku_code = models.CharField(max_length=255, unique=True, blank=True, null=True, verbose_name='Mã SKU')
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Giá')
+    stock = models.IntegerField(default=0, verbose_name='Số lượng tồn kho')
+    image = models.ImageField(upload_to='products/variants/', null=True, blank=True, verbose_name='Hình ảnh phân loại')
+    attributes = models.JSONField(blank=True, null=True, verbose_name='Thuộc tính', help_text='Ví dụ: {"Size": "M", "Color": "Đỏ"}')
+    is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
+    sort_order = models.IntegerField(default=0, verbose_name='Thứ tự hiển thị')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
+
+    class Meta:
+        verbose_name = 'Phân loại sản phẩm'
+        verbose_name_plural = 'Phân loại sản phẩm'
+        ordering = ['sort_order', 'created_at']
+
+    def __str__(self):
+        return f"{self.product.name} - {self.variant_name}"
+    
+    def save(self, *args, **kwargs):
+        """Tự động bật has_variants cho product khi tạo variant"""
+        super().save(*args, **kwargs)
+        # Tự động bật has_variants nếu chưa bật
+        if not self.product.has_variants:
+            self.product.has_variants = True
+            self.product.save(update_fields=['has_variants'])
+    
+    def delete(self, *args, **kwargs):
+        """Tự động tắt has_variants nếu không còn variants"""
+        product = self.product
+        super().delete(*args, **kwargs)
+        # Nếu không còn variants nào, tắt has_variants
+        if not product.variants.exists():
+            product.has_variants = False
+            product.save(update_fields=['has_variants'])
+    
+    @property
+    def display_image(self):
+        """Lấy hình ảnh của variant hoặc hình ảnh mặc định của product"""
+        if self.image:
+            return self.image
+        return self.product.get_primary_image
+    
+    @property
+    def is_in_stock(self):
+        """Kiểm tra còn hàng"""
+        return self.stock > 0
+
+
 # Cart Item Model
 class CartItem(models.Model):
     cart_item_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='cart_items', verbose_name='Người dùng')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='cart_items', verbose_name='Sản phẩm')
+    variant = models.ForeignKey('ProductVariant', on_delete=models.CASCADE, related_name='cart_items', null=True, blank=True, verbose_name='Phân loại')
     quantity = models.IntegerField(default=1, verbose_name='Số lượng')
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày thêm')
 
     class Meta:
         verbose_name = 'Mục giỏ hàng'
         verbose_name_plural = 'Các mục giỏ hàng'
-        unique_together = ('user', 'product')
+        unique_together = ('user', 'product', 'variant')
 
     def __str__(self):
-        return f"{self.quantity} x {self.product.name} by {self.user.phone_number}"
+        variant_str = f" - {self.variant.variant_name}" if self.variant else ""
+        return f"{self.quantity} x {self.product.name}{variant_str} by {self.user.phone_number}"
     
     @property
     def total_price(self):
-        return self.product.price * self.quantity
+        """Tính tổng giá dựa trên variant hoặc product"""
+        price = self.variant.price if self.variant else self.product.price
+        return price * self.quantity
+    
+    @property
+    def unit_price(self):
+        """Lấy đơn giá"""
+        return self.variant.price if self.variant else self.product.price
 
 
 # Order Model
@@ -377,6 +464,7 @@ class OrderItem(models.Model):
     order_item_id = models.AutoField(primary_key=True)
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='order_items', verbose_name='Đơn hàng')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='order_items', verbose_name='Sản phẩm')
+    variant = models.ForeignKey('ProductVariant', on_delete=models.SET_NULL, null=True, blank=True, related_name='order_items', verbose_name='Phân loại')
     quantity = models.IntegerField(verbose_name='Số lượng')
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Đơn giá')
     total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Thành tiền')
@@ -386,9 +474,16 @@ class OrderItem(models.Model):
         verbose_name_plural = 'Chi tiết đơn hàng'
     
     def __str__(self):
-        return f"{self.quantity} x {self.product.name} trong đơn hàng #{self.order.order_id}"
+        variant_str = f" - {self.variant.variant_name}" if self.variant else ""
+        return f"{self.quantity} x {self.product.name}{variant_str} trong đơn hàng #{self.order.order_id}"
     
     def save(self, *args, **kwargs):
+        # Nếu chưa có unit_price, lấy từ variant hoặc product
+        if not self.unit_price:
+            if self.variant:
+                self.unit_price = self.variant.price
+            else:
+                self.unit_price = self.product.price
         self.total_price = self.quantity * self.unit_price
         super().save(*args, **kwargs)
 

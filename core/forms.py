@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
-from .models import CustomUser, Product, Order, Review, Address, ProductImage, StoreCertification, ProductComment, OrderItem
+from .models import CustomUser, Product, Order, Review, Address, ProductImage, StoreCertification, ProductComment, OrderItem, ProductVariant
 
 
 class CustomUserRegistrationForm(UserCreationForm):
@@ -57,9 +57,16 @@ class ProfileUpdateForm(forms.ModelForm):
 
 
 class ProductForm(forms.ModelForm):
+    has_variants = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'has_variants'}),
+        label='Có phân loại sản phẩm',
+        help_text='Bật tính năng này nếu sản phẩm có nhiều phân loại với giá và hình ảnh khác nhau'
+    )
+    
     class Meta:
         model = Product
-        fields = ['name', 'description', 'price', 'base_unit', 'category', 'image']
+        fields = ['name', 'description', 'price', 'base_unit', 'category', 'image', 'has_variants']
         widgets = {
             'name': forms.TextInput(attrs={'placeholder': 'Tên sản phẩm', 'class': 'form-control form-control-lg rounded-3'}),
             'description': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Mô tả sản phẩm', 'class': 'form-control rounded-3'}),
@@ -75,6 +82,20 @@ class ProductForm(forms.ModelForm):
         self.fields['image'].required = False
         self.fields['category'].required = False
         self.fields['base_unit'].required = False
+        
+        # Disable has_variants checkbox if product has variants
+        if self.instance and self.instance.pk:
+            if self.instance.variants.exists():
+                self.fields['has_variants'].widget.attrs['disabled'] = True
+                self.fields['has_variants'].help_text = 'Không thể tắt chế độ phân loại khi còn phân loại. Vui lòng xóa hết phân loại trước.'
+    
+    def clean_has_variants(self):
+        """Prevent disabling has_variants if variants exist"""
+        has_variants = self.cleaned_data.get('has_variants')
+        if self.instance and self.instance.pk:
+            if not has_variants and self.instance.variants.exists():
+                raise forms.ValidationError('Không thể tắt chế độ phân loại khi còn phân loại. Vui lòng xóa hết phân loại trước.')
+        return has_variants
 
 
 class ProductImageForm(forms.ModelForm):
@@ -427,3 +448,89 @@ class StoreReviewFilterForm(forms.Form):
             'class': 'form-control'
         })
     )
+
+
+# Product Variant Forms
+class ProductVariantForm(forms.ModelForm):
+    class Meta:
+        model = ProductVariant
+        fields = ['variant_name', 'variant_description', 'sku_code', 'price', 'stock', 'image', 'attributes', 'is_active', 'sort_order']
+        widgets = {
+            'variant_name': forms.TextInput(attrs={
+                'placeholder': 'Tên phân loại (ví dụ: 500g, Size M - Màu Đỏ)',
+                'class': 'form-control'
+            }),
+            'variant_description': forms.Textarea(attrs={
+                'rows': 2,
+                'placeholder': 'Mô tả phân loại (tùy chọn)',
+                'class': 'form-control'
+            }),
+            'sku_code': forms.TextInput(attrs={
+                'placeholder': 'Mã SKU (tự động nếu để trống)',
+                'class': 'form-control'
+            }),
+            'price': forms.NumberInput(attrs={
+                'step': '0.01',
+                'class': 'form-control',
+                'required': True
+            }),
+            'stock': forms.NumberInput(attrs={
+                'min': '0',
+                'class': 'form-control'
+            }),
+            'image': forms.FileInput(attrs={
+                'accept': 'image/*',
+                'class': 'form-control'
+            }),
+            'attributes': forms.Textarea(attrs={
+                'rows': 2,
+                'placeholder': 'JSON: {"Size": "M", "Color": "Đỏ"}',
+                'class': 'form-control'
+            }),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'sort_order': forms.NumberInput(attrs={
+                'min': '0',
+                'class': 'form-control'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.product = kwargs.pop('product', None)
+        super().__init__(*args, **kwargs)
+        
+        # Convert JSONField to string for form display
+        if self.instance and self.instance.pk and self.instance.attributes:
+            import json
+            self.fields['attributes'].initial = json.dumps(self.instance.attributes, ensure_ascii=False, indent=2)
+        
+        # Make sku_code optional
+        self.fields['sku_code'].required = False
+        self.fields['image'].required = False
+        self.fields['attributes'].required = False
+        self.fields['variant_description'].required = False
+    
+    def clean_sku_code(self):
+        """Validate SKU code uniqueness"""
+        sku_code = self.cleaned_data.get('sku_code')
+        if sku_code:
+            # Check if SKU already exists for another variant
+            existing = ProductVariant.objects.filter(sku_code=sku_code)
+            if self.instance and self.instance.pk:
+                existing = existing.exclude(variant_id=self.instance.variant_id)
+            if existing.exists():
+                raise forms.ValidationError('Mã SKU này đã tồn tại.')
+        return sku_code
+    
+    def clean_attributes(self):
+        """Validate and parse JSON attributes"""
+        data = self.cleaned_data.get('attributes')
+        if data:
+            try:
+                import json
+                parsed = json.loads(data)
+                if not isinstance(parsed, dict):
+                    raise forms.ValidationError('Thuộc tính phải là một object JSON.')
+                return parsed
+            except json.JSONDecodeError:
+                raise forms.ValidationError('JSON không hợp lệ. Vui lòng kiểm tra lại định dạng.')
+        return None
