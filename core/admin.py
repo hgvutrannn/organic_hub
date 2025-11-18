@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import (
     CustomUser, Category, Address, Store, Product, CartItem, 
-    Order, OrderItem, Review
+    Order, OrderItem, Review, ProductComment, ReviewMedia, StoreReviewStats
 )
 
 
@@ -77,11 +77,52 @@ class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemInline]
 
 
+class ReviewMediaInline(admin.TabularInline):
+    model = ReviewMedia
+    extra = 0
+    readonly_fields = ('created_at',)
+
+
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
-    list_display = ('user', 'product', 'rating', 'title', 'is_approved', 'created_at')
+    list_display = ('user', 'product', 'rating', 'content_preview', 'has_seller_reply', 'is_approved', 'created_at')
     list_filter = ('rating', 'is_approved', 'is_verified_purchase', 'created_at')
-    search_fields = ('user__phone_number', 'product__name', 'title')
+    search_fields = ('user__phone_number', 'product__name', 'content')
+    list_select_related = ('user', 'product', 'order_item')
+    inlines = [ReviewMediaInline]
+    
+    def content_preview(self, obj):
+        """Preview of review content"""
+        return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
+    content_preview.short_description = 'Nội dung'
+
+
+@admin.register(ProductComment)
+class ProductCommentAdmin(admin.ModelAdmin):
+    list_display = ('user', 'product', 'content_preview', 'has_seller_reply', 'is_approved', 'created_at')
+    list_filter = ('is_approved', 'created_at')
+    search_fields = ('user__phone_number', 'product__name', 'content')
     list_select_related = ('user', 'product')
+    
+    def content_preview(self, obj):
+        """Preview of comment content"""
+        return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
+    content_preview.short_description = 'Nội dung'
+
+
+@admin.register(ReviewMedia)
+class ReviewMediaAdmin(admin.ModelAdmin):
+    list_display = ('review', 'media_type', 'order', 'created_at')
+    list_filter = ('media_type', 'created_at')
+    search_fields = ('review__product__name',)
+    list_select_related = ('review',)
+
+
+@admin.register(StoreReviewStats)
+class StoreReviewStatsAdmin(admin.ModelAdmin):
+    list_display = ('store', 'avg_rating_30d', 'total_reviews_30d', 'good_reviews_count', 'negative_reviews_count', 'last_accessed_at')
+    list_filter = ('last_accessed_at',)
+    search_fields = ('store__store_name',)
+    readonly_fields = ('total_reviews_30d', 'avg_rating_30d', 'good_reviews_count', 'negative_reviews_count', 'updated_at')
 
 

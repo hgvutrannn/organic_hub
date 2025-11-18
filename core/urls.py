@@ -14,6 +14,11 @@ urlpatterns = [
     path('products/', views.product_list, name='product_list'),
     path('products/<int:product_id>/', views.product_detail, name='product_detail'),
     
+    # Product Comments
+    path('products/<int:product_id>/comments/', views.get_product_comments, name='product_comments'),
+    path('products/<int:product_id>/comments/add/', views.add_product_comment, name='add_product_comment'),
+    path('comments/<int:comment_id>/reply/', views.add_comment_reply, name='add_comment_reply'),
+    
     # Cart
     path('cart/', views.cart, name='cart'),
     path('add-to-cart/<int:product_id>/', views.add_to_cart, name='add_to_cart'),
@@ -24,6 +29,11 @@ urlpatterns = [
     path('checkout/', views.checkout, name='checkout'),
     path('orders/', views.order_list, name='orders'),
     path('orders/<int:order_id>/', views.order_detail, name='order_detail'),
+    
+    # Reviews
+    path('orders/<int:order_id>/review/<int:order_item_id>/', views.create_review, name='create_review'),
+    path('reviews/<int:review_id>/reply/', views.add_review_reply, name='add_review_reply'),
+    path('products/<int:product_id>/reviews/', views.get_reviews_for_product, name='get_reviews_for_product'),
     
     # Profile
     path('profile/', views.profile, name='profile'),
@@ -39,6 +49,8 @@ urlpatterns = [
     path('store/<int:store_id>/orders/<int:order_id>/', views.store_order_detail, name='store_order_detail'),
     path('store/<int:store_id>/verification/', views.verification_status, name='verification_status'),
     path('store/<int:store_id>/verification/management/', views.verification_management, name='verification_management'),
+    path('store/<int:store_id>/reviews/', views.store_review_dashboard, name='store_review_dashboard'),
+    path('store/<int:store_id>/reviews/list/', views.store_review_list, name='store_review_list'),
     
     # Admin URLs
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),

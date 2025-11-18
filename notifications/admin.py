@@ -9,3 +9,4 @@ class NotificationAdmin(admin.ModelAdmin):
     list_filter = ('category', 'severity', 'is_read', 'created_at')
     search_fields = ('recipient__phone_number', 'recipient__email', 'message')
     autocomplete_fields = ('recipient', 'order')
+

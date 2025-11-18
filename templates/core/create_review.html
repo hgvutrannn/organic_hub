@@ -1,0 +1,72 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Đánh giá sản phẩm - Organic Hub{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <h2><i class="fas fa-star"></i> Đánh giá sản phẩm</h2>
+                <a href="{% url 'order_detail' order.order_id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Quay lại đơn hàng
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">{{ order_item.product.name }}</h4>
+                    <small class="text-muted">Đơn hàng #{{ order.order_id }}</small>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Đánh giá (sao)</label>
+                            {{ form.rating }}
+                            {% if form.rating.errors %}
+                                <div class="text-danger">{{ form.rating.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Nội dung đánh giá</label>
+                            {{ form.content }}
+                            {% if form.content.errors %}
+                                <div class="text-danger">{{ form.content.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Hình ảnh (có thể chọn nhiều)</label>
+                            <input type="file" name="images" class="form-control" accept="image/*" multiple>
+                            <small class="text-muted">Có thể upload nhiều hình ảnh</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Video (có thể chọn nhiều)</label>
+                            <input type="file" name="videos" class="form-control" accept="video/*" multiple>
+                            <small class="text-muted">Có thể upload nhiều video</small>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Gửi đánh giá
+                            </button>
+                            <a href="{% url 'order_detail' order.order_id %}" class="btn btn-outline-secondary">
+                                Hủy
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

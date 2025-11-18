@@ -399,6 +399,7 @@ class Review(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='reviews', verbose_name='Người dùng')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews', verbose_name='Sản phẩm')
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='reviews', verbose_name='Đơn hàng', null=True, blank=True)
+    order_item = models.ForeignKey('OrderItem', on_delete=models.CASCADE, related_name='reviews', verbose_name='Chi tiết đơn hàng', null=True, blank=True)
     
     rating = models.IntegerField(verbose_name='Đánh giá', choices=[
         (1, '1 sao'),
@@ -407,8 +408,10 @@ class Review(models.Model):
         (4, '4 sao'),
         (5, '5 sao'),
     ])
-    title = models.CharField(max_length=255, verbose_name='Tiêu đề đánh giá')
     content = models.TextField(verbose_name='Nội dung đánh giá')
+    
+    seller_reply = models.TextField(blank=True, null=True, verbose_name='Phản hồi của cửa hàng')
+    seller_replied_at = models.DateTimeField(null=True, blank=True, verbose_name='Thời gian phản hồi')
     
     is_verified_purchase = models.BooleanField(default=True, verbose_name='Xác minh mua hàng')
     is_approved = models.BooleanField(default=True, verbose_name='Đã duyệt')
@@ -419,10 +422,85 @@ class Review(models.Model):
     class Meta:
         verbose_name = 'Đánh giá sản phẩm'
         verbose_name_plural = 'Đánh giá sản phẩm'
-        unique_together = ('user', 'product')
+        unique_together = ('user', 'order_item')
         ordering = ['-created_at']
     
     def __str__(self):
         return f"Đánh giá {self.rating} sao cho {self.product.name} bởi {self.user.phone_number}"
+    
+    @property
+    def has_seller_reply(self):
+        """Check if review has seller reply"""
+        return bool(self.seller_reply)
+
+
+# Review Media Model
+class ReviewMedia(models.Model):
+    MEDIA_TYPE_CHOICES = [
+        ('image', 'Hình ảnh'),
+        ('video', 'Video'),
+    ]
+    
+    media_id = models.AutoField(primary_key=True)
+    review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name='media_files', verbose_name='Đánh giá')
+    file = models.FileField(upload_to='reviews/media/', verbose_name='File')
+    media_type = models.CharField(max_length=10, choices=MEDIA_TYPE_CHOICES, verbose_name='Loại media')
+    order = models.PositiveIntegerField(default=0, verbose_name='Thứ tự')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
+    
+    class Meta:
+        verbose_name = 'Media đánh giá'
+        verbose_name_plural = 'Media đánh giá'
+        ordering = ['order', 'created_at']
+    
+    def __str__(self):
+        return f"{self.get_media_type_display()} cho review #{self.review.review_id}"
+
+
+# Product Comment Model
+class ProductComment(models.Model):
+    comment_id = models.AutoField(primary_key=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='comments', verbose_name='Sản phẩm')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='product_comments', verbose_name='Người dùng')
+    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, related_name='comments', verbose_name='Chi tiết đơn hàng', null=True, blank=True)
+    content = models.TextField(verbose_name='Nội dung bình luận')
+    
+    seller_reply = models.TextField(blank=True, null=True, verbose_name='Phản hồi của cửa hàng')
+    seller_replied_at = models.DateTimeField(null=True, blank=True, verbose_name='Thời gian phản hồi')
+    
+    is_approved = models.BooleanField(default=True, verbose_name='Đã duyệt')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
+    
+    class Meta:
+        verbose_name = 'Bình luận sản phẩm'
+        verbose_name_plural = 'Bình luận sản phẩm'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Bình luận của {self.user.full_name} cho {self.product.name}"
+    
+    @property
+    def has_seller_reply(self):
+        """Check if comment has seller reply"""
+        return bool(self.seller_reply)
+
+
+# Store Review Stats Model - Cache thống kê
+class StoreReviewStats(models.Model):
+    store = models.OneToOneField(Store, on_delete=models.CASCADE, related_name='review_stats', verbose_name='Cửa hàng')
+    last_accessed_at = models.DateTimeField(null=True, blank=True, verbose_name='Lần truy cập cuối')
+    total_reviews_30d = models.IntegerField(default=0, verbose_name='Tổng đánh giá 30 ngày')
+    avg_rating_30d = models.DecimalField(max_digits=3, decimal_places=2, default=0.00, verbose_name='Đánh giá trung bình 30 ngày')
+    good_reviews_count = models.IntegerField(default=0, verbose_name='Số đánh giá tốt (4-5 sao)')
+    negative_reviews_count = models.IntegerField(default=0, verbose_name='Số đánh giá tiêu cực (1-2 sao)')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
+    
+    class Meta:
+        verbose_name = 'Thống kê đánh giá cửa hàng'
+        verbose_name_plural = 'Thống kê đánh giá cửa hàng'
+    
+    def __str__(self):
+        return f"Thống kê đánh giá cho {self.store.store_name}"
 
 

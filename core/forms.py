@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
-from .models import CustomUser, Product, Order, Review, Address, ProductImage, StoreCertification
+from .models import CustomUser, Product, Order, Review, Address, ProductImage, StoreCertification, ProductComment, OrderItem
 
 
 class CustomUserRegistrationForm(UserCreationForm):
@@ -110,11 +110,13 @@ class AddressForm(forms.ModelForm):
 class ReviewForm(forms.ModelForm):
     class Meta:
         model = Review
-        fields = ['rating', 'title', 'content']
+        fields = ['rating', 'content']
         widgets = {
-            'title': forms.TextInput(attrs={'placeholder': 'Tiêu đề đánh giá'}),
-            'content': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Nội dung đánh giá'}),
+            'rating': forms.Select(attrs={'class': 'form-select'}),
+            'content': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Nội dung đánh giá', 'class': 'form-control'}),
         }
+    
+    # Note: Multiple file uploads (images/videos) will be handled in views using request.FILES.getlist()
 
 
 
@@ -317,3 +319,111 @@ class OTPVerificationForm(forms.Form):
         if otp_code and not otp_code.isdigit():
             raise forms.ValidationError('Mã OTP chỉ chứa số.')
         return otp_code
+
+
+# Product Comment Forms
+class ProductCommentForm(forms.ModelForm):
+    class Meta:
+        model = ProductComment
+        fields = ['content']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'rows': 3,
+                'placeholder': 'Viết bình luận của bạn...',
+                'class': 'form-control'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        self.product = kwargs.pop('product', None)
+        super().__init__(*args, **kwargs)
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.user and self.product:
+            # Check if user has purchased this product
+            from .models import OrderItem
+            has_purchased = OrderItem.objects.filter(
+                order__user=self.user,
+                product=self.product,
+                order__status='delivered'
+            ).exists()
+            if not has_purchased:
+                raise forms.ValidationError('Bạn cần mua sản phẩm này trước khi bình luận.')
+        return cleaned_data
+
+
+class ProductCommentReplyForm(forms.Form):
+    seller_reply = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'rows': 3,
+            'placeholder': 'Viết phản hồi của cửa hàng...',
+            'class': 'form-control'
+        }),
+        label='Phản hồi'
+    )
+
+
+# Review Forms
+class ReviewReplyForm(forms.Form):
+    seller_reply = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'rows': 3,
+            'placeholder': 'Viết phản hồi của cửa hàng...',
+            'class': 'form-control'
+        }),
+        label='Phản hồi'
+    )
+
+
+# Store Review Filter Form
+class StoreReviewFilterForm(forms.Form):
+    STATUS_CHOICES = [
+        ('all', 'Tất cả'),
+        ('needs_reply', 'Cần phản hồi'),
+        ('replied', 'Đã trả lời'),
+    ]
+    
+    status = forms.ChoiceField(
+        choices=STATUS_CHOICES,
+        required=False,
+        initial='all',
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    
+    rating = forms.MultipleChoiceField(
+        choices=[
+            (1, '1 sao'),
+            (2, '2 sao'),
+            (3, '3 sao'),
+            (4, '4 sao'),
+            (5, '5 sao'),
+        ],
+        required=False,
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'})
+    )
+    
+    product_name = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Tên sản phẩm',
+            'class': 'form-control'
+        })
+    )
+    
+    order_id = forms.IntegerField(
+        required=False,
+        widget=forms.NumberInput(attrs={
+            'placeholder': 'Mã đơn hàng',
+            'class': 'form-control'
+        })
+    )
+    
+    buyer_username = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Tên đăng nhập người mua',
+            'class': 'form-control'
+        })
+    )

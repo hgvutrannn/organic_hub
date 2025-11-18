@@ -12,15 +12,124 @@ from django.utils import timezone
 from .models import (
     CustomUser, Product, 
     Category, CartItem, Order, OrderItem, Review, Address, Store, 
-    ProductImage, StoreCertification, StoreVerificationRequest
+    ProductImage, StoreCertification, StoreVerificationRequest,
+    ProductComment, ReviewMedia, StoreReviewStats
 )
 from .forms import (
     CustomUserRegistrationForm, LoginForm, ProductForm, AddressForm, ReviewForm, SearchForm, ProfileUpdateForm,
     StoreCertificationForm, AdminStoreReviewForm, PasswordChangeForm, ForgotPasswordForm, 
-    PasswordResetConfirmForm, OTPVerificationForm
+    PasswordResetConfirmForm, OTPVerificationForm,
+    ProductCommentForm, ProductCommentReplyForm, ReviewReplyForm, StoreReviewFilterForm
 )
 from chat.models import Message
 from notifications.tasks import create_order_status_notifications
+from datetime import timedelta
+from django.db.models import Avg, Count, Q
+
+
+# Helper Functions for Permissions and Business Logic
+def has_user_purchased_product(user, product):
+    """Check if user has purchased a specific product"""
+    return OrderItem.objects.filter(
+        order__user=user,
+        product=product,
+        order__status='delivered'
+    ).exists()
+
+
+def get_user_purchased_products(user):
+    """Get list of products user has purchased"""
+    return Product.objects.filter(
+        order_items__order__user=user,
+        order_items__order__status='delivered'
+    ).distinct()
+
+
+def can_comment_product(user, product):
+    """Check if user can comment on a product"""
+    if not user.is_authenticated:
+        return False
+    return has_user_purchased_product(user, product)
+
+
+def can_reply_comment(user, comment):
+    """Check if user can reply to a comment (must be shop owner)"""
+    if not user.is_authenticated:
+        return False
+    return comment.product.store.user == user
+
+
+def can_create_review(user, order_item):
+    """Check if user can create review for an order item"""
+    if not user.is_authenticated:
+        return False
+    if order_item.order.user != user:
+        return False
+    if order_item.order.status != 'delivered':
+        return False
+    # Check if review already exists
+    return not Review.objects.filter(user=user, order_item=order_item).exists()
+
+
+def can_reply_review(user, review):
+    """Check if user can reply to a review (must be shop owner and not already replied)"""
+    if not user.is_authenticated:
+        return False
+    if review.product.store.user != user:
+        return False
+    return not review.has_seller_reply
+
+
+def update_store_review_stats(store):
+    """Update store review statistics"""
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    
+    # Get reviews in last 30 days
+    reviews_30d = Review.objects.filter(
+        product__store=store,
+        created_at__gte=thirty_days_ago,
+        is_approved=True
+    )
+    
+    total_reviews_30d = reviews_30d.count()
+    avg_rating_30d = reviews_30d.aggregate(Avg('rating'))['rating__avg'] or 0.00
+    good_reviews_count = reviews_30d.filter(rating__gte=4).count()
+    negative_reviews_count = reviews_30d.filter(rating__lte=2).count()
+    
+    # Get or create stats
+    stats, created = StoreReviewStats.objects.get_or_create(store=store)
+    stats.total_reviews_30d = total_reviews_30d
+    stats.avg_rating_30d = round(avg_rating_30d, 2)
+    stats.good_reviews_count = good_reviews_count
+    stats.negative_reviews_count = negative_reviews_count
+    stats.save()
+    
+    return stats
+
+
+def get_recent_reviews_since_last_access(store):
+    """Get reviews created since last access"""
+    stats, created = StoreReviewStats.objects.get_or_create(store=store)
+    
+    if stats.last_accessed_at:
+        return Review.objects.filter(
+            product__store=store,
+            created_at__gt=stats.last_accessed_at,
+            is_approved=True
+        ).order_by('-created_at')
+    else:
+        # If never accessed, return empty queryset
+        return Review.objects.none()
+
+
+def get_negative_reviews_needing_reply(store):
+    """Get negative reviews (1-2 stars) that need reply"""
+    return Review.objects.filter(
+        product__store=store,
+        rating__lte=2,
+        seller_reply__isnull=True,
+        is_approved=True
+    ).order_by('-created_at')
 
 
 # Home Page
@@ -144,11 +253,15 @@ def product_detail(request, product_id):
     product.save()
     
     # Lấy đánh giá
-    reviews = Review.objects.filter(product=product, is_approved=True).order_by('-created_at')
+    reviews = Review.objects.filter(product=product, is_approved=True).select_related('user').prefetch_related('media_files').order_by('-created_at')
+    
+    # Check if user can comment
+    can_comment = can_comment_product(request.user, product) if request.user.is_authenticated else False
     
     context = {
         'product': product,
         'reviews': reviews,
+        'can_comment': can_comment,
     }
     return render(request, 'core/product_detail.html', context)
 
@@ -296,8 +409,20 @@ def order_detail(request, order_id):
     """Chi tiết đơn hàng"""
     order = get_object_or_404(Order, pk=order_id, user=request.user)
     
+    # Get reviews for order items
+    order_items_with_reviews = []
+    for item in order.order_items.all():
+        review = Review.objects.filter(user=request.user, order_item=item).first()
+        can_review = can_create_review(request.user, item) if order.status == 'delivered' else False
+        order_items_with_reviews.append({
+            'item': item,
+            'review': review,
+            'can_review': can_review,
+        })
+    
     context = {
         'order': order,
+        'order_items_with_reviews': order_items_with_reviews,
     }
     return render(request, 'core/order_detail.html', context)
 
@@ -827,6 +952,341 @@ def admin_reject_store(request, store_id):
     
     messages.success(request, f'Đã từ chối cửa hàng "{store.store_name}"')
     return redirect('admin_store_detail', store_id=store.store_id)
+
+
+# Product Comment Views
+@login_required
+@require_POST
+def add_product_comment(request, product_id):
+    """Add a comment to a product"""
+    product = get_object_or_404(Product, pk=product_id, is_active=True)
+    
+    if not can_comment_product(request.user, product):
+        return JsonResponse({
+            'success': False,
+            'message': 'Bạn cần mua sản phẩm này trước khi bình luận.'
+        })
+    
+    # Get order_item for this product
+    order_item = OrderItem.objects.filter(
+        order__user=request.user,
+        product=product,
+        order__status='delivered'
+    ).first()
+    
+    form = ProductCommentForm(request.POST, user=request.user, product=product)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.product = product
+        comment.user = request.user
+        comment.order_item = order_item
+        comment.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Đã thêm bình luận thành công.',
+            'comment_id': comment.comment_id,
+            'user_name': comment.user.full_name,
+            'content': comment.content,
+            'created_at': comment.created_at.strftime('%d/%m/%Y %H:%M')
+        })
+    else:
+        return JsonResponse({
+            'success': False,
+            'message': 'Dữ liệu không hợp lệ.',
+            'errors': form.errors
+        })
+
+
+def get_product_comments(request, product_id):
+    """Get comments for a product (AJAX)"""
+    product = get_object_or_404(Product, pk=product_id, is_active=True)
+    comments = ProductComment.objects.filter(
+        product=product,
+        is_approved=True
+    ).select_related('user', 'product__store__user').order_by('-created_at')
+    
+    comments_data = []
+    for comment in comments:
+        comments_data.append({
+            'comment_id': comment.comment_id,
+            'user_name': comment.user.full_name,
+            'content': comment.content,
+            'created_at': comment.created_at.strftime('%d/%m/%Y %H:%M'),
+            'has_seller_reply': comment.has_seller_reply,
+            'seller_reply': comment.seller_reply,
+            'seller_replied_at': comment.seller_replied_at.strftime('%d/%m/%Y %H:%M') if comment.seller_replied_at else None,
+            'can_reply': can_reply_comment(request.user, comment) if request.user.is_authenticated else False,
+        })
+    
+    return JsonResponse({
+        'success': True,
+        'comments': comments_data,
+        'can_comment': can_comment_product(request.user, product) if request.user.is_authenticated else False
+    })
+
+
+@login_required
+@require_POST
+def add_comment_reply(request, comment_id):
+    """Add seller reply to a comment"""
+    comment = get_object_or_404(ProductComment, pk=comment_id)
+    
+    if not can_reply_comment(request.user, comment):
+        return JsonResponse({
+            'success': False,
+            'message': 'Bạn không có quyền phản hồi bình luận này.'
+        })
+    
+    if comment.has_seller_reply:
+        return JsonResponse({
+            'success': False,
+            'message': 'Bạn đã phản hồi bình luận này rồi.'
+        })
+    
+    form = ProductCommentReplyForm(request.POST)
+    if form.is_valid():
+        comment.seller_reply = form.cleaned_data['seller_reply']
+        comment.seller_replied_at = timezone.now()
+        comment.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Đã phản hồi bình luận thành công.',
+            'seller_reply': comment.seller_reply,
+            'seller_replied_at': comment.seller_replied_at.strftime('%d/%m/%Y %H:%M')
+        })
+    else:
+        return JsonResponse({
+            'success': False,
+            'message': 'Dữ liệu không hợp lệ.',
+            'errors': form.errors
+        })
+
+
+# Review Views
+@login_required
+def create_review(request, order_id, order_item_id):
+    """Create a review for an order item"""
+    order = get_object_or_404(Order, pk=order_id, user=request.user)
+    order_item = get_object_or_404(OrderItem, pk=order_item_id, order=order)
+    
+    if not can_create_review(request.user, order_item):
+        messages.error(request, 'Bạn không thể đánh giá sản phẩm này.')
+        return redirect('order_detail', order_id=order_id)
+    
+    if request.method == 'POST':
+        form = ReviewForm(request.POST, request.FILES)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.user = request.user
+            review.product = order_item.product
+            review.order = order
+            review.order_item = order_item
+            review.save()
+            
+            # Handle image uploads
+            images = request.FILES.getlist('images')
+            for idx, image in enumerate(images):
+                ReviewMedia.objects.create(
+                    review=review,
+                    file=image,
+                    media_type='image',
+                    order=idx
+                )
+            
+            # Handle video uploads
+            videos = request.FILES.getlist('videos')
+            for idx, video in enumerate(videos):
+                ReviewMedia.objects.create(
+                    review=review,
+                    file=video,
+                    media_type='video',
+                    order=len(images) + idx
+                )
+            
+            # Update store review stats
+            update_store_review_stats(order_item.product.store)
+            
+            messages.success(request, 'Đã tạo đánh giá thành công!')
+            return redirect('order_detail', order_id=order_id)
+        else:
+            messages.error(request, 'Vui lòng kiểm tra lại thông tin.')
+    else:
+        form = ReviewForm()
+    
+    context = {
+        'order': order,
+        'order_item': order_item,
+        'form': form,
+    }
+    return render(request, 'core/create_review.html', context)
+
+
+@login_required
+@require_POST
+def add_review_reply(request, review_id):
+    """Add seller reply to a review"""
+    review = get_object_or_404(Review, pk=review_id)
+    
+    if not can_reply_review(request.user, review):
+        return JsonResponse({
+            'success': False,
+            'message': 'Bạn không có quyền phản hồi đánh giá này hoặc đã phản hồi rồi.'
+        })
+    
+    form = ReviewReplyForm(request.POST)
+    if form.is_valid():
+        review.seller_reply = form.cleaned_data['seller_reply']
+        review.seller_replied_at = timezone.now()
+        review.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Đã phản hồi đánh giá thành công.',
+            'seller_reply': review.seller_reply,
+            'seller_replied_at': review.seller_replied_at.strftime('%d/%m/%Y %H:%M')
+        })
+    else:
+        return JsonResponse({
+            'success': False,
+            'message': 'Dữ liệu không hợp lệ.',
+            'errors': form.errors
+        })
+
+
+def get_reviews_for_product(request, product_id):
+    """Get reviews for a product (AJAX)"""
+    product = get_object_or_404(Product, pk=product_id, is_active=True)
+    reviews = Review.objects.filter(
+        product=product,
+        is_approved=True
+    ).select_related('user', 'product__store__user').prefetch_related('media_files').order_by('-created_at')
+    
+    reviews_data = []
+    for review in reviews:
+        media_data = []
+        for media in review.media_files.all():
+            media_data.append({
+                'media_id': media.media_id,
+                'file_url': media.file.url,
+                'media_type': media.media_type,
+            })
+        
+        reviews_data.append({
+            'review_id': review.review_id,
+            'user_name': review.user.full_name,
+            'rating': review.rating,
+            'content': review.content,
+            'created_at': review.created_at.strftime('%d/%m/%Y %H:%M'),
+            'has_seller_reply': review.has_seller_reply,
+            'seller_reply': review.seller_reply,
+            'seller_replied_at': review.seller_replied_at.strftime('%d/%m/%Y %H:%M') if review.seller_replied_at else None,
+            'media': media_data,
+            'can_reply': can_reply_review(request.user, review) if request.user.is_authenticated else False,
+        })
+    
+    return JsonResponse({
+        'success': True,
+        'reviews': reviews_data
+    })
+
+
+# Store Review Management Views
+@login_required
+def store_review_dashboard(request, store_id):
+    """Store review dashboard with statistics"""
+    store = get_object_or_404(Store, store_id=store_id, user=request.user)
+    
+    # Update stats
+    stats = update_store_review_stats(store)
+    
+    # Get recent reviews since last access
+    recent_reviews = get_recent_reviews_since_last_access(store)
+    
+    # Get negative reviews needing reply
+    negative_reviews = get_negative_reviews_needing_reply(store)
+    
+    # Calculate order review rate (reviews / total delivered orders)
+    from django.db.models import Count
+    total_delivered_orders = Order.objects.filter(
+        order_items__product__store=store,
+        status='delivered'
+    ).distinct().count()
+    
+    total_reviews = Review.objects.filter(
+        product__store=store,
+        is_approved=True
+    ).count()
+    
+    order_review_rate = (total_reviews / total_delivered_orders * 100) if total_delivered_orders > 0 else 0
+    
+    # Update last accessed time
+    stats.last_accessed_at = timezone.now()
+    stats.save()
+    
+    context = {
+        'store': store,
+        'stats': stats,
+        'recent_reviews': recent_reviews[:10],  # Limit to 10
+        'negative_reviews': negative_reviews[:10],  # Limit to 10
+        'order_review_rate': round(order_review_rate, 1),
+        'total_reviews': total_reviews,
+    }
+    return render(request, 'core/store/review_dashboard.html', context)
+
+
+@login_required
+def store_review_list(request, store_id):
+    """Store review list with filters"""
+    store = get_object_or_404(Store, store_id=store_id, user=request.user)
+    
+    # Get all reviews for this store
+    reviews = Review.objects.filter(
+        product__store=store,
+        is_approved=True
+    ).select_related('user', 'product', 'order').prefetch_related('media_files').order_by('-created_at')
+    
+    # Apply filters
+    filter_form = StoreReviewFilterForm(request.GET)
+    if filter_form.is_valid():
+        status = filter_form.cleaned_data.get('status')
+        ratings = filter_form.cleaned_data.get('rating')
+        product_name = filter_form.cleaned_data.get('product_name')
+        order_id = filter_form.cleaned_data.get('order_id')
+        buyer_username = filter_form.cleaned_data.get('buyer_username')
+        
+        if status == 'needs_reply':
+            reviews = reviews.filter(seller_reply__isnull=True)
+        elif status == 'replied':
+            reviews = reviews.filter(seller_reply__isnull=False)
+        
+        if ratings:
+            reviews = reviews.filter(rating__in=[int(r) for r in ratings])
+        
+        if product_name:
+            reviews = reviews.filter(product__name__icontains=product_name)
+        
+        if order_id:
+            reviews = reviews.filter(order__order_id=order_id)
+        
+        if buyer_username:
+            reviews = reviews.filter(
+                Q(user__full_name__icontains=buyer_username) |
+                Q(user__phone_number__icontains=buyer_username)
+            )
+    
+    # Pagination
+    paginator = Paginator(reviews, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'store': store,
+        'reviews': page_obj,
+        'filter_form': filter_form,
+    }
+    return render(request, 'core/store/review_list.html', context)
 
 
 # Password Change & Reset Views

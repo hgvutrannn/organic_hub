@@ -73,3 +73,4 @@ def mark_all_notifications_read(request):
     )
 
     return JsonResponse({'success': True, 'updated': updated})
+

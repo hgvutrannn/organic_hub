@@ -1,0 +1,147 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Quản lý đánh giá - {{ store.store_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h2><i class="fas fa-star"></i> Quản lý đánh giá</h2>
+                    <p class="text-muted mb-0">{{ store.store_name }}</p>
+                </div>
+                <a href="{% url 'store_dashboard' store.store_id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Về dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h3 class="text-primary">{{ stats.avg_rating_30d|floatformat:1 }}/5.0</h3>
+                    <p class="text-muted mb-0">Đánh giá trung bình<br>(30 ngày)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h3 class="text-info">{{ order_review_rate }}%</h3>
+                    <p class="text-muted mb-0">Tỷ lệ đánh giá<br>đơn hàng</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h3 class="text-success">{{ stats.good_reviews_count }}</h3>
+                    <p class="text-muted mb-0">Đánh giá tốt<br>(4-5 sao)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h3 class="text-danger">{{ stats.negative_reviews_count }}</h3>
+                    <p class="text-muted mb-0">Cần phản hồi<br>(1-2 sao)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Reviews -->
+    {% if recent_reviews %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-clock"></i> Đánh giá gần đây</h4>
+                    <small class="text-muted">Từ lần truy cập trước</small>
+                </div>
+                <div class="card-body">
+                    {% for review in recent_reviews %}
+                    <div class="border-bottom pb-3 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>{{ review.user.full_name }}</strong>
+                                <div class="mt-1">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= review.rating %}
+                                            <i class="fas fa-star text-warning"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-warning"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <p class="mb-1 mt-2">{{ review.content|truncatewords:20 }}</p>
+                                <small class="text-muted">{{ review.product.name }}</small>
+                            </div>
+                            <small class="text-muted">{{ review.created_at|date:"d/m/Y H:i" }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Negative Reviews Needing Reply -->
+    {% if negative_reviews %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Đánh giá tiêu cực cần phản hồi</h4>
+                </div>
+                <div class="card-body">
+                    {% for review in negative_reviews %}
+                    <div class="border-bottom pb-3 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>{{ review.user.full_name }}</strong>
+                                <div class="mt-1">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= review.rating %}
+                                            <i class="fas fa-star text-danger"></i>
+                                        {% else %}
+                                            <i class="far fa-star text-muted"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <p class="mb-1 mt-2">{{ review.content }}</p>
+                                <small class="text-muted">{{ review.product.name }} - Đơn hàng #{{ review.order.order_id }}</small>
+                            </div>
+                            <div>
+                                <small class="text-muted">{{ review.created_at|date:"d/m/Y H:i" }}</small>
+                                <a href="{% url 'store_review_list' store.store_id %}?status=needs_reply&rating={{ review.rating }}" class="btn btn-sm btn-outline-danger mt-2">
+                                    Phản hồi
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Link to Review List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="d-grid">
+                <a href="{% url 'store_review_list' store.store_id %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-list"></i> Xem tất cả đánh giá
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -177,6 +177,12 @@
                                 <i class="fas fa-shopping-cart me-2"></i>Xem đơn hàng
                             </a>
                         </div>
+                        <div class="col-md-6 col-lg-4">
+                            <a href="{% url 'store_review_dashboard' store.store_id %}" 
+                               class="btn btn-outline-warning btn-lg w-100 rounded-pill">
+                                <i class="fas fa-star me-2"></i>Quản lý đánh giá
+                            </a>
+                        </div>
                         {% if store.is_verified_status == 'verified' %}
                         <div class="col-md-6 col-lg-4">
                             <a href="{% url 'add_product' store.store_id %}" 

@@ -23,3 +23,4 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
     async def notification_message(self, event):
         payload = event.get('payload', {})
         await self.send_json(payload)
+

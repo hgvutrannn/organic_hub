@@ -228,6 +228,44 @@
         </div>
     </div>
 
+    <!-- Comments Section -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-comments"></i> Bình luận sản phẩm</h4>
+                </div>
+                <div class="card-body">
+                    {% if can_comment %}
+                        <form id="comment-form" class="mb-4">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <textarea class="form-control" id="comment-content" rows="3" placeholder="Viết bình luận của bạn..."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Gửi bình luận
+                            </button>
+                        </form>
+                    {% elif user.is_authenticated %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Bạn cần mua sản phẩm này trước khi bình luận.
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> Vui lòng đăng nhập để bình luận.
+                        </div>
+                    {% endif %}
+                    
+                    <div id="comments-container">
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-spinner fa-spin"></i> Đang tải bình luận...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Reviews Section -->
     <div class="row">
         <div class="col-12 mb-4">
@@ -240,15 +278,16 @@
                         {% for review in reviews %}
                         <div class="border-bottom pb-3 mb-3">
                             <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="mb-1">{{ review.title }}</h6>
                                 <div>
-                                    {% for i in "12345" %}
-                                        {% if forloop.counter <= review.rating %}
-                                            <i class="fas fa-star text-warning"></i>
-                                        {% else %}
-                                            <i class="far fa-star text-warning"></i>
-                                        {% endif %}
-                                    {% endfor %}
+                                    <div>
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= review.rating %}
+                                                <i class="fas fa-star text-warning"></i>
+                                            {% else %}
+                                                <i class="far fa-star text-warning"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
                                 </div>
                             </div>
                             <div class="d-flex justify-content-between text-muted small mb-2">
@@ -256,6 +295,29 @@
                                 <span><i class="fas fa-calendar"></i> {{ review.created_at|date:"d/m/Y H:i" }}</span>
                             </div>
                             <p class="mb-1">{{ review.content }}</p>
+                            
+                            {% if review.media_files.exists %}
+                                <div class="mt-2 mb-2">
+                                    {% for media in review.media_files.all %}
+                                        {% if media.media_type == 'image' %}
+                                            <img src="{{ media.file.url }}" alt="Review image" class="img-thumbnail me-2 mb-2" style="max-height: 150px;">
+                                        {% elif media.media_type == 'video' %}
+                                            <video controls class="me-2 mb-2" style="max-height: 150px;">
+                                                <source src="{{ media.file.url }}" type="video/mp4">
+                                            </video>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            
+                            {% if review.has_seller_reply %}
+                                <div class="alert alert-light mt-2 mb-0">
+                                    <strong><i class="fas fa-store"></i> Phản hồi từ cửa hàng:</strong>
+                                    <p class="mb-0 mt-1">{{ review.seller_reply }}</p>
+                                    <small class="text-muted">{{ review.seller_replied_at|date:"d/m/Y H:i" }}</small>
+                                </div>
+                            {% endif %}
+                            
                             {% if review.is_verified_purchase %}
                                 <small class="text-success">
                                     <i class="fas fa-check-circle"></i> Đã xác minh mua hàng
@@ -369,7 +431,103 @@ document.addEventListener('DOMContentLoaded', function() {
             this.style.transform = 'scale(1)';
         });
     });
+    
+    // Load comments
+    loadComments();
+    
+    // Handle comment form submission
+    const commentForm = document.getElementById('comment-form');
+    if (commentForm) {
+        commentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitComment();
+        });
+    }
 });
+
+// Load comments function
+function loadComments() {
+    const productId = {{ product.product_id }};
+    fetch(`/products/${productId}/comments/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayComments(data.comments);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading comments:', error);
+            document.getElementById('comments-container').innerHTML = 
+                '<div class="text-center text-muted py-4">Có lỗi khi tải bình luận.</div>';
+        });
+}
+
+// Display comments
+function displayComments(comments) {
+    const container = document.getElementById('comments-container');
+    if (comments.length === 0) {
+        container.innerHTML = '<div class="text-center text-muted py-4">Chưa có bình luận nào.</div>';
+        return;
+    }
+    
+    let html = '';
+    comments.forEach(comment => {
+        html += `
+            <div class="border-bottom pb-3 mb-3" data-comment-id="${comment.comment_id}">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <strong><i class="fas fa-user"></i> ${comment.user_name}</strong>
+                    <small class="text-muted">${comment.created_at}</small>
+                </div>
+                <p class="mb-2">${comment.content}</p>
+                ${comment.has_seller_reply ? `
+                    <div class="alert alert-light mt-2 mb-0">
+                        <strong><i class="fas fa-store"></i> Phản hồi từ cửa hàng:</strong>
+                        <p class="mb-0 mt-1">${comment.seller_reply}</p>
+                        <small class="text-muted">${comment.seller_replied_at}</small>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+// Submit comment
+function submitComment() {
+    const productId = {{ product.product_id }};
+    const content = document.getElementById('comment-content').value.trim();
+    
+    if (!content) {
+        alert('Vui lòng nhập nội dung bình luận.');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('content', content);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    fetch(`/products/${productId}/comments/add/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('comment-content').value = '';
+            loadComments();
+            alert('Đã thêm bình luận thành công!');
+        } else {
+            alert(data.message || 'Có lỗi xảy ra.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra khi gửi bình luận.');
+    });
+}
 </script>
 
 <style>
