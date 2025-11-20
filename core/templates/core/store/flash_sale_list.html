@@ -1,0 +1,246 @@
+{% extends 'core/store/store_base.html' %}
+
+{% block store_title %}Flash Sale Của Shop{% endblock %}
+
+{% block store_page_title %}Flash Sale Của Shop{% endblock %}
+{% block store_page_subtitle %}Chạy chương trình Flash Sale của riêng Shop để tăng doanh số!{% endblock %}
+
+{% block store_content %}
+<!-- Overview Section -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-white border-0 pb-0">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0 fw-bold">Tổng quan Flash Sale của Shop</h4>
+            <a href="#" class="text-primary text-decoration-none">Xem thêm ></a>
+        </div>
+        <p class="text-muted small mb-3">(Từ {{ "now"|date:"d-m-Y" }} đến {{ "now"|date:"d-m-Y" }} GMT+7)</p>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="border rounded-3 p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted small">Doanh Số</span>
+                        <i class="fas fa-question-circle text-muted"></i>
+                    </div>
+                    <h4 class="mb-0">₫ 0</h4>
+                    <small class="text-muted">so với 7 ngày trước 0.00%</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded-3 p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted small">Đơn hàng</span>
+                        <i class="fas fa-question-circle text-muted"></i>
+                    </div>
+                    <h4 class="mb-0">0</h4>
+                    <small class="text-muted">so với 7 ngày trước 0.00%</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded-3 p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted small">Người mua</span>
+                        <i class="fas fa-question-circle text-muted"></i>
+                    </div>
+                    <h4 class="mb-0">0</h4>
+                    <small class="text-muted">so với 7 ngày trước 0.00%</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded-3 p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="text-muted small">Tỷ lệ truy cập</span>
+                        <i class="fas fa-question-circle text-muted"></i>
+                    </div>
+                    <h4 class="mb-0">0.00 %</h4>
+                    <small class="text-muted">so với 7 ngày trước -%</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Program List Section -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-white border-0">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="mb-1 fw-bold">Danh sách chương trình</h4>
+                <p class="text-muted small mb-0">Chạy chương trình Flash Sale của riêng Shop để tăng doanh số! <a href="#" class="text-primary">Tìm hiểu thêm</a></p>
+            </div>
+            <a href="{% url 'store_flash_sale_create' store.store_id %}" class="btn btn-danger rounded-pill">
+                <i class="fas fa-plus me-2"></i>Tạo
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-3" id="flashSaleTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if status_filter == 'all' %}active{% endif %}" 
+                        onclick="window.location.href='?status=all'">
+                    Tất cả
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if status_filter == 'ongoing' %}active{% endif %}" 
+                        onclick="window.location.href='?status=ongoing'">
+                    Đang diễn ra
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if status_filter == 'upcoming' %}active{% endif %}" 
+                        onclick="window.location.href='?status=upcoming'">
+                    Sắp diễn ra
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if status_filter == 'ended' %}active{% endif %}" 
+                        onclick="window.location.href='?status=ended'">
+                    Đã kết thúc
+                </button>
+            </li>
+        </ul>
+        
+        <!-- Flash Sale List -->
+        {% if flash_sales %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tên chương trình</th>
+                            <th>Thời gian</th>
+                            <th>Trạng thái</th>
+                            <th>Số sản phẩm</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for flash_sale in flash_sales %}
+                        <tr>
+                            <td>
+                                <strong>{{ flash_sale.name }}</strong>
+                                {% if flash_sale.description %}
+                                <br><small class="text-muted">{{ flash_sale.description|truncatewords:10 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ flash_sale.start_date|date:"d/m/Y H:i" }}</small><br>
+                                <small class="text-muted">đến</small><br>
+                                <small>{{ flash_sale.end_date|date:"d/m/Y H:i" }}</small>
+                            </td>
+                            <td>
+                                <span class="badge {% if flash_sale.status == 'ongoing' %}bg-success{% elif flash_sale.status == 'upcoming' %}bg-warning{% elif flash_sale.status == 'ended' %}bg-secondary{% else %}bg-info{% endif %}">
+                                    {{ flash_sale.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ flash_sale.products.count }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'store_flash_sale_edit' store.store_id flash_sale.flash_sale_id %}" 
+                                       class="btn btn-outline-primary">
+                                        <i class="fas fa-edit"></i> Sửa
+                                    </a>
+                                    <form method="post" action="{% url 'store_flash_sale_delete' store.store_id flash_sale.flash_sale_id %}" 
+                                          class="d-inline" 
+                                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa Flash Sale này?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-danger">
+                                            <i class="fas fa-trash"></i> Xóa
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if flash_sales.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if flash_sales.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ flash_sales.previous_page_number }}&status={{ status_filter }}">Trước</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in flash_sales.paginator.page_range %}
+                    {% if flash_sales.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > flash_sales.number|add:'-3' and num < flash_sales.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}&status={{ status_filter }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if flash_sales.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ flash_sales.next_page_number }}&status={{ status_filter }}">Sau</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Chưa có chương trình Flash Sale nào</h5>
+                <p class="text-muted">Tạo chương trình Flash Sale đầu tiên để tăng doanh số!</p>
+                <a href="{% url 'store_flash_sale_create' store.store_id %}" class="btn btn-danger rounded-pill mt-3">
+                    <i class="fas fa-plus me-2"></i>Tạo chương trình Flash Sale ngay!
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Creation Guide Section -->
+{% if not flash_sales %}
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-4">
+        <div class="row align-items-center">
+            <div class="col-md-4 text-center">
+                <div class="mb-3">
+                    <i class="fas fa-calendar-alt fa-3x text-primary mb-3"></i>
+                    <h5>Chọn khung giờ</h5>
+                    <p class="text-muted small">Chọn ngày và khung giờ thích hợp để chạy Flash Sale của Shop.</p>
+                </div>
+            </div>
+            <div class="col-md-1 text-center">
+                <i class="fas fa-arrow-right fa-2x text-muted"></i>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="mb-3">
+                    <i class="fas fa-box fa-3x text-primary mb-3"></i>
+                    <h5>Thêm sản phẩm</h5>
+                    <p class="text-muted small">Chọn những sản phẩm sẽ tham gia Flash Sale.</p>
+                </div>
+            </div>
+            <div class="col-md-1 text-center">
+                <i class="fas fa-arrow-right fa-2x text-muted"></i>
+            </div>
+            <div class="col-md-2 text-center">
+                <div class="mb-3">
+                    <i class="fas fa-mobile-alt fa-3x text-primary mb-3"></i>
+                    <h5>Hiển thị trên trang Shop</h5>
+                    <p class="text-muted small">Lưu và gửi để hiển thị Flash Sale trong Shop của bạn</p>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mt-4">
+            <a href="{% url 'store_flash_sale_create' store.store_id %}" class="btn btn-warning btn-lg rounded-pill">
+                Tạo chương trình Flash Sale của Shop ngay! <i class="fas fa-arrow-right ms-2"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

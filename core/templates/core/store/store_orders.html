@@ -1,23 +1,11 @@
-{% extends 'core/base.html' %}
+{% extends 'core/store/store_base.html' %}
 
-{% block title %}Đơn hàng - {{ store.store_name }}{% endblock %}
+{% block store_title %}Quản lý đơn hàng{% endblock %}
 
-{% block content %}
-<div class="container-fluid mt-4">
-    <!-- Page Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex align-items-center">
-                <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
-                    <i class="fas fa-shopping-cart text-primary fs-1"></i>
-                </div>
-                <div>
-                    <h1 class="display-6 fw-bold mb-1">Đơn hàng</h1>
-                    <p class="text-muted mb-0">{{ store.store_name }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
+{% block store_page_title %}Quản Lý Đơn Hàng{% endblock %}
+{% block store_page_subtitle %}Xem và quản lý tất cả đơn hàng{% endblock %}
+
+{% block store_content %}
 
     <!-- Navigation -->
     <div class="row mb-4">
@@ -160,5 +148,4 @@
             </div>
         </div>
     {% endif %}
-</div>
 {% endblock %}

@@ -1,34 +1,22 @@
-{% extends 'core/base.html' %}
+{% extends 'core/store/store_base.html' %}
 
-{% block title %}Quản lý sản phẩm - {{ store.store_name }}{% endblock %}
+{% block store_title %}Quản lý sản phẩm{% endblock %}
 
-{% block content %}
-<div class="container-fluid mt-4">
-    <!-- Page Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center">
-                    <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
-                        <i class="fas fa-box text-primary fs-1"></i>
-                    </div>
-                    <div>
-                        <h1 class="display-6 fw-bold mb-1">Quản lý sản phẩm</h1>
-                        <p class="text-muted mb-0">{{ store.store_name }}</p>
-                    </div>
-                </div>
-                {% if store.is_verified_status == 'verified' %}
-                <a href="{% url 'add_product' store.store_id %}" class="btn btn-primary btn-lg rounded-pill">
-                    <i class="fas fa-plus me-2"></i>Thêm sản phẩm
-                </a>
-                {% else %}
-                <button class="btn btn-secondary btn-lg rounded-pill" disabled>
-                    <i class="fas fa-lock me-2"></i>Thêm sản phẩm
-                </button>
-                {% endif %}
-            </div>
-        </div>
-    </div>
+{% block store_page_title %}Quản lý sản phẩm{% endblock %}
+{% block store_page_subtitle %}Danh sách sản phẩm của cửa hàng{% endblock %}
+
+{% block store_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    {% if store.is_verified_status == 'verified' %}
+    <a href="{% url 'add_product' store.store_id %}" class="btn btn-primary rounded-pill">
+        <i class="fas fa-plus me-2"></i>Thêm sản phẩm
+    </a>
+    {% else %}
+    <button class="btn btn-secondary rounded-pill" disabled>
+        <i class="fas fa-lock me-2"></i>Thêm sản phẩm
+    </button>
+    {% endif %}
+</div>
 
     <!-- Navigation -->
     <div class="row mb-4">
@@ -191,5 +179,4 @@
             </div>
         </div>
     {% endif %}
-</div>
 {% endblock %}

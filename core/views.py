@@ -13,7 +13,13 @@ from .models import (
     CustomUser, Product, 
     Category, CartItem, Order, OrderItem, Review, Address, Store, 
     ProductImage, StoreCertification, StoreVerificationRequest,
-    ProductComment, ReviewMedia, StoreReviewStats, ProductVariant
+    ProductComment, ReviewMedia, StoreReviewStats, ProductVariant,
+    FlashSale, FlashSaleProduct, DiscountCode, DiscountCodeProduct
+)
+from .marketing_views import (
+    store_flash_sale_list, store_flash_sale_create, store_flash_sale_edit, store_flash_sale_delete,
+    store_discount_code_list, store_discount_code_create, store_discount_code_edit, store_discount_code_delete,
+    get_store_products_ajax
 )
 from .forms import (
     CustomUserRegistrationForm, LoginForm, ProductForm, AddressForm, ReviewForm, SearchForm, ProfileUpdateForm,
@@ -134,11 +140,13 @@ def get_negative_reviews_needing_reply(store):
 
 # Home Page
 def home(request):
-    """Trang chủ - hiển thị sản phẩm nổi bật"""
-    featured_products = Product.objects.filter(is_active=True).order_by('-view_count')[:8]
+    """Trang chủ - hiển thị danh mục và sản phẩm gợi ý"""
+    categories = Category.objects.all()[:12]  # Hiển thị tối đa 12 danh mục
+    suggested_products = Product.objects.filter(is_active=True).order_by('-view_count', '-created_at')[:12]  # Gợi ý sản phẩm
     
     context = {
-        'featured_products': featured_products,
+        'categories': categories,
+        'suggested_products': suggested_products,
     }
     return render(request, 'core/home.html', context)
 
@@ -209,16 +217,79 @@ def user_logout(request):
 # Product Views
 def product_list(request):
     """Danh sách sản phẩm"""
-    products = Product.objects.filter(is_active=True)
+    from django.conf import settings
+    from search_engine.services import ProductSearchService
+    import logging
+    
+    logger = logging.getLogger(__name__)
     categories = Category.objects.all()
     
     # Search and filter
     search_form = SearchForm(request.GET)
+    query = None
+    category = None
+    min_price = None
+    max_price = None
+    
     if search_form.is_valid():
         query = search_form.cleaned_data.get('query')
         category = search_form.cleaned_data.get('category')
         min_price = search_form.cleaned_data.get('min_price')
         max_price = search_form.cleaned_data.get('max_price')
+    
+    # Try Elasticsearch search first if enabled
+    use_elasticsearch = getattr(settings, 'USE_ELASTICSEARCH', True)
+    products_queryset = None
+    search_method_used = None
+    
+    # Debug: Print search parameters
+    print(f"\n{'='*60}")
+    print(f"🔍 SEARCH DEBUG - Query: '{query}'")
+    print(f"   USE_ELASTICSEARCH setting: {use_elasticsearch}")
+    print(f"{'='*60}\n")
+    
+    if use_elasticsearch and query:
+        try:
+            # Build filters dict
+            filters = {}
+            if category:
+                filters['category_id'] = category.category_id
+            if min_price:
+                filters['min_price'] = min_price
+            if max_price:
+                filters['max_price'] = max_price
+            filters['is_active'] = True
+            
+            print(f"🚀 Attempting Elasticsearch search with filters: {filters}")
+            
+            # Use Elasticsearch search with fallback
+            products_list = ProductSearchService.search_with_fallback(
+                query=query,
+                filters=filters,
+                size=1000,  # Get enough results for pagination
+                use_elasticsearch=True
+            )
+            
+            # Convert list to queryset-like object for pagination
+            # We'll use the list directly for pagination
+            products_queryset = products_list
+            search_method_used = 'Elasticsearch'
+            print(f"✅ SUCCESS: Using Elasticsearch - Found {len(products_list)} products")
+            logger.info(f"Using Elasticsearch for query: '{query}' - Found {len(products_list)} products")
+            
+        except Exception as e:
+            print(f"❌ ERROR: Elasticsearch search failed: {str(e)}")
+            print(f"   Exception type: {type(e).__name__}")
+            import traceback
+            traceback.print_exc()
+            logger.warning(f"Elasticsearch search failed, using Django ORM fallback: {str(e)}")
+            logger.exception(e)
+            use_elasticsearch = False
+    
+    # Fallback to Django ORM search (original method)
+    if not use_elasticsearch or products_queryset is None:
+        print(f"🔄 Falling back to Django ORM search")
+        products = Product.objects.filter(is_active=True)
         
         if query:
             products = products.filter(
@@ -230,16 +301,35 @@ def product_list(request):
             products = products.filter(price__gte=min_price)
         if max_price:
             products = products.filter(price__lte=max_price)
+        
+        products_queryset = products
+        if query:
+            search_method_used = 'Django ORM'
+            count = products.count()
+            print(f"✅ Using Django ORM - Found {count} products")
+            logger.info(f"Using Django ORM for query: '{query}' - Found {count} products")
+    
+    print(f"📊 Final search method: {search_method_used}")
+    print(f"{'='*60}\n")
     
     # Pagination
-    paginator = Paginator(products, 12)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    # Handle both QuerySet and list
+    if isinstance(products_queryset, list):
+        # For list, use manual pagination
+        paginator = Paginator(products_queryset, 12)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+    else:
+        # For QuerySet, use standard pagination
+        paginator = Paginator(products_queryset, 12)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
     
     context = {
         'page_obj': page_obj,
         'categories': categories,
         'search_form': search_form,
+        'search_method': search_method_used,  # For debugging
     }
     return render(request, 'core/product_list.html', context)
 
@@ -318,15 +408,29 @@ def product_detail(request, product_id):
 # Cart Views
 @login_required
 def cart(request):
-    """Giỏ hàng"""
-    cart_items = CartItem.objects.filter(user=request.user)
+    """Shopping Cart - Grouped by Store"""
+    cart_items = CartItem.objects.filter(user=request.user).select_related('product', 'product__store', 'variant')
+    
+    # Group cart items by store
+    stores_dict = {}
+    for item in cart_items:
+        store = item.product.store
+        if store.store_id not in stores_dict:
+            stores_dict[store.store_id] = {
+                'store': store,
+                'items': []
+            }
+        stores_dict[store.store_id]['items'].append(item)
+    
+    # Calculate totals
     total = sum(item.total_price for item in cart_items)
     
     context = {
         'cart_items': cart_items,
+        'stores_dict': stores_dict,
         'total': total,
     }
-    return render(request, 'core/cart.html', context)
+    return render(request, 'core/user/cart.html', context)
 
 
 @login_required
@@ -406,7 +510,7 @@ def checkout(request):
         
         if not shipping_address_id:
             messages.error(request, 'Vui lòng chọn địa chỉ giao hàng.')
-            return render(request, 'core/checkout.html', {
+            return render(request, 'core/user/checkout.html', {
                 'cart_items': cart_items,
                 'addresses': addresses,
                 'total': sum(item.total_price for item in cart_items)
@@ -450,7 +554,7 @@ def checkout(request):
         'addresses': addresses,
         'total': sum(item.total_price for item in cart_items)
     }
-    return render(request, 'core/checkout.html', context)
+    return render(request, 'core/user/checkout.html', context)
 
 
 @login_required
@@ -461,7 +565,7 @@ def order_list(request):
     context = {
         'orders': orders,
     }
-    return render(request, 'core/orders.html', context)
+    return render(request, 'core/user/orders.html', context)
 
 
 @login_required
@@ -484,7 +588,7 @@ def order_detail(request, order_id):
         'order': order,
         'order_items_with_reviews': order_items_with_reviews,
     }
-    return render(request, 'core/order_detail.html', context)
+    return render(request, 'core/user/order_detail.html', context)
 
 
 
@@ -516,7 +620,7 @@ def profile(request):
         'has_store': has_store,
         'form': form,
     }
-    return render(request, 'core/profile.html', context)
+    return render(request, 'core/user/profile.html', context)
 
 
 @login_required
@@ -539,7 +643,7 @@ def address_management(request):
         'addresses': addresses,
         'form': form,
     }
-    return render(request, 'core/address_management.html', context)
+    return render(request, 'core/user/address_management.html', context)
 
 
 # Store Views
@@ -1362,7 +1466,7 @@ def create_review(request, order_id, order_item_id):
         'order_item': order_item,
         'form': form,
     }
-    return render(request, 'core/create_review.html', context)
+    return render(request, 'core/user/create_review.html', context)
 
 
 @login_required

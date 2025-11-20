@@ -1,0 +1,229 @@
+{% extends 'core/store/store_base.html' %}
+
+{% block store_title %}Mã Giảm Giá Của Shop{% endblock %}
+
+{% block store_page_title %}Mã Giảm Giá Của Shop{% endblock %}
+{% block store_page_subtitle %}Tạo mã giảm giá để tăng đơn hàng và doanh thu{% endblock %}
+
+{% block store_content %}
+
+<!-- Create Voucher Types Section -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-white border-0">
+        <h4 class="mb-1 fw-bold">Tạo Voucher</h4>
+        <p class="text-muted small mb-0">Tạo Mã giảm giá toàn shop hoặc Mã giảm giá sản phẩm ngay bây giờ để thu hút người mua. <a href="#" class="text-primary">Tìm hiểu thêm</a></p>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <!-- Shop-wide Voucher -->
+            <div class="col-md-6">
+                <div class="card border h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-store fa-3x text-primary mb-3"></i>
+                        <h5 class="fw-bold">Voucher toàn Shop</h5>
+                        <p class="text-muted small">Voucher áp dụng cho tất cả sản phẩm trong Shop của bạn</p>
+                        <a href="{% url 'store_discount_code_create' store.store_id %}?scope=shop" class="btn btn-warning rounded-pill">
+                            Tạo
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Product Voucher -->
+            <div class="col-md-6">
+                <div class="card border h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-box fa-3x text-primary mb-3"></i>
+                        <h5 class="fw-bold">Voucher sản phẩm</h5>
+                        <p class="text-muted small">Voucher chỉ áp dụng cho những sản phẩm nhất định mà Shop chọn</p>
+                        <a href="{% url 'store_discount_code_create' store.store_id %}?scope=products" class="btn btn-warning rounded-pill">
+                            Tạo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Discount Code List -->
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-header bg-white border-0">
+        <h4 class="mb-0 fw-bold">Danh sách mã giảm giá</h4>
+    </div>
+    <div class="card-body">
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-3" id="discountCodeTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if status_filter == 'all' %}active{% endif %}" 
+                        onclick="window.location.href='?status=all'">
+                    Tất cả
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if status_filter == 'active' %}active{% endif %}" 
+                        onclick="window.location.href='?status=active'">
+                    Đang diễn ra
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if status_filter == 'upcoming' %}active{% endif %}" 
+                        onclick="window.location.href='?status=upcoming'">
+                    Sắp diễn ra
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if status_filter == 'ended' %}active{% endif %}" 
+                        onclick="window.location.href='?status=ended'">
+                    Đã kết thúc
+                </button>
+            </li>
+        </ul>
+        
+        <!-- Search/Filter Bar -->
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <select class="form-select" id="searchType">
+                    <option value="name" {% if search_type == 'name' %}selected{% endif %}>Tên Voucher</option>
+                    <option value="code" {% if search_type == 'code' %}selected{% endif %}>Mã voucher</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <input type="text" class="form-control" id="searchInput" placeholder="Input" value="{{ search_query }}">
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-warning w-100" onclick="searchDiscountCodes()">Tìm</button>
+            </div>
+        </div>
+        
+        <!-- Discount Code Table -->
+        {% if discount_codes %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tên Voucher | Mã voucher</th>
+                            <th>Loại mã</th>
+                            <th>Sản phẩm áp dụng <i class="fas fa-info-circle text-muted"></i></th>
+                            <th>Giảm giá</th>
+                            <th>Tổng lượt sử dụng tối đa <i class="fas fa-info-circle text-muted"></i></th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for discount_code in discount_codes %}
+                        <tr>
+                            <td>
+                                <strong>{{ discount_code.name }}</strong><br>
+                                <code class="text-primary">{{ discount_code.code }}</code>
+                            </td>
+                            <td>
+                                {% if discount_code.scope == 'shop' %}
+                                    <span class="badge bg-info">Toàn Shop</span>
+                                {% else %}
+                                    <span class="badge bg-success">Sản phẩm</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if discount_code.scope == 'shop' %}
+                                    Tất cả sản phẩm
+                                {% else %}
+                                    {{ discount_code.products.count }} sản phẩm
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if discount_code.discount_type == 'percentage' %}
+                                    {{ discount_code.discount_value }}%
+                                {% else %}
+                                    {{ discount_code.discount_value|floatformat:0 }} VNĐ
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if discount_code.max_usage == 0 %}
+                                    Không giới hạn
+                                {% else %}
+                                    {{ discount_code.max_usage }} (Đã dùng: {{ discount_code.used_count }})
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'store_discount_code_edit' store.store_id discount_code.discount_code_id %}" 
+                                       class="btn btn-outline-primary">
+                                        <i class="fas fa-edit"></i> Sửa
+                                    </a>
+                                    <form method="post" action="{% url 'store_discount_code_delete' store.store_id discount_code.discount_code_id %}" 
+                                          class="d-inline" 
+                                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa mã giảm giá này?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-danger">
+                                            <i class="fas fa-trash"></i> Xóa
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if discount_codes.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if discount_codes.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ discount_codes.previous_page_number }}&status={{ status_filter }}&search={{ search_query }}&search_type={{ search_type }}">Trước</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in discount_codes.paginator.page_range %}
+                    {% if discount_codes.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > discount_codes.number|add:'-3' and num < discount_codes.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}&status={{ status_filter }}&search={{ search_query }}&search_type={{ search_type }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if discount_codes.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ discount_codes.next_page_number }}&status={{ status_filter }}&search={{ search_query }}&search_type={{ search_type }}">Sau</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Không có Mã giảm giá nào</h5>
+                <p class="text-muted">Tạo mã giảm giá đầu tiên để tăng đơn hàng!</p>
+                <a href="{% url 'store_discount_code_create' store.store_id %}" class="btn btn-warning rounded-pill mt-3">
+                    <i class="fas fa-plus me-2"></i>Tạo Voucher ngay!
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function searchDiscountCodes() {
+    const searchType = document.getElementById('searchType').value;
+    const searchInput = document.getElementById('searchInput').value;
+    const statusFilter = '{{ status_filter }}';
+    window.location.href = `?status=${statusFilter}&search=${encodeURIComponent(searchInput)}&search_type=${searchType}`;
+}
+
+// Allow Enter key to search
+document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchDiscountCodes();
+    }
+});
+</script>
+{% endblock %}
+

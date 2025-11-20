@@ -599,3 +599,156 @@ class StoreReviewStats(models.Model):
         return f"Thống kê đánh giá cho {self.store.store_name}"
 
 
+# Flash Sale Model
+class FlashSale(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Nháp'),
+        ('upcoming', 'Sắp diễn ra'),
+        ('ongoing', 'Đang diễn ra'),
+        ('ended', 'Đã kết thúc'),
+    ]
+    
+    flash_sale_id = models.AutoField(primary_key=True)
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='flash_sales', verbose_name='Cửa hàng')
+    name = models.CharField(max_length=255, verbose_name='Tên chương trình Flash Sale')
+    description = models.TextField(blank=True, null=True, verbose_name='Mô tả')
+    start_date = models.DateTimeField(verbose_name='Ngày bắt đầu')
+    end_date = models.DateTimeField(verbose_name='Ngày kết thúc')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft', verbose_name='Trạng thái')
+    is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
+    
+    class Meta:
+        verbose_name = 'Flash Sale'
+        verbose_name_plural = 'Flash Sales'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.name} - {self.store.store_name}"
+    
+    @property
+    def is_ongoing(self):
+        """Check if flash sale is currently ongoing"""
+        now = timezone.now()
+        return self.start_date <= now <= self.end_date and self.is_active
+    
+    @property
+    def is_upcoming(self):
+        """Check if flash sale is upcoming"""
+        now = timezone.now()
+        return now < self.start_date and self.is_active
+    
+    @property
+    def is_ended(self):
+        """Check if flash sale has ended"""
+        now = timezone.now()
+        return now > self.end_date or not self.is_active
+
+
+# Flash Sale Product Model
+class FlashSaleProduct(models.Model):
+    flash_sale_product_id = models.AutoField(primary_key=True)
+    flash_sale = models.ForeignKey(FlashSale, on_delete=models.CASCADE, related_name='products', verbose_name='Flash Sale')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='flash_sales', verbose_name='Sản phẩm')
+    flash_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Giá Flash Sale')
+    flash_stock = models.IntegerField(default=0, verbose_name='Số lượng Flash Sale')
+    sort_order = models.IntegerField(default=0, verbose_name='Thứ tự hiển thị')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
+    
+    class Meta:
+        verbose_name = 'Sản phẩm Flash Sale'
+        verbose_name_plural = 'Sản phẩm Flash Sale'
+        unique_together = ('flash_sale', 'product')
+        ordering = ['sort_order', 'created_at']
+    
+    def __str__(self):
+        return f"{self.product.name} - {self.flash_sale.name}"
+
+
+# Discount Code Model
+class DiscountCode(models.Model):
+    DISCOUNT_TYPE_CHOICES = [
+        ('percentage', 'Phần trăm (%)'),
+        ('fixed', 'Số tiền cố định (VNĐ)'),
+    ]
+    
+    SCOPE_CHOICES = [
+        ('shop', 'Toàn Shop'),
+        ('products', 'Sản phẩm cụ thể'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('draft', 'Nháp'),
+        ('active', 'Đang hoạt động'),
+        ('inactive', 'Ngừng hoạt động'),
+        ('ended', 'Đã kết thúc'),
+    ]
+    
+    discount_code_id = models.AutoField(primary_key=True)
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='discount_codes', verbose_name='Cửa hàng')
+    code = models.CharField(max_length=50, unique=True, verbose_name='Mã giảm giá')
+    name = models.CharField(max_length=255, verbose_name='Tên mã giảm giá')
+    description = models.TextField(blank=True, null=True, verbose_name='Mô tả')
+    discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE_CHOICES, verbose_name='Loại giảm giá')
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Giá trị giảm giá')
+    min_order_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='Đơn hàng tối thiểu')
+    max_discount_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='Giảm tối đa')
+    scope = models.CharField(max_length=20, choices=SCOPE_CHOICES, default='shop', verbose_name='Phạm vi áp dụng')
+    start_date = models.DateTimeField(verbose_name='Ngày bắt đầu')
+    end_date = models.DateTimeField(verbose_name='Ngày kết thúc')
+    max_usage = models.IntegerField(default=0, verbose_name='Số lượt sử dụng tối đa (0 = không giới hạn)')
+    used_count = models.IntegerField(default=0, verbose_name='Số lượt đã sử dụng')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft', verbose_name='Trạng thái')
+    is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
+    
+    class Meta:
+        verbose_name = 'Mã giảm giá'
+        verbose_name_plural = 'Mã giảm giá'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.code} - {self.store.store_name}"
+    
+    @property
+    def is_ongoing(self):
+        """Check if discount code is currently active"""
+        now = timezone.now()
+        return (self.start_date <= now <= self.end_date and 
+                self.is_active and 
+                self.status == 'active' and
+                (self.max_usage == 0 or self.used_count < self.max_usage))
+    
+    def calculate_discount(self, order_amount):
+        """Calculate discount amount for given order amount"""
+        if order_amount < self.min_order_amount:
+            return 0
+        
+        if self.discount_type == 'percentage':
+            discount = order_amount * (self.discount_value / 100)
+            if self.max_discount_amount:
+                discount = min(discount, self.max_discount_amount)
+        else:
+            discount = min(self.discount_value, order_amount)
+        
+        return discount
+
+
+# Discount Code Product Model
+class DiscountCodeProduct(models.Model):
+    discount_code_product_id = models.AutoField(primary_key=True)
+    discount_code = models.ForeignKey(DiscountCode, on_delete=models.CASCADE, related_name='products', verbose_name='Mã giảm giá')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='discount_codes', verbose_name='Sản phẩm')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
+    
+    class Meta:
+        verbose_name = 'Sản phẩm áp dụng mã giảm giá'
+        verbose_name_plural = 'Sản phẩm áp dụng mã giảm giá'
+        unique_together = ('discount_code', 'product')
+    
+    def __str__(self):
+        return f"{self.product.name} - {self.discount_code.code}"
+
+

@@ -12,6 +12,7 @@ urlpatterns = [
     path('chat/', include('chat.urls')),
     path('otp/', include('otp_service.urls')),
     path('notifications/', include(('notifications.urls', 'notifications'), namespace='notifications')),
+    path('search/', include('search_engine.urls')),
 ]
 
 # Serve media files in development

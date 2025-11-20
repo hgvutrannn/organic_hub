@@ -59,6 +59,21 @@ urlpatterns = [
     path('store/<int:store_id>/reviews/', views.store_review_dashboard, name='store_review_dashboard'),
     path('store/<int:store_id>/reviews/list/', views.store_review_list, name='store_review_list'),
     
+    # Marketing Channel - Flash Sale
+    path('store/<int:store_id>/flash-sale/', views.store_flash_sale_list, name='store_flash_sale_list'),
+    path('store/<int:store_id>/flash-sale/create/', views.store_flash_sale_create, name='store_flash_sale_create'),
+    path('store/<int:store_id>/flash-sale/<int:flash_sale_id>/edit/', views.store_flash_sale_edit, name='store_flash_sale_edit'),
+    path('store/<int:store_id>/flash-sale/<int:flash_sale_id>/delete/', views.store_flash_sale_delete, name='store_flash_sale_delete'),
+    
+    # Marketing Channel - Discount Code
+    path('store/<int:store_id>/discount-code/', views.store_discount_code_list, name='store_discount_code_list'),
+    path('store/<int:store_id>/discount-code/create/', views.store_discount_code_create, name='store_discount_code_create'),
+    path('store/<int:store_id>/discount-code/<int:discount_code_id>/edit/', views.store_discount_code_edit, name='store_discount_code_edit'),
+    path('store/<int:store_id>/discount-code/<int:discount_code_id>/delete/', views.store_discount_code_delete, name='store_discount_code_delete'),
+    
+    # AJAX - Get store products for selection
+    path('store/<int:store_id>/products/ajax/', views.get_store_products_ajax, name='get_store_products_ajax'),
+    
     # Admin URLs
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('admin-dashboard/store/<int:store_id>/', views.admin_store_detail, name='admin_store_detail'),

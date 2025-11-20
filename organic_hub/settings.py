@@ -30,9 +30,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
+    'django_elasticsearch_dsl',
     'core',
     'otp_service',
     'notifications',
+    'search_engine',
 ]
 
 MIDDLEWARE = [
@@ -175,3 +178,73 @@ AWS_SES_REGION_NAME = 'ap-southeast-2'
 # OTP Settings
 OTP_EXPIRY_MINUTES = 5
 OTP_RESEND_COOLDOWN_MINUTES = 1  # 1 minute cooldown between resends
+
+# Elasticsearch Configuration
+USE_ELASTICSEARCH = os.getenv('USE_ELASTICSEARCH', 'True').lower() == 'true'
+ELASTICSEARCH_HOST = os.getenv('ELASTICSEARCH_HOST', 'localhost')
+ELASTICSEARCH_PORT = int(os.getenv('ELASTICSEARCH_PORT', '9200'))
+ELASTICSEARCH_USE_SSL = os.getenv('ELASTICSEARCH_USE_SSL', 'False').lower() == 'true'
+ELASTICSEARCH_VERIFY_CERTS = os.getenv('ELASTICSEARCH_VERIFY_CERTS', 'True').lower() == 'true'
+ELASTICSEARCH_TIMEOUT = int(os.getenv('ELASTICSEARCH_TIMEOUT', '30'))
+
+# Build Elasticsearch connection configuration
+# Use URL scheme instead of use_ssl parameter (for compatibility with newer elasticsearch versions)
+scheme = 'https' if ELASTICSEARCH_USE_SSL else 'http'
+elasticsearch_hosts = f'{scheme}://{ELASTICSEARCH_HOST}:{ELASTICSEARCH_PORT}'
+
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': [elasticsearch_hosts],
+        'timeout': ELASTICSEARCH_TIMEOUT,
+    },
+}
+
+# Only add SSL verification settings if using SSL
+if ELASTICSEARCH_USE_SSL:
+    ELASTICSEARCH_DSL['default']['verify_certs'] = ELASTICSEARCH_VERIFY_CERTS
+
+# Google Gemini AI Configuration
+GOOGLE_GEMINI_API_KEY = os.getenv('GOOGLE_GEMINI_API_KEY', 'AIzaSyAemsSExWGn4orc9YSWtJLbz_fWyfdpXms')
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'core': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'search_engine': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}

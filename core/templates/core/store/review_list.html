@@ -1,22 +1,11 @@
-{% extends 'core/base.html' %}
+{% extends 'core/store/store_base.html' %}
 
-{% block title %}Danh sách đánh giá - {{ store.store_name }}{% endblock %}
+{% block store_title %}Danh sách đánh giá{% endblock %}
 
-{% block content %}
-<div class="container-fluid mt-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <h2><i class="fas fa-list"></i> Danh sách đánh giá</h2>
-                    <p class="text-muted mb-0">{{ store.store_name }}</p>
-                </div>
-                <a href="{% url 'store_review_dashboard' store.store_id %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> Về dashboard
-                </a>
-            </div>
-        </div>
-    </div>
+{% block store_page_title %}Danh Sách Đánh Giá{% endblock %}
+{% block store_page_subtitle %}Xem và quản lý tất cả đánh giá sản phẩm{% endblock %}
+
+{% block store_content %}
 
     <!-- Filter Form -->
     <div class="row mb-4">

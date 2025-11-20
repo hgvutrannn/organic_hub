@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import (
     CustomUser, Category, Address, Store, Product, CartItem, 
-    Order, OrderItem, Review, ProductComment, ReviewMedia, StoreReviewStats, ProductVariant
+    Order, OrderItem, Review, ProductComment, ReviewMedia, StoreReviewStats, ProductVariant,
+    FlashSale, FlashSaleProduct, DiscountCode, DiscountCodeProduct
 )
 
 
@@ -174,5 +175,37 @@ class StoreReviewStatsAdmin(admin.ModelAdmin):
     list_filter = ('last_accessed_at',)
     search_fields = ('store__store_name',)
     readonly_fields = ('total_reviews_30d', 'avg_rating_30d', 'good_reviews_count', 'negative_reviews_count', 'updated_at')
+
+
+@admin.register(FlashSale)
+class FlashSaleAdmin(admin.ModelAdmin):
+    list_display = ('name', 'store', 'start_date', 'end_date', 'status', 'is_active', 'created_at')
+    list_filter = ('status', 'is_active', 'created_at')
+    search_fields = ('name', 'store__store_name')
+    readonly_fields = ('created_at', 'updated_at')
+    date_hierarchy = 'created_at'
+
+
+@admin.register(FlashSaleProduct)
+class FlashSaleProductAdmin(admin.ModelAdmin):
+    list_display = ('flash_sale', 'product', 'flash_price', 'flash_stock', 'sort_order')
+    list_filter = ('flash_sale', 'created_at')
+    search_fields = ('product__name', 'flash_sale__name')
+
+
+@admin.register(DiscountCode)
+class DiscountCodeAdmin(admin.ModelAdmin):
+    list_display = ('code', 'name', 'store', 'discount_type', 'discount_value', 'scope', 'status', 'start_date', 'end_date', 'used_count', 'max_usage')
+    list_filter = ('discount_type', 'scope', 'status', 'is_active', 'created_at')
+    search_fields = ('code', 'name', 'store__store_name')
+    readonly_fields = ('used_count', 'created_at', 'updated_at')
+    date_hierarchy = 'created_at'
+
+
+@admin.register(DiscountCodeProduct)
+class DiscountCodeProductAdmin(admin.ModelAdmin):
+    list_display = ('discount_code', 'product', 'created_at')
+    list_filter = ('discount_code', 'created_at')
+    search_fields = ('product__name', 'discount_code__code')
 
 

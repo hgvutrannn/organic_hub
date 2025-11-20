@@ -1,0 +1,339 @@
+{% extends 'core/store/store_base.html' %}
+
+{% block store_title %}{% if flash_sale %}Sửa{% else %}Tạo{% endif %} Flash Sale{% endblock %}
+
+{% block store_page_title %}{% if flash_sale %}Sửa Flash Sale{% else %}Tạo Flash Sale{% endif %}{% endblock %}
+{% block store_page_subtitle %}{% if flash_sale %}Chỉnh sửa chương trình Flash Sale{% else %}Tạo chương trình Flash Sale mới{% endif %}{% endblock %}
+
+{% block store_content %}
+<form method="post" id="flashSaleForm">
+    {% csrf_token %}
+    
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-0">
+            <h5 class="mb-0 fw-bold">Thông tin chương trình</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Tên chương trình <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" name="name" 
+                           value="{% if flash_sale %}{{ flash_sale.name }}{% endif %}" 
+                           required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Mô tả</label>
+                    <textarea class="form-control" name="description" rows="2">{% if flash_sale %}{{ flash_sale.description }}{% endif %}</textarea>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Ngày bắt đầu <span class="text-danger">*</span></label>
+                    <input type="datetime-local" class="form-control" name="start_date" 
+                           value="{% if flash_sale %}{{ flash_sale.start_date|date:'Y-m-d\TH:i' }}{% endif %}" 
+                           required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Ngày kết thúc <span class="text-danger">*</span></label>
+                    <input type="datetime-local" class="form-control" name="end_date" 
+                           value="{% if flash_sale %}{{ flash_sale.end_date|date:'Y-m-d\TH:i' }}{% endif %}" 
+                           required>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Products Selection -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-0">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">Sản phẩm tham gia Flash Sale</h5>
+                <button type="button" class="btn btn-primary rounded-pill" onclick="openProductSelector()">
+                    <i class="fas fa-plus me-2"></i>Thêm sản phẩm
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="selected-products-list">
+                {% if flash_sale and selected_products %}
+                    {% for flash_product in selected_products %}
+                    <div class="border rounded-3 p-3 mb-3 selected-product-item" data-product-id="{{ flash_product.product.product_id }}">
+                        <div class="row align-items-center">
+                            <div class="col-md-1">
+                                {% if flash_product.product.get_primary_image %}
+                                <img src="{{ flash_product.product.get_primary_image.url }}" 
+                                     alt="{{ flash_product.product.name }}" 
+                                     class="img-fluid rounded square-image" 
+                                     style="width: 60px; height: 60px; object-fit: cover;">
+                                {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                    <i class="fas fa-image text-muted"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ flash_product.product.name }}</strong>
+                                <br><small class="text-muted">Giá gốc: {{ flash_product.product.price|floatformat:0 }} VNĐ</small>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">Giá Flash Sale</label>
+                                <input type="number" class="form-control form-control-sm" 
+                                       name="flash_price_{{ flash_product.product.product_id }}"
+                                       value="{{ flash_product.flash_price|floatformat:0 }}"
+                                       min="0" step="1000" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small">Số lượng</label>
+                                <input type="number" class="form-control form-control-sm" 
+                                       name="flash_stock_{{ flash_product.product.product_id }}"
+                                       value="{{ flash_product.flash_stock }}"
+                                       min="0" required>
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        onclick="removeProduct({{ flash_product.product.product_id }})">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <input type="hidden" name="products" value="{{ flash_product.product.product_id }}">
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-box fa-2x mb-2"></i>
+                        <p class="mb-0">Chưa có sản phẩm nào. Nhấn "Thêm sản phẩm" để chọn.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-between">
+        <a href="{% url 'store_flash_sale_list' store.store_id %}" class="btn btn-outline-secondary rounded-pill">
+            <i class="fas fa-arrow-left me-2"></i>Quay lại
+        </a>
+        <button type="submit" class="btn btn-primary rounded-pill">
+            <i class="fas fa-save me-2"></i>Lưu
+        </button>
+    </div>
+</form>
+
+<!-- Product Selector Modal -->
+<div class="modal fade" id="productSelectorModal" tabindex="-1" aria-labelledby="productSelectorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productSelectorModalLabel">Chọn sản phẩm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Search -->
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="productSearchInput" 
+                           placeholder="Tìm kiếm sản phẩm..." 
+                           onkeyup="searchProducts()">
+                </div>
+                
+                <!-- Products Grid -->
+                <div id="products-grid" class="row g-3" style="max-height: 500px; overflow-y: auto;">
+                    <!-- Products will be loaded here via AJAX -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="confirmProductSelection()">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedProductIds = new Set();
+{% if flash_sale and selected_product_ids %}
+    selectedProductIds = new Set([{% for pid in selected_product_ids %}{{ pid }}{% if not forloop.last %},{% endif %}{% endfor %}]);
+{% endif %}
+
+function openProductSelector() {
+    loadProducts();
+    const modal = new bootstrap.Modal(document.getElementById('productSelectorModal'));
+    modal.show();
+}
+
+function loadProducts(search = '') {
+    const url = `{% url 'get_store_products_ajax' store.store_id %}?search=${encodeURIComponent(search)}`;
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayProducts(data.products);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading products:', error);
+        });
+}
+
+function displayProducts(products) {
+    const grid = document.getElementById('products-grid');
+    grid.innerHTML = '';
+    
+    products.forEach(product => {
+        const isSelected = selectedProductIds.has(product.product_id);
+        const productCard = `
+            <div class="col-md-3">
+                <div class="card border ${isSelected ? 'border-primary' : ''} product-select-card" 
+                     data-product-id="${product.product_id}"
+                     onclick="toggleProductSelection(${product.product_id})"
+                     style="cursor: pointer;">
+                    <div class="card-body p-2">
+                        <div class="position-relative">
+                            ${product.image_url ? 
+                                `<img src="${product.image_url}" class="card-img-top square-image" style="width: 100%; height: 120px; object-fit: cover;">` :
+                                `<div class="bg-light d-flex align-items-center justify-content-center" style="height: 120px;">
+                                    <i class="fas fa-image fa-2x text-muted"></i>
+                                </div>`
+                            }
+                            ${isSelected ? 
+                                `<div class="position-absolute top-0 end-0 m-2">
+                                    <span class="badge bg-primary"><i class="fas fa-check"></i></span>
+                                </div>` : ''
+                            }
+                        </div>
+                        <h6 class="card-title mt-2 small">${product.name}</h6>
+                        <p class="card-text small text-primary mb-0">${product.price.toLocaleString('vi-VN')} VNĐ</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        grid.innerHTML += productCard;
+    });
+}
+
+function toggleProductSelection(productId) {
+    if (selectedProductIds.has(productId)) {
+        selectedProductIds.delete(productId);
+    } else {
+        selectedProductIds.add(productId);
+    }
+    loadProducts(document.getElementById('productSearchInput').value);
+}
+
+function confirmProductSelection() {
+    // Add selected products to form
+    const selectedList = document.getElementById('selected-products-list');
+    const existingIds = new Set();
+    
+    // Get existing product IDs
+    document.querySelectorAll('.selected-product-item').forEach(item => {
+        const pid = item.getAttribute('data-product-id');
+        existingIds.add(parseInt(pid));
+    });
+    
+    // Add new products
+    selectedProductIds.forEach(productId => {
+        if (!existingIds.has(productId)) {
+            // Fetch product details and add to form
+            fetch(`{% url 'get_store_products_ajax' store.store_id %}?search=`)
+                .then(response => response.json())
+                .then(data => {
+                    const product = data.products.find(p => p.product_id === productId);
+                    if (product) {
+                        addProductToForm(product);
+                    }
+                });
+        }
+    });
+    
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('productSelectorModal'));
+    modal.hide();
+}
+
+function addProductToForm(product) {
+    const selectedList = document.getElementById('selected-products-list');
+    
+    // Remove empty message if exists
+    const emptyMsg = selectedList.querySelector('.text-center');
+    if (emptyMsg) {
+        emptyMsg.remove();
+    }
+    
+    const productItem = `
+        <div class="border rounded-3 p-3 mb-3 selected-product-item" data-product-id="${product.product_id}">
+            <div class="row align-items-center">
+                <div class="col-md-1">
+                    ${product.image_url ? 
+                        `<img src="${product.image_url}" alt="${product.name}" class="img-fluid rounded square-image" style="width: 60px; height: 60px; object-fit: cover;">` :
+                        `<div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="fas fa-image text-muted"></i>
+                        </div>`
+                    }
+                </div>
+                <div class="col-md-4">
+                    <strong>${product.name}</strong>
+                    <br><small class="text-muted">Giá gốc: ${product.price.toLocaleString('vi-VN')} VNĐ</small>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small">Giá Flash Sale</label>
+                    <input type="number" class="form-control form-control-sm" 
+                           name="flash_price_${product.product_id}"
+                           value="${product.price}"
+                           min="0" step="1000" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Số lượng</label>
+                    <input type="number" class="form-control form-control-sm" 
+                           name="flash_stock_${product.product_id}"
+                           value="0"
+                           min="0" required>
+                </div>
+                <div class="col-md-2 text-end">
+                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                            onclick="removeProduct(${product.product_id})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <input type="hidden" name="products" value="${product.product_id}">
+        </div>
+    `;
+    selectedList.innerHTML += productItem;
+}
+
+function removeProduct(productId) {
+    selectedProductIds.delete(productId);
+    const item = document.querySelector(`.selected-product-item[data-product-id="${productId}"]`);
+    if (item) {
+        item.remove();
+    }
+    
+    // Show empty message if no products
+    const selectedList = document.getElementById('selected-products-list');
+    if (selectedList.querySelectorAll('.selected-product-item').length === 0) {
+        selectedList.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-box fa-2x mb-2"></i>
+                <p class="mb-0">Chưa có sản phẩm nào. Nhấn "Thêm sản phẩm" để chọn.</p>
+            </div>
+        `;
+    }
+}
+
+function searchProducts() {
+    const search = document.getElementById('productSearchInput').value;
+    loadProducts(search);
+}
+
+// Load products on page load if modal is opened
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if URL has openModal parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('openModal') === 'true') {
+        openProductSelector();
+    }
+});
+</script>
+{% endblock %}
+

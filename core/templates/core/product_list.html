@@ -2,21 +2,64 @@
 
 {% block title %}Danh sách sản phẩm - Organic Hub{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Product Card Hover Effects */
+    .product-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .product-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 0.75rem 1.5rem rgba(40, 167, 69, 0.2) !important;
+    }
+
+    .product-card:hover .card-img-top {
+        transform: scale(1.05);
+    }
+
+    .product-card .card-img-top {
+        transition: transform 0.3s ease;
+    }
+
+    .product-card .position-relative {
+        overflow: hidden;
+        border-radius: 1rem 1rem 0 0;
+    }
+
+    .product-card:hover .card-title a {
+        color: var(--organic-primary) !important;
+    }
+
+    /* Category Badge - Ensure text is visible */
+    .product-card .badge.bg-primary.bg-opacity-10 {
+        background-color: rgba(40, 167, 69, 0.15) !important;
+        color: var(--organic-primary-dark) !important;
+        font-weight: 500;
+        padding: 0.4em 0.8em;
+        border: 1px solid rgba(40, 167, 69, 0.2);
+    }
+
+    .product-card:hover .badge.bg-primary.bg-opacity-10 {
+        background-color: rgba(40, 167, 69, 0.25) !important;
+        border-color: rgba(40, 167, 69, 0.4);
+    }
+
+    /* Price hover effect */
+    .product-card:hover .text-success {
+        color: var(--organic-primary-dark) !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid mt-4">
     <!-- Page Header -->
-    <div class="row mb-4">
+    <div class="row">
         <div class="col-12">
             <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <h1 class="display-6 fw-bold mb-1">Danh sách sản phẩm</h1>
-                    <p class="text-muted mb-0">Khám phá các sản phẩm organic chất lượng</p>
-                </div>
-                <div class="text-end">
-                    <span class="badge bg-primary fs-6 px-3 py-2 rounded-pill">
-                        {{ page_obj.paginator.count }} sản phẩm
-                    </span>
-                </div>
+                <h1 class="display-6 fw-bold mb-1">Danh sách sản phẩm</h1>
             </div>
         </div>
     </div>
@@ -80,20 +123,7 @@
                                      alt="{{ product.name }}" 
                                      class="card-img-top square-image" 
                                      style="width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: center;">
-                            {% endif %}
-                            
-                            <!-- Status Badge -->
-                            <div class="position-absolute top-0 end-0 m-2">
-                                {% if product.is_active %}
-                                    <span class="badge bg-success rounded-pill">
-                                        <i class="fas fa-check me-1"></i>Đang bán
-                                    </span>
-                                {% else %}
-                                    <span class="badge bg-danger rounded-pill">
-                                        <i class="fas fa-times me-1"></i>Ngừng bán
-                                    </span>
-                                {% endif %}
-                            </div>
+                            {% endif %}                        
                             
                             <!-- View Count -->
                             <div class="position-absolute top-0 start-0 m-2">
@@ -120,19 +150,11 @@
                                 </a>
                             </h5>
                             
-                            <!-- Store Info -->
-                            <div class="mb-2">
-                                <small class="text-muted">
-                                    <i class="fas fa-store me-1"></i>{{ product.store.store_name }}
-                                </small>
-                            </div>
-                            
                             <!-- Price -->
                             <div class="mb-3">
                                 <span class="h5 fw-bold text-success mb-0">
                                     {{ product.price|floatformat:0 }} VNĐ
                                 </span>
-                                <small class="text-muted d-block">/ {{ product.base_unit }}</small>
                             </div>
                             
                             <!-- Description -->
@@ -140,36 +162,6 @@
                                 <p class="card-text text-muted small flex-grow-1">
                                     {{ product.description|truncatewords:15 }}
                                 </p>
-                            {% endif %}
-                            
-                            <!-- Add to Cart Button -->
-                            {% if user.is_authenticated %}
-                                <form method="post" action="{% url 'add_to_cart' product.product_id %}" class="mt-auto">
-                                    {% csrf_token %}
-                                    <div class="d-grid gap-2">
-                                        <div class="input-group input-group-sm">
-                                            <span class="input-group-text">SL:</span>
-                                            <input type="number" 
-                                                   name="quantity" 
-                                                   class="form-control" 
-                                                   value="1" 
-                                                   min="1" 
-                                                   max="99">
-                                        </div>
-                                        <button type="submit" class="btn btn-success btn-sm rounded-pill">
-                                            <i class="fas fa-cart-plus me-1"></i>Thêm vào giỏ
-                                        </button>
-                                    </div>
-                                </form>
-                            {% else %}
-                                <div class="mt-auto">
-                                    <div class="alert alert-warning alert-sm mb-0">
-                                        <small>
-                                            <i class="fas fa-lock me-1"></i>
-                                            <a href="/login/" class="text-decoration-none">Đăng nhập</a> để mua hàng
-                                        </small>
-                                    </div>
-                                </div>
                             {% endif %}
                         </div>
                     </div>
