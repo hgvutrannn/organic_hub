@@ -1,6 +1,6 @@
 {% extends 'core/base.html' %}
 
-{% block title %}Trang cá nhân{% endblock %}
+{% block title %}Profile{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
@@ -12,8 +12,8 @@
                     <i class="fas fa-user-circle text-primary fs-1"></i>
                 </div>
                 <div>
-                    <h1 class="display-6 fw-bold mb-1">Trang cá nhân</h1>
-                    <p class="text-muted mb-0">Quản lý thông tin tài khoản và cửa hàng</p>
+                    <h1 class="display-6 fw-bold mb-1">Profile</h1>
+                    <p class="text-muted mb-0">Manage your account information and stores</p>
                 </div>
             </div>
         </div>
@@ -41,7 +41,7 @@
                             </span>
                         </div>
                         <h4 class="fw-bold mt-3 mb-1">{{ user.full_name }}</h4>
-                        <p class="text-muted">{{ user.phone_number }}</p>
+                        <p class="text-muted">{{ user.email }}</p>
                         
                         <!-- Status Badge -->
                         <span class="badge bg-success fs-6 px-3 py-2 rounded-pill">
@@ -52,7 +52,7 @@
                         <div class="mt-3">
                             <button type="button" class="btn btn-outline-primary btn-sm rounded-pill" 
                                     data-bs-toggle="modal" data-bs-target="#passwordChangeModal">
-                                <i class="fas fa-key me-1"></i>Đổi mật khẩu
+                                <i class="fas fa-key me-1"></i>Change Password
                             </button>
                         </div>
                     </div>
@@ -63,11 +63,11 @@
                             <div class="col-12">
                                 <div class="d-flex align-items-center">
                                     <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3">
-                                        <i class="fas fa-phone text-info"></i>
+                                        <i class="fas fa-envelope text-info"></i>
                                     </div>
                                     <div>
-                                        <small class="text-muted d-block">Số điện thoại</small>
-                                        <strong>{{ user.phone_number }}</strong>
+                                        <small class="text-muted d-block">Email</small>
+                                        <strong>{{ user.email }}</strong>
                                     </div>
                                 </div>
                             </div>
@@ -92,7 +92,7 @@
                                         <i class="fas fa-calendar text-success"></i>
                                     </div>
                                     <div>
-                                        <small class="text-muted d-block">Ngày tham gia</small>
+                                        <small class="text-muted d-block">Join Date</small>
                                         <strong>{{ user.created_at|date:"d/m/Y" }}</strong>
                                     </div>
                                 </div>
@@ -105,7 +105,7 @@
                                         <i class="fas fa-clock text-primary"></i>
                                     </div>
                                     <div>
-                                        <small class="text-muted d-block">Lần đăng nhập cuối</small>
+                                        <small class="text-muted d-block">Last Login</small>
                                         <strong>{{ user.last_login_at|date:"d/m/Y H:i" }}</strong>
                                     </div>
                                 </div>
@@ -123,7 +123,7 @@
             <div class="card border-0 shadow-lg rounded-4 mb-4">
                 <div class="card-header bg-gradient bg-opacity-10 border-0">
                     <h3 class="mb-0 fw-bold">
-                        <i class="fas fa-edit text-primary me-2"></i>Cập nhật thông tin
+                        <i class="fas fa-edit text-primary me-2"></i>Update Information
                     </h3>
                 </div>
                 <div class="card-body p-4">
@@ -132,25 +132,14 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="{{ form.full_name.id_for_label }}" class="form-label fw-semibold">
-                                    <i class="fas fa-user me-1"></i>Họ và tên
+                                    <i class="fas fa-user me-1"></i>Full Name
                                 </label>
                                 <input type="text" 
                                        class="form-control form-control-lg" 
                                        id="{{ form.full_name.id_for_label }}"
                                        name="{{ form.full_name.name }}"
                                        value="{{ form.full_name.value|default:'' }}"
-                                       placeholder="Nhập họ và tên">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.phone_number.id_for_label }}" class="form-label fw-semibold">
-                                    <i class="fas fa-phone me-1"></i>Số điện thoại
-                                </label>
-                                <input type="text" 
-                                       class="form-control form-control-lg" 
-                                       id="{{ form.phone_number.id_for_label }}"
-                                       name="{{ form.phone_number.name }}"
-                                       value="{{ form.phone_number.value|default:'' }}"
-                                       placeholder="Nhập số điện thoại">
+                                       placeholder="Enter full name">
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.email.id_for_label }}" class="form-label fw-semibold">
@@ -161,11 +150,11 @@
                                        id="{{ form.email.id_for_label }}"
                                        name="{{ form.email.name }}"
                                        value="{{ form.email.value|default:'' }}"
-                                       placeholder="Nhập email">
+                                       placeholder="Enter email">
                             </div>
                             <div class="col-md-6">
                                 <label for="{{ form.avatar.id_for_label }}" class="form-label fw-semibold">
-                                    <i class="fas fa-camera me-1"></i>Ảnh đại diện
+                                    <i class="fas fa-camera me-1"></i>Avatar
                                 </label>
                                 <input type="file" 
                                        class="form-control form-control-lg" 
@@ -177,7 +166,7 @@
                         
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                             <button type="submit" class="btn btn-primary btn-lg px-4 rounded-pill">
-                                <i class="fas fa-save me-2"></i>Cập nhật thông tin
+                                <i class="fas fa-save me-2"></i>Update Information
                             </button>
                         </div>
                     </form>
@@ -188,7 +177,7 @@
             <div class="card border-0 shadow-lg rounded-4">
                 <div class="card-header bg-gradient bg-opacity-10 border-0">
                     <h3 class="mb-0 fw-bold">
-                        <i class="fas fa-store text-primary me-2"></i>Quản lý cửa hàng
+                        <i class="fas fa-store text-primary me-2"></i>Store Management
                     </h3>
                 </div>
                 <div class="card-body p-4">
@@ -198,10 +187,10 @@
                                  style="width: 100px; height: 100px;">
                                 <i class="fas fa-store text-warning" style="font-size: 3rem;"></i>
                             </div>
-                            <h4 class="fw-bold mb-3">Bạn chưa có cửa hàng</h4>
-                            <p class="text-muted mb-4">Tạo cửa hàng để bắt đầu kinh doanh và bán sản phẩm organic của bạn.</p>
+                            <h4 class="fw-bold mb-3">You Don't Have a Store</h4>
+                            <p class="text-muted mb-4">Create a store to start your business and sell your organic products.</p>
                             <a href="{% url 'create_store' %}" class="btn btn-warning btn-lg rounded-pill px-4">
-                                <i class="fas fa-plus me-2"></i>Trở thành nhà cung cấp
+                                <i class="fas fa-plus me-2"></i>Become a Vendor
                             </a>
                         </div>
                     {% else %}
@@ -219,15 +208,15 @@
                                                 <div class="d-flex align-items-center gap-2">
                                                     {% if store.is_verified_status == 'verified' %}
                                                         <span class="badge bg-success rounded-pill">
-                                                            <i class="fas fa-check-circle me-1"></i>Đã xác minh
+                                                            <i class="fas fa-check-circle me-1"></i>Verified
                                                         </span>
                                                     {% elif store.is_verified_status == 'pending' %}
                                                         <span class="badge bg-warning rounded-pill">
-                                                            <i class="fas fa-clock me-1"></i>Đang chờ xác minh
+                                                            <i class="fas fa-clock me-1"></i>Pending Verification
                                                         </span>
                                                     {% else %}
                                                         <span class="badge bg-danger rounded-pill">
-                                                            <i class="fas fa-times-circle me-1"></i>Bị từ chối
+                                                            <i class="fas fa-times-circle me-1"></i>Rejected
                                                         </span>
                                                     {% endif %}
                                                 </div>
@@ -235,7 +224,7 @@
                                         </div>
                                         <a href="{% url 'store_dashboard' store.store_id %}" 
                                            class="btn btn-primary rounded-pill px-4">
-                                            <i class="fas fa-cog me-2"></i>Quản lý cửa hàng
+                                            <i class="fas fa-cog me-2"></i>Manage Store
                                         </a>
                                     </div>
                                     
@@ -259,7 +248,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="passwordChangeModalLabel">
-                    <i class="fas fa-key text-primary me-2"></i>Đổi mật khẩu
+                    <i class="fas fa-key text-primary me-2"></i>Change Password
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -268,34 +257,34 @@
                     {% csrf_token %}
                     <div class="mb-3">
                         <label for="old_password" class="form-label fw-semibold">
-                            <i class="fas fa-lock me-1"></i>Mật khẩu hiện tại
+                            <i class="fas fa-lock me-1"></i>Current Password
                         </label>
                         <input type="password" class="form-control form-control-lg" id="old_password" name="old_password" 
-                               placeholder="Nhập mật khẩu hiện tại" required>
+                               placeholder="Enter current password" required>
                         <div class="invalid-feedback"></div>
                     </div>
                     <div class="mb-3">
                         <label for="new_password1" class="form-label fw-semibold">
-                            <i class="fas fa-lock me-1"></i>Mật khẩu mới
+                            <i class="fas fa-lock me-1"></i>New Password
                         </label>
                         <input type="password" class="form-control form-control-lg" id="new_password1" name="new_password1" 
-                               placeholder="Nhập mật khẩu mới" required>
+                               placeholder="Enter new password" required>
                         <div class="invalid-feedback"></div>
                     </div>
                     <div class="mb-3">
                         <label for="new_password2" class="form-label fw-semibold">
-                            <i class="fas fa-lock me-1"></i>Xác nhận mật khẩu mới
+                            <i class="fas fa-lock me-1"></i>Confirm New Password
                         </label>
                         <input type="password" class="form-control form-control-lg" id="new_password2" name="new_password2" 
-                               placeholder="Xác nhận mật khẩu mới" required>
+                               placeholder="Confirm new password" required>
                         <div class="invalid-feedback"></div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="requestPasswordChangeOTP">
-                    <i class="fas fa-paper-plane me-1"></i>Gửi OTP
+                    <i class="fas fa-paper-plane me-1"></i>Send OTP
                 </button>
             </div>
         </div>
@@ -308,7 +297,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="otpVerificationModalLabel">
-                    <i class="fas fa-shield-alt text-primary me-2"></i>Xác thực OTP
+                    <i class="fas fa-shield-alt text-primary me-2"></i>OTP Verification
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -318,26 +307,26 @@
                          style="width: 80px; height: 80px;">
                         <i class="fas fa-envelope text-primary fs-2"></i>
                     </div>
-                    <h6 class="fw-bold">Nhập mã OTP</h6>
-                    <p class="text-muted">Mã OTP đã được gửi đến email của bạn</p>
+                    <h6 class="fw-bold">Enter OTP Code</h6>
+                    <p class="text-muted">OTP code has been sent to your email</p>
                 </div>
                 <form id="otpVerificationForm">
                     {% csrf_token %}
                     <div class="mb-3">
-                        <label for="otp_code" class="form-label fw-semibold">Mã OTP</label>
+                        <label for="otp_code" class="form-label fw-semibold">OTP Code</label>
                         <input type="text" class="form-control form-control-lg text-center" id="otp_code" name="otp_code" 
-                               placeholder="Nhập mã OTP 6 số" maxlength="6" pattern="[0-9]{6}" required>
+                               placeholder="Enter 6-digit OTP" maxlength="6" pattern="[0-9]{6}" required>
                         <div class="invalid-feedback"></div>
-                        <div class="form-text">Nhập mã 6 số đã được gửi đến email của bạn</div>
+                        <div class="form-text">Enter the 6-digit code sent to your email</div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" id="resendOTP" disabled>
-                    <i class="fas fa-redo me-1"></i>Gửi lại (<span id="countdown">60</span>s)
+                    <i class="fas fa-redo me-1"></i>Resend (<span id="countdown">60</span>s)
                 </button>
                 <button type="button" class="btn btn-primary" id="verifyOTP">
-                    <i class="fas fa-check me-1"></i>Xác thực
+                    <i class="fas fa-check me-1"></i>Verify
                 </button>
             </div>
         </div>
@@ -483,7 +472,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (countdownSeconds <= 0) {
                 clearInterval(countdownTimer);
                 resendBtn.disabled = false;
-                resendBtn.innerHTML = '<i class="fas fa-redo me-1"></i>Gửi lại';
+                resendBtn.innerHTML = '<i class="fas fa-redo me-1"></i>Resend';
             }
         }, 1000);
     }

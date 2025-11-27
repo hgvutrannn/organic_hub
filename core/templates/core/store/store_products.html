@@ -1,19 +1,19 @@
 {% extends 'core/store/store_base.html' %}
 
-{% block store_title %}Quản lý sản phẩm{% endblock %}
+{% block store_title %}Product Management{% endblock %}
 
-{% block store_page_title %}Quản lý sản phẩm{% endblock %}
-{% block store_page_subtitle %}Danh sách sản phẩm của cửa hàng{% endblock %}
+{% block store_page_title %}Product Management{% endblock %}
+{% block store_page_subtitle %}Store product list{% endblock %}
 
 {% block store_content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     {% if store.is_verified_status == 'verified' %}
     <a href="{% url 'add_product' store.store_id %}" class="btn btn-primary rounded-pill">
-        <i class="fas fa-plus me-2"></i>Thêm sản phẩm
+        <i class="fas fa-plus me-2"></i>Add Product
     </a>
     {% else %}
     <button class="btn btn-secondary rounded-pill" disabled>
-        <i class="fas fa-lock me-2"></i>Thêm sản phẩm
+        <i class="fas fa-lock me-2"></i>Add Product
     </button>
     {% endif %}
 </div>
@@ -28,7 +28,7 @@
                             <i class="fas fa-tachometer-alt me-1"></i>Dashboard
                         </a>
                     </li>
-                    <li class="breadcrumb-item active">Quản lý sản phẩm</li>
+                    <li class="breadcrumb-item active">Product Management</li>
                 </ol>
             </nav>
         </div>
@@ -44,8 +44,8 @@
                         <i class="fas fa-exclamation-triangle text-warning fs-4"></i>
                     </div>
                     <div class="flex-grow-1">
-                        <h5 class="alert-heading fw-bold mb-2">Cửa hàng chưa được xác minh</h5>
-                        <p class="mb-0">Bạn cần xác minh cửa hàng trước khi có thể thêm sản phẩm mới.</p>
+                        <h5 class="alert-heading fw-bold mb-2">Store Not Verified</h5>
+                        <p class="mb-0">You need to verify your store before adding new products.</p>
                     </div>
                 </div>
             </div>
@@ -61,8 +61,8 @@
                     <div class="card border-0 shadow-sm rounded-4 h-100">
                         <!-- Product Image -->
                         <div class="position-relative">
-                            {% if product.image %}
-                                <img src="{{ product.image.url }}" 
+                            {% if product.get_primary_image %}
+                                <img src="{{ product.get_primary_image.url }}" 
                                      alt="{{ product.name }}" 
                                      class="card-img-top rounded-top-4 square-image" 
                                      style="width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: center;">
@@ -71,7 +71,7 @@
                                      style="height: 200px;">
                                     <div class="text-center">
                                         <i class="fas fa-image text-muted mb-2" style="font-size: 2rem;"></i>
-                                        <p class="text-muted small mb-0">Chưa có hình ảnh</p>
+                                        <p class="text-muted small mb-0">No Image</p>
                                     </div>
                                 </div>
                             {% endif %}
@@ -79,7 +79,7 @@
                             <!-- Status Badge -->
                             <div class="position-absolute top-0 end-0 m-3">
                                 <span class="badge {% if product.is_active %}bg-success{% else %}bg-danger{% endif %}">
-                                    {% if product.is_active %}Đang bán{% else %}Ngừng bán{% endif %}
+                                    {% if product.is_active %}Available{% else %}Discontinued{% endif %}
                                 </span>
                             </div>
                         </div>
@@ -93,24 +93,24 @@
                             
                             <div class="row mb-3">
                                 <div class="col-6">
-                                    <h6 class="fw-bold text-muted mb-1">Giá</h6>
+                                    <h6 class="fw-bold text-muted mb-1">Price</h6>
                                     <p class="mb-0 fw-bold text-primary">{{ product.price|floatformat:0 }} VNĐ</p>
                                 </div>
                                 <div class="col-6">
-                                    <h6 class="fw-bold text-muted mb-1">Lượt xem</h6>
+                                    <h6 class="fw-bold text-muted mb-1">Views</h6>
                                     <p class="mb-0">{{ product.view_count }}</p>
                                 </div>
                             </div>
                             
                             <div class="mb-3">
-                                <h6 class="fw-bold text-muted mb-1">Danh mục</h6>
-                                <span class="badge bg-light text-dark">{{ product.category.name|default:"Chưa phân loại" }}</span>
+                                <h6 class="fw-bold text-muted mb-1">Category</h6>
+                                <span class="badge bg-light text-dark">{{ product.category.name|default:"Uncategorized" }}</span>
                             </div>
                             
                             <div class="d-grid">
                                 <a href="{% url 'edit_product' store.store_id product.product_id %}" 
                                    class="btn btn-outline-primary rounded-pill">
-                                    <i class="fas fa-edit me-1"></i>Sửa sản phẩm
+                                    <i class="fas fa-edit me-1"></i>Edit Product
                                 </a>
                             </div>
                         </div>
@@ -128,31 +128,31 @@
                             {% if products.has_previous %}
                                 <li class="page-item">
                                     <a class="page-link rounded-pill me-2" href="?page=1">
-                                        <i class="fas fa-angle-double-left me-1"></i>Đầu
+                                        <i class="fas fa-angle-double-left me-1"></i>First
                                     </a>
                                 </li>
                                 <li class="page-item">
                                     <a class="page-link rounded-pill me-2" href="?page={{ products.previous_page_number }}">
-                                        <i class="fas fa-angle-left me-1"></i>Trước
+                                        <i class="fas fa-angle-left me-1"></i>Previous
                                     </a>
                                 </li>
                             {% endif %}
                             
                             <li class="page-item active">
                                 <span class="page-link rounded-pill me-2">
-                                    Trang {{ products.number }} / {{ products.paginator.num_pages }}
+                                    Page {{ products.number }} / {{ products.paginator.num_pages }}
                                 </span>
                             </li>
                             
                             {% if products.has_next %}
                                 <li class="page-item">
                                     <a class="page-link rounded-pill me-2" href="?page={{ products.next_page_number }}">
-                                        Tiếp<i class="fas fa-angle-right ms-1"></i>
+                                        Next<i class="fas fa-angle-right ms-1"></i>
                                     </a>
                                 </li>
                                 <li class="page-item">
                                     <a class="page-link rounded-pill" href="?page={{ products.paginator.num_pages }}">
-                                        Cuối<i class="fas fa-angle-double-right ms-1"></i>
+                                        Last<i class="fas fa-angle-double-right ms-1"></i>
                                     </a>
                                 </li>
                             {% endif %}
@@ -170,10 +170,10 @@
                          style="width: 120px; height: 120px;">
                         <i class="fas fa-box text-muted" style="font-size: 4rem;"></i>
                     </div>
-                    <h4 class="fw-bold text-muted mb-3">Chưa có sản phẩm nào</h4>
-                    <p class="text-muted mb-4">Bắt đầu thêm sản phẩm đầu tiên cho cửa hàng của bạn!</p>
+                    <h4 class="fw-bold text-muted mb-3">No Products</h4>
+                    <p class="text-muted mb-4">Start adding your first product to the store!</p>
                     <a href="{% url 'add_product' store.store_id %}" class="btn btn-primary btn-lg rounded-pill">
-                        <i class="fas fa-plus me-2"></i>Thêm sản phẩm đầu tiên
+                        <i class="fas fa-plus me-2"></i>Add First Product
                     </a>
                 </div>
             </div>

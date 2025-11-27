@@ -31,6 +31,7 @@ class ProductSearchService:
             query: Search query string
             filters: Optional filters dict with keys:
                 - category_id: Filter by category
+                - certificate_id: Filter by certification organization ID (NEW)
                 - min_price: Minimum price
                 - max_price: Maximum price
                 - store_id: Filter by store
@@ -42,8 +43,6 @@ class ProductSearchService:
         """
         try:
             logger.debug(f"Building Elasticsearch query for: '{query}'")
-            # Build Elasticsearch query with field boosting
-            # name^3 means name field is 3x more important than description
             search = ProductDocument.search()
             
             # Multi-match query with field boosting
@@ -51,13 +50,12 @@ class ProductSearchService:
                 search = search.query(
                     'multi_match',
                     query=query,
-                    fields=['name^3', 'description^1'],  # name boost=3, description boost=1
+                    fields=['name^3', 'description^1'],
                     type='best_fields',
                     fuzziness='AUTO'
                 )
                 logger.debug(f"Built multi_match query for: '{query}'")
             else:
-                # If no query, match all active products
                 search = search.query('match_all')
                 logger.debug("Built match_all query")
             
@@ -68,6 +66,13 @@ class ProductSearchService:
                 if filters.get('category_id'):
                     filter_queries.append(
                         Q('term', category_id=filters['category_id'])
+                    )
+                
+                # THÊM FILTER NÀY
+                if filters.get('certificate_id'):
+                    # Sử dụng 'terms' query để match với bất kỳ giá trị nào trong array
+                    filter_queries.append(
+                        Q('terms', certification_organization_ids=[filters['certificate_id']])
                     )
                 
                 if filters.get('store_id'):
@@ -154,14 +159,6 @@ class ProductSearchService:
     ) -> List[Product]:
         """
         Fallback search using Django ORM (original search method)
-        
-        Args:
-            query: Search query string
-            filters: Optional filters dict
-            size: Maximum number of results
-        
-        Returns:
-            List of Product objects
         """
         from django.db.models import Q
         
@@ -178,6 +175,13 @@ class ProductSearchService:
             if filters.get('category_id'):
                 products = products.filter(category_id=filters['category_id'])
             
+            # THÊM FILTER NÀY
+            if filters.get('certificate_id'):
+                # Filter products có Store với CertificationOrganization này
+                products = products.filter(
+                    store__verification_requests__certifications__certification_organization_id=filters['certificate_id']
+                ).distinct()
+            
             if filters.get('store_id'):
                 products = products.filter(store_id=filters['store_id'])
             
@@ -190,7 +194,7 @@ class ProductSearchService:
             if filters.get('max_price') is not None:
                 products = products.filter(price__lte=filters['max_price'])
         
-        # Order by view_count and created_at (original ordering)
+        # Order by view_count and created_at
         products = products.order_by('-view_count', '-created_at')
         
         return list(products[:size])

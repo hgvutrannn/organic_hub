@@ -1,0 +1,93 @@
+{% load static %}
+<div class="chat-widget" id="chatWidget">
+    <button class="chat-button" id="chatToggleBtn">
+        <i class="fas fa-comments"></i>
+        <span class="badge" id="unreadBadge" style="display: none;">0</span>
+    </button>
+    
+    <div class="chat-window" id="chatWindow">
+        <!-- Chat List View -->
+        <div class="chat-list-view" id="chatListView" style="display: flex; flex-direction: column; height: 100%;">
+            <div class="chat-header">
+                <h6>
+                    <i class="fas fa-comments"></i>
+                    <span>Chat (<span id="chatCount">0</span>)</span>
+                </h6>
+                <div class="chat-header-actions">
+                    <button id="closeBtn" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="chat-search-filter">
+                <input type="text" 
+                       class="chat-search-input" 
+                       id="chatSearchInput" 
+                       placeholder="Search by name...">
+                <div class="chat-filter-buttons">
+                    <button class="chat-filter-btn active" data-filter="all">All</button>
+                    <button class="chat-filter-btn" data-filter="unread">Unread</button>
+                </div>
+            </div>
+            
+            <div class="chat-list" id="chatList">
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-spinner fa-spin"></i> Loading...
+                </div>
+            </div>
+        </div>
+        
+        <!-- Chat Detail View -->
+        <div class="chat-detail" id="chatDetailView">
+            <div class="chat-header">
+                <h6>
+                    <button id="backToListBtn" style="background: none; border: none; color: white; margin-right: 0.5rem; cursor: pointer;">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <span id="chatDetailName">Chat</span>
+                </h6>
+                <div class="chat-header-actions">
+                    <button id="closeDetailBtn" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="chat-messages" id="chatMessages">
+                <div class="text-center text-muted py-4">
+                    Select a conversation to view messages
+                </div>
+            </div>
+            
+            <div class="chat-input-area">
+                <div class="chat-input-wrapper">
+                    <div class="chat-input-avatar-container" id="chatInputAvatarContainer">
+                        <img src="" 
+                             alt="Your avatar" 
+                             class="chat-input-avatar" 
+                             id="chatInputAvatar"
+                             style="display: none;">
+                        <div class="chat-input-avatar-placeholder">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
+                    <input type="text" 
+                           class="chat-input" 
+                           id="chatMessageInput" 
+                           placeholder="Type message">
+                    <a href="#" class="chat-input-icon" id="chatAttachBtn" title="Attach file">
+                        <i class="fas fa-paperclip"></i>
+                    </a>
+                    <a href="#" class="chat-input-icon" id="chatEmojiBtn" title="Emoji">
+                        <i class="fas fa-smile"></i>
+                    </a>
+                    <a href="#" class="chat-input-icon chat-send-icon" id="chatSendIconBtn" title="Send">
+                        <i class="fas fa-paper-plane"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -1,15 +1,15 @@
 {% extends 'core/base.html' %}
 
-{% block title %}Đánh giá sản phẩm - Organic Hub{% endblock %}
+{% block title %}Product Review - Organic Hub{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="row">
         <div class="col-12">
             <div class="d-flex align-items-center justify-content-between mb-4">
-                <h2><i class="fas fa-star"></i> Đánh giá sản phẩm</h2>
+                <h2><i class="fas fa-star"></i> Product Review</h2>
                 <a href="{% url 'order_detail' order.order_id %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> Quay lại đơn hàng
+                    <i class="fas fa-arrow-left"></i> Back to Order
                 </a>
             </div>
         </div>
@@ -20,14 +20,14 @@
             <div class="card">
                 <div class="card-header">
                     <h4 class="mb-0">{{ order_item.product.name }}</h4>
-                    <small class="text-muted">Đơn hàng #{{ order.order_id }}</small>
+                    <small class="text-muted">Order #{{ order.order_id }}</small>
                 </div>
                 <div class="card-body">
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         
                         <div class="mb-3">
-                            <label class="form-label">Đánh giá (sao)</label>
+                            <label class="form-label">Rating (stars)</label>
                             {{ form.rating }}
                             {% if form.rating.errors %}
                                 <div class="text-danger">{{ form.rating.errors }}</div>
@@ -35,7 +35,7 @@
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Nội dung đánh giá</label>
+                            <label class="form-label">Review Content</label>
                             {{ form.content }}
                             {% if form.content.errors %}
                                 <div class="text-danger">{{ form.content.errors }}</div>
@@ -43,23 +43,23 @@
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Hình ảnh (có thể chọn nhiều)</label>
+                            <label class="form-label">Images (can select multiple)</label>
                             <input type="file" name="images" class="form-control" accept="image/*" multiple>
-                            <small class="text-muted">Có thể upload nhiều hình ảnh</small>
+                            <small class="text-muted">You can upload multiple images</small>
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Video (có thể chọn nhiều)</label>
+                            <label class="form-label">Videos (can select multiple)</label>
                             <input type="file" name="videos" class="form-control" accept="video/*" multiple>
-                            <small class="text-muted">Có thể upload nhiều video</small>
+                            <small class="text-muted">You can upload multiple videos</small>
                         </div>
                         
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-paper-plane"></i> Gửi đánh giá
+                                <i class="fas fa-paper-plane"></i> Submit Review
                             </button>
                             <a href="{% url 'order_detail' order.order_id %}" class="btn btn-outline-secondary">
-                                Hủy
+                                Cancel
                             </a>
                         </div>
                     </form>

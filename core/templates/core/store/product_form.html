@@ -1,424 +1,437 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
-{% block title %}{% if product %}Sửa sản phẩm - {{ product.name }}{% else %}Thêm sản phẩm mới{% endif %} - {{ store.store_name }}{% endblock %}
+{% block title %}{% if product %}Sửa sản phẩm: {{ product.name }}{% else %}Thêm sản phẩm mới{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .image-upload-zone {
+        border: 2px dashed #dee2e6;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+    }
+    .image-upload-zone:hover {
+        border-color: #0d6efd;
+        background: #f1f8ff;
+    }
+    .preview-container img {
+        object-fit: cover;
+        width: 100%;
+        height: 100px;
+        border-radius: 4px;
+    }
+    .gallery-preview-item {
+        position: relative;
+        margin-bottom: 10px;
+    }
+    .sticky-sidebar {
+        position: sticky;
+        top: 20px;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <!-- Page Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex align-items-center">
-                <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
-                    <i class="fas {% if product %}fa-edit{% else %}fa-plus{% endif %} text-primary fs-1"></i>
-                </div>
+<div class="container-fluid py-4">
+    <!-- Header & Actions -->
+    <form method="post" enctype="multipart/form-data" id="productForm">
+        {% csrf_token %}
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
-                    <h1 class="display-6 fw-bold mb-1">
-                        {% if product %}Sửa sản phẩm{% else %}Thêm sản phẩm mới{% endif %}
-                    </h1>
-                    <p class="text-muted mb-0">
-                        {% if product %}{{ product.name }}{% else %}{{ store.store_name }}{% endif %}
-                    </p>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1">
+                        <li class="breadcrumb-item"><a href="{% url 'store_dashboard' store.store_id %}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'store_products' store.store_id %}">Sản phẩm</a></li>
+                        <li class="breadcrumb-item active">{% if product %}Chỉnh sửa{% else %}Thêm mới{% endif %}</li>
+                    </ol>
+                </nav>
+                <h2 class="h3 fw-bold mb-0">{% if product %}{{ product.name }}{% else %}Thêm sản phẩm mới{% endif %}</h2>
                 </div>
-            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'store_products' store.store_id %}" class="btn btn-outline-secondary">Cancel</a>
+                {% if product %}
+                    <button type="submit" name="action" value="update" class="btn btn-primary px-4">
+                        <i class="fas fa-save me-2"></i>Update
+                    </button>
+                    <button type="submit" name="action" value="delete" class="btn btn-danger px-4">
+                        <i class="fas fa-save me-2"></i>Delete
+                    </button>
+                {% else %}
+                    <button type="submit" name="save" class="btn btn-primary px-4">
+                        <i class="fas fa-save me-2"></i>Save
+                    </button>
+                {% endif %}
+               
         </div>
     </div>
 
-    <!-- Navigation -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item">
-                        <a href="{% url 'store_dashboard' store.store_id %}" class="text-decoration-none">
-                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
-                        </a>
-                    </li>
-                    <li class="breadcrumb-item">
-                        <a href="{% url 'store_products' store.store_id %}" class="text-decoration-none">
-                            <i class="fas fa-box me-1"></i>Quản lý sản phẩm
-                        </a>
-                    </li>
-                    <li class="breadcrumb-item active">
-                        {% if product %}Sửa sản phẩm{% else %}Thêm sản phẩm{% endif %}
-                    </li>
-                </ol>
-            </nav>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-lg-8 col-xl-6">
-            <!-- Product Form -->
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-header bg-gradient bg-opacity-10 border-0">
-                    <h3 class="mb-0 fw-bold">
-                        <i class="fas fa-info-circle me-2"></i>Thông tin sản phẩm
-                    </h3>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="row">
+            <!-- LEFT COLUMN: Main Info -->
+            <div class="col-lg-8">
+                <!-- 1. General Info -->
+                <div class="card shadow-sm border-0 mb-4">
                 <div class="card-body p-4">
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        
-                        <div class="mb-4">
-                            <label for="name" class="form-label fw-bold">
-                                <i class="fas fa-tag me-1"></i>Tên sản phẩm <span class="text-danger">*</span>
-                            </label>
-                            <input type="text" 
-                                   class="form-control form-control-lg rounded-3" 
-                                   id="name" 
-                                   name="name" 
-                                   value="{% if product %}{{ product.name }}{% endif %}" 
-                                   required 
-                                   placeholder="Nhập tên sản phẩm">
+                        <h5 class="card-title fw-bold mb-3">Thông tin chung</h5>
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" required
+                                   value="{{ product.name|default:'' }}" placeholder="Ví dụ: Cà chua hữu cơ Đà Lạt">
                         </div>
-                        
-                        <div class="mb-4">
-                            <label for="description" class="form-label fw-bold">
-                                <i class="fas fa-align-left me-1"></i>Mô tả sản phẩm
-                            </label>
-                            <textarea class="form-control rounded-3" 
-                                      id="description" 
-                                      name="description" 
-                                      rows="4" 
-                                      placeholder="Mô tả chi tiết về sản phẩm...">{% if product %}{{ product.description }}{% endif %}</textarea>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Mô tả chi tiết</label>
+                            <textarea class="form-control" id="description" name="description" rows="6" 
+                                      placeholder="Mô tả đặc điểm, nguồn gốc, hướng dẫn sử dụng...">{{ product.description|default:'' }}</textarea>
                         </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-4">
-                                    <label for="price" class="form-label fw-bold">
-                                        <i class="fas fa-dollar-sign me-1"></i>Giá <span class="text-danger">*</span>
-                                    </label>
-                                    <div class="input-group">
-                                        <input type="number" 
-                                               class="form-control form-control-lg rounded-3" 
-                                               id="price" 
-                                               name="price" 
-                                               step="0.01" 
-                                               value="{% if product %}{{ product.price|floatformat:0 }}{% endif %}" 
-                                               required 
-                                               placeholder="0.00">
-                                        <span class="input-group-text">VNĐ</span>
                                     </div>
                                 </div>
+
+                <!-- 2. Pricing & Inventory (Ẩn nếu có variant) -->
+                <div class="card shadow-sm border-0 mb-4" id="simple-pricing-card">
+                    <div class="card-body p-4">
+                        <h5 class="card-title fw-bold mb-3">Giá & Kho hàng</h5>
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label for="price" class="form-label">Giá bán (VNĐ) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="price" name="price" step="1000"
+                                       value="{{ product.price|floatformat:'0'|default:'' }}" placeholder="0" required>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-4">
-                                    <label for="base_unit" class="form-label fw-bold">
-                                        <i class="fas fa-weight me-1"></i>Đơn vị
-                                    </label>
-                                    <input type="text" 
-                                           class="form-control form-control-lg rounded-3" 
-                                           id="base_unit" 
-                                           name="base_unit" 
-                                           value="{% if product %}{{ product.base_unit }}{% endif %}" 
-                                           placeholder="kg, gói, chiếc...">
+                            <div class="col-md-3">
+                                <label for="base_unit" class="form-label">Đơn vị tính</label>
+                                <input type="text" class="form-control" id="base_unit" name="base_unit" 
+                                       value="{{ product.base_unit|default:'' }}" placeholder="kg, hộp, bó...">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="stock" class="form-label">Số lượng tồn kho <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="stock" name="stock" min="0"
+                                       value="{{ product.stock|default:0 }}" placeholder="0" required>
                                 </div>
+                            <div class="col-md-3">
+                                <label for="SKU" class="form-label">Mã SKU</label>
+                                <input type="text" class="form-control" id="SKU" name="SKU" 
+                                       value="{{ product.SKU|default:'' }}" placeholder="Mã SKU (tự động nếu để trống)">
+                            </div>
+                        </div>
+                                </div>
+                            </div>
+
+                <!-- 3. Variants Section -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title fw-bold mb-0">Biến thể sản phẩm</h5>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="has_variants" name="has_variants"
+                                       {% if product.has_variants %}checked{% endif %}
+                                       {% if product.variants.exists %}disabled{% endif %}>
+                                <label class="form-check-label" for="has_variants">Sản phẩm có nhiều biến thể</label>
                             </div>
                         </div>
                         
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-4">
-                                    <label for="category" class="form-label fw-bold">
-                                        <i class="fas fa-list me-1"></i>Danh mục
-                                    </label>
-                                    <select class="form-select form-select-lg rounded-3" 
-                                            id="category" 
-                                            name="category">
-                                        <option value="">Chọn danh mục</option>
-                                        {% for category in categories %}
-                                        <option value="{{ category.category_id }}" 
-                                                {% if product and product.category == category %}selected{% endif %}>
-                                            {{ category.name }}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-4">
-                                    <label for="is_active" class="form-label fw-bold">
-                                        <i class="fas fa-toggle-on me-1"></i>Trạng thái
-                                    </label>
-                                    <div class="form-check form-switch mt-3">
-                                        <input class="form-check-input" 
-                                               type="checkbox" 
-                                               id="is_active" 
-                                               name="is_active" 
-                                               {% if not product or product.is_active %}checked{% endif %}>
-                                        <label class="form-check-label fw-bold" for="is_active">
-                                            Đang bán
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
+                        <div id="variants-warning" class="alert alert-light border-warning text-warning" style="display: none;">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Khi bật chế độ biến thể, giá và kho hàng sẽ được quản lý theo từng biến thể riêng biệt.
                         </div>
                         
-                        <!-- Variant Settings -->
-                        <div class="mb-4">
-                            <div class="form-check form-switch mb-3">
-                                <input class="form-check-input" 
-                                       type="checkbox" 
-                                       id="has_variants" 
-                                       name="has_variants"
-                                       {% if product and product.has_variants %}checked{% endif %}
-                                       {% if product and product.variants.exists %}disabled{% endif %}>
-                                <label class="form-check-label fw-bold" for="has_variants">
-                                    <i class="fas fa-tags me-1"></i>Có phân loại sản phẩm
-                                </label>
-                            </div>
-                            {% if product and product.variants.exists %}
-                                <div class="alert alert-info">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    Không thể tắt chế độ phân loại khi còn phân loại. Vui lòng xóa hết phân loại trước.
-                                </div>
-                            {% else %}
-                                <small class="text-muted d-block mb-3">Bật tính năng này nếu sản phẩm có nhiều phân loại với giá và hình ảnh khác nhau. Sau khi bật, bạn sẽ được chuyển đến trang thêm phân loại.</small>
-                            {% endif %}
-                        </div>
-                        
-                        <!-- Primary Image Upload Section -->
-                        <div class="mb-4">
-                            <label for="image" class="form-label fw-bold">
-                                <i class="fas fa-image me-1"></i>Ảnh sản phẩm chính
-                            </label>
-                            
-                            <!-- Current Primary Image Display -->
-                            {% if product and product.image %}
+                        <!-- Variants Form (Inline) - Hiển thị khi create hoặc edit nhưng chưa có variants -->
+                        <div id="variants-form-container" style="display: none;">
                                 <div class="mb-3">
-                                    <div class="d-flex align-items-center">
-                                        <img src="{{ product.image.url }}" 
-                                             alt="{{ product.name }}" 
-                                             class="rounded-3 me-3" 
-                                             style="width: 100px; height: 100px; object-fit: cover;">
-                                        <div>
-                                            <h6 class="mb-1">Ảnh chính hiện tại</h6>
-                                            <small class="text-muted">Chọn ảnh mới để thay thế</small>
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="add-variant-btn">
+                                    <i class="fas fa-plus me-1"></i>Thêm biến thể
+                                </button>
+                                        </div>
+                            <div id="variants-list">
+                                <!-- Variants sẽ được thêm động bằng JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <!-- Existing Variants Form (chỉ hiển thị khi edit và đã có variants) -->
+                        {% if product and product.has_variants and variants %}
+                            <div class="mt-3" id="existing-variants-table">
+                                <h6 class="mb-3 fw-bold">Biến thể hiện có</h6>
+                                {% for variant in variants %}
+                                <div class="card mb-3 variant-edit-item" data-variant-id="{{ variant.variant_id }}">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h6 class="mb-0">Biến thể #{{ forloop.counter }}</h6>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" 
+                                                       name="delete_variants" value="{{ variant.variant_id }}" 
+                                                       id="delete_variant_{{ variant.variant_id }}">
+                                                <label class="form-check-label text-danger" for="delete_variant_{{ variant.variant_id }}">
+                                                    Xóa
+                            </label>
+                                            </div>
+                                        </div>
+                                        <input type="hidden" name="variants[{{ forloop.counter }}][variant_id]" value="{{ variant.variant_id }}">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Tên biến thể <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" 
+                                                       name="variants[{{ forloop.counter }}][variant_name]" 
+                                                       value="{{ variant.variant_name }}" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Giá (VNĐ) <span class="text-danger">*</span></label>
+                                                <input type="number" class="form-control" 
+                                                       name="variants[{{ forloop.counter }}][price]" 
+                                                       value="{{ variant.price|floatformat:'0' }}" step="1000" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Số lượng tồn kho <span class="text-danger">*</span></label>
+                                                <input type="number" class="form-control" 
+                                                       name="variants[{{ forloop.counter }}][stock]" 
+                                                       value="{{ variant.stock }}" min="0" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Mã SKU</label>
+                                                <input type="text" class="form-control" 
+                                                       name="variants[{{ forloop.counter }}][sku_code]" 
+                                                       value="{{ variant.sku_code|default:'' }}">
+                                            </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label">Hình ảnh biến thể</label>
+                                                {% if variant.image %}
+                                                    <div class="mb-2">
+                                                        <img src="{{ variant.image.url }}" class="rounded me-2" width="60" height="60" style="object-fit: cover;">
+                                                        <small class="text-muted">Ảnh hiện tại</small>
+                                                    </div>
+                                                    {% endif %}
+                                                <input type="file" class="form-control" 
+                                                       name="variants[{{ forloop.counter }}][image]" 
+                                                       accept="image/*">
+                                                </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label">Mô tả biến thể</label>
+                                                <textarea class="form-control" 
+                                                          name="variants[{{ forloop.counter }}][variant_description]" 
+                                                          rows="2">{{ variant.variant_description|default:'' }}</textarea>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            {% endif %}
-                            
-                            <input type="file" 
-                                   class="form-control form-control-lg rounded-3" 
-                                   id="image" 
-                                   name="image" 
-                                   accept="image/*">
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Ảnh chính sẽ hiển thị đầu tiên (JPG, PNG, GIF). Kích thước tối đa 5MB.
+                                {% empty %}
+                                <p class="text-muted text-center py-3">Chưa có biến thể nào.</p>
+                                {% endfor %}
                             </div>
+                        {% endif %}
                         </div>
-                        
-                        <!-- Multiple Images Section -->
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">
-                                <i class="fas fa-images me-1"></i>Thư viện hình ảnh
-                            </label>
-                            
-                            <!-- Current Gallery Images -->
-                            {% if product and product.images.exists %}
-                                <div class="mb-3">
-                                    <h6 class="fw-bold mb-2">Hình ảnh hiện tại:</h6>
-                                    <div class="row g-2">
-                                        {% for img in product.images.all %}
-                                            <div class="col-md-3">
-                                                <div class="position-relative">
-                                                    <img src="{{ img.image.url }}" 
-                                                         alt="{{ img.alt_text|default:product.name }}" 
-                                                         class="img-fluid rounded-3" 
-                                                         style="height: 80px; object-fit: cover; width: 100%;">
-                                                    {% if img.is_primary %}
-                                                        <span class="badge bg-primary position-absolute top-0 start-0 m-1">Chính</span>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            {% endif %}
-                            
-                            <!-- Multiple File Upload -->
-                            <input type="file" 
-                                   class="form-control form-control-lg rounded-3" 
-                                   id="gallery_images" 
-                                   name="gallery_images" 
-                                   accept="image/*" 
-                                   multiple>
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Chọn nhiều hình ảnh cùng lúc (Ctrl+Click hoặc Cmd+Click). Tối đa 10 ảnh.
-                            </div>
-                        </div>
-                        
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg rounded-pill">
-                                <i class="fas {% if product %}fa-save{% else %}fa-plus{% endif %} me-2"></i>
-                                {% if product %}Cập nhật sản phẩm{% else %}Thêm sản phẩm{% endif %}
-                            </button>
-                        </div>
-                    </form>
                 </div>
             </div>
             
-            <!-- Variant Management Section -->
-            {% if product %}
-            <div class="card border-0 shadow-sm rounded-4 mt-4" id="variants-section" style="display: {% if product.has_variants %}block{% else %}none{% endif %};">
-                <div class="card-header bg-gradient bg-opacity-10 border-0">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h3 class="mb-0 fw-bold">
-                            <i class="fas fa-tags me-2"></i>Quản lý phân loại
-                        </h3>
-                        <a href="{% url 'add_variant' store.store_id product.product_id %}" class="btn btn-sm btn-primary">
-                            <i class="fas fa-plus me-1"></i>Thêm phân loại
-                        </a>
+            <!-- RIGHT COLUMN: Sidebar -->
+            <div class="col-lg-4">
+                <div class="sticky-sidebar">
+                    <!-- 1. Status & Organization -->
+                    <div class="card shadow-sm border-0 mb-4">
+                        <div class="card-body p-4">
+                            <h5 class="card-title fw-bold mb-3">Tổ chức</h5>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Trạng thái</label>
+                                <select class="form-select" name="is_active">
+                                    <option value="on" {% if product.is_active %}selected{% endif %}>Đang bán (Active)</option>
+                                    <option value="" {% if not product.is_active %}selected{% endif %}>Ẩn (Draft)</option>
+                                </select>
                     </div>
-                </div>
-                <div class="card-body p-4">
-                    {% if variants %}
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Tên phân loại</th>
-                                        <th>Giá</th>
-                                        <th>Tồn kho</th>
-                                        <th>SKU</th>
-                                        <th>Trạng thái</th>
-                                        <th>Thao tác</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for variant in variants %}
-                                    <tr>
-                                        <td>
-                                            <strong>{{ variant.variant_name }}</strong>
-                                            {% if variant.image %}
-                                                <br><img src="{{ variant.image.url }}" alt="{{ variant.variant_name }}" class="img-thumbnail mt-1" style="max-height: 50px;">
-                                            {% endif %}
-                                        </td>
-                                        <td>{{ variant.price|floatformat:0 }} VNĐ</td>
-                                        <td>
-                                            {% if variant.stock > 0 %}
-                                                <span class="badge bg-success">{{ variant.stock }}</span>
-                                            {% else %}
-                                                <span class="badge bg-danger">Hết hàng</span>
-                                            {% endif %}
-                                        </td>
-                                        <td><code>{{ variant.sku_code|default:"-" }}</code></td>
-                                        <td>
-                                            {% if variant.is_active %}
-                                                <span class="badge bg-success">Hoạt động</span>
-                                            {% else %}
-                                                <span class="badge bg-secondary">Tạm ngưng</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <a href="{% url 'edit_variant' store.store_id product.product_id variant.variant_id %}" class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <form method="post" action="{% url 'delete_variant' store.store_id product.product_id variant.variant_id %}" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa phân loại này?');">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
+
+                            <div class="mb-3">
+                                <label for="category" class="form-label fw-bold">Danh mục</label>
+                                <select class="form-select" id="category" name="category">
+                                    <option value="">-- Chọn danh mục --</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category.category_id }}" 
+                                            {% if product.category_id == category.category_id %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
                                     {% endfor %}
-                                </tbody>
-                            </table>
+                                </select>
+                            </div>
                         </div>
-                    {% else %}
-                        <div class="text-center text-muted py-4">
-                            <i class="fas fa-tags fa-3x mb-3"></i>
-                            <p>Chưa có phân loại nào. Hãy thêm phân loại đầu tiên!</p>
-                            <a href="{% url 'add_variant' store.store_id product.product_id %}" class="btn btn-primary">
-                                <i class="fas fa-plus me-1"></i>Thêm phân loại
-                            </a>
                         </div>
-                    {% endif %}
+
+                    <!-- 2. Media Management -->
+                    <div class="card shadow-sm border-0 mb-4">
+                        <div class="card-body p-4">
+                            <h5 class="card-title fw-bold mb-3">Hình ảnh</h5>
+                            <!-- Gallery Images -->
+                            <div class="mb-3">
+                                <label class="form-label small text-muted text-uppercase">Thư viện ảnh</label>
+                                
+                                <!-- Existing Gallery -->
+                                {% if product and product.images.exists %}
+                                <div class="row g-2 mb-3">
+                                    {% for img in product.images.all %}
+                                    <div class="col-4 position-relative">
+                                        <img src="{{ img.image.url }}" class="img-fluid rounded border">
+                                        <!-- Nút xóa ảnh (Cần xử lý logic BE hoặc JS) -->
                 </div>
+                                    {% endfor %}
             </div>
             {% endif %}
-        </div>
-        
-        <!-- Image Preview -->
-        <div class="col-lg-4 col-xl-6">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-header bg-gradient bg-opacity-10 border-0">
-                    <h4 class="mb-0 fw-bold">
-                        <i class="fas fa-eye me-2"></i>Xem trước hình ảnh
-                    </h4>
-                </div>
-                <div class="card-body p-4">
-                    <div id="image-preview" class="text-center">
-                        {% if product and product.image %}
-                            <img src="{{ product.image.url }}" 
-                                 alt="{{ product.name }}" 
-                                 class="img-fluid rounded-3" 
-                                 style="max-height: 300px; object-fit: cover;">
-                        {% else %}
-                            <div class="bg-light bg-opacity-50 rounded-3 d-flex align-items-center justify-content-center" 
-                                 style="height: 200px;">
-                                <div class="text-center">
-                                    <i class="fas fa-image text-muted mb-3" style="font-size: 3rem;"></i>
-                                    <p class="text-muted mb-0">Chưa có hình ảnh</p>
+
+                                <div class="image-upload-zone" onclick="document.getElementById('gallery_images').click()">
+                                    <i class="fas fa-cloud-upload-alt fa-2x text-primary mb-2"></i>
+                                    <p class="small mb-0 text-muted">Click để chọn nhiều ảnh</p>
                                 </div>
+                                <input type="file" class="d-none" id="gallery_images" name="gallery_images" accept="image/*" multiple onchange="previewGallery(this)">
+                                
+                                <div id="gallery-preview-container" class="row g-2 mt-2"></div>
                             </div>
-                        {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </form>
 </div>
 
+<!-- Javascript tối ưu -->
 <script>
-// Image preview functionality
-document.getElementById('image').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    const preview = document.getElementById('image-preview');
+    // 1. Logic ẩn/hiện Pricing khi chọn Variant
+    const hasVariantsCheckbox = document.getElementById('has_variants');
+    const pricingCard = document.getElementById('simple-pricing-card');
+    const variantWarning = document.getElementById('variants-warning');
+    const priceInput = document.getElementById('price');
     
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            preview.innerHTML = `
-                <img src="${e.target.result}" 
-                     alt="Preview" 
-                     class="img-fluid rounded-3" 
-                     style="max-height: 300px; object-fit: cover;">
-            `;
-        };
-        reader.readAsDataURL(file);
+    let variantCount = 0;
+
+    function toggleVariantMode() {
+        const variantsFormContainer = document.getElementById('variants-form-container');
+        const existingVariantsTable = document.getElementById('existing-variants-table');
+        const stockInput = document.getElementById('stock');
+        
+        if (hasVariantsCheckbox.checked) {
+            pricingCard.style.opacity = '0.5';
+            pricingCard.style.pointerEvents = 'none'; // Disable inputs
+            variantWarning.style.display = 'block';
+            priceInput.required = false;
+            if (stockInput) stockInput.required = false;
+            
+            // Show variants form container (always show when has_variants is checked)
+            if (variantsFormContainer) {
+                variantsFormContainer.style.display = 'block';
+            }
+            // Show existing variants table if editing and has variants
+            {% if product and variants %}
+                if (existingVariantsTable) {
+                    existingVariantsTable.style.display = 'block';
+                }
+            {% endif %}
     } else {
-        preview.innerHTML = `
-            <div class="bg-light bg-opacity-50 rounded-3 d-flex align-items-center justify-content-center" 
-                 style="height: 200px;">
-                <div class="text-center">
-                    <i class="fas fa-image text-muted mb-3" style="font-size: 3rem;"></i>
-                    <p class="text-muted mb-0">Chưa có hình ảnh</p>
+            pricingCard.style.opacity = '1';
+            pricingCard.style.pointerEvents = 'auto';
+            variantWarning.style.display = 'none';
+            priceInput.required = true;
+            if (stockInput) stockInput.required = true;
+            if (variantsFormContainer) {
+                variantsFormContainer.style.display = 'none';
+            }
+        }
+    }
+
+    // Add Variant Form
+    function addVariantForm() {
+        variantCount++;
+        const variantsList = document.getElementById('variants-list');
+        const variantHtml = `
+            <div class="card mb-3 variant-form-item" data-variant-index="${variantCount}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Biến thể #${variantCount}</h6>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-variant-btn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Tên biến thể <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="variants[${variantCount}][variant_name]" 
+                                   placeholder="Ví dụ: 500g, Size M - Màu Đỏ" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Giá (VNĐ) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="variants[${variantCount}][price]" 
+                                   step="1000" placeholder="0" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Số lượng tồn kho <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="variants[${variantCount}][stock]" 
+                                   min="0" placeholder="0" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Mã SKU</label>
+                            <input type="text" class="form-control" name="variants[${variantCount}][sku_code]" 
+                                   placeholder="Tự động nếu để trống">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Hình ảnh biến thể</label>
+                            <input type="file" class="form-control" name="variants[${variantCount}][image]" 
+                                   accept="image/*">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Mô tả biến thể</label>
+                            <textarea class="form-control" name="variants[${variantCount}][variant_description]" 
+                                      rows="2" placeholder="Mô tả tùy chọn"></textarea>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
-    }
-});
+        variantsList.insertAdjacentHTML('beforeend', variantHtml);
 
-// Toggle variants section visibility
-document.addEventListener('DOMContentLoaded', function() {
-    const hasVariantsCheckbox = document.getElementById('has_variants');
-    const variantsSection = document.getElementById('variants-section');
-    
-    if (hasVariantsCheckbox && variantsSection) {
-        hasVariantsCheckbox.addEventListener('change', function() {
-            if (this.checked) {
-                variantsSection.style.display = 'block';
-            } else {
-                variantsSection.style.display = 'none';
-            }
+        // Attach remove event listener
+        const removeBtn = variantsList.querySelector(`[data-variant-index="${variantCount}"] .remove-variant-btn`);
+        removeBtn.addEventListener('click', function() {
+            this.closest('.variant-form-item').remove();
         });
     }
-});
+
+    // Initialize add variant button and variant mode toggle
+document.addEventListener('DOMContentLoaded', function() {
+        const addVariantBtn = document.getElementById('add-variant-btn');
+        if (addVariantBtn) {
+            addVariantBtn.addEventListener('click', addVariantForm);
+        }
+        
+        // Initialize variant mode toggle
+        if(hasVariantsCheckbox) {
+            hasVariantsCheckbox.addEventListener('change', toggleVariantMode);
+            // Run on load to set initial state
+            toggleVariantMode();
+        }
+    });
+
+    // 2. Preview Gallery (Nhiều ảnh)
+    function previewGallery(input) {
+        const container = document.getElementById('gallery-preview-container');
+        container.innerHTML = ''; // Clear old previews for new selection
+        
+        if (input.files) {
+            Array.from(input.files).forEach(file => {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    const div = document.createElement('div');
+                    div.className = 'col-4';
+                    div.innerHTML = `<img src="${e.target.result}" class="img-fluid rounded border" style="height: 70px; object-fit: cover; width: 100%;">`;
+                    container.appendChild(div);
+            }
+                reader.readAsDataURL(file);
+        });
+    }
+    }
 </script>
 {% endblock %}

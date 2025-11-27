@@ -1,9 +1,9 @@
 {% extends 'core/store/store_base.html' %}
 
-{% block store_title %}Danh sách đánh giá{% endblock %}
+{% block store_title %}Review List{% endblock %}
 
-{% block store_page_title %}Danh Sách Đánh Giá{% endblock %}
-{% block store_page_subtitle %}Xem và quản lý tất cả đánh giá sản phẩm{% endblock %}
+{% block store_page_title %}Review List{% endblock %}
+{% block store_page_subtitle %}View and manage all product reviews{% endblock %}
 
 {% block store_content %}
 
@@ -12,17 +12,17 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-filter"></i> Bộ lọc</h5>
+                    <h5 class="mb-0"><i class="fas fa-filter"></i> Filters</h5>
                 </div>
                 <div class="card-body">
                     <form method="get" id="filter-form">
                         <div class="row g-3">
                             <div class="col-md-3">
-                                <label class="form-label">Trạng thái</label>
+                                <label class="form-label">Status</label>
                                 {{ filter_form.status }}
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">Đánh giá</label>
+                                <label class="form-label">Rating</label>
                                 <div class="form-check-group">
                                     {% for choice in filter_form.rating %}
                                         <div class="form-check">
@@ -35,25 +35,25 @@
                                 </div>
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label">Tên sản phẩm</label>
+                                <label class="form-label">Product Name</label>
                                 {{ filter_form.product_name }}
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label">Mã đơn hàng</label>
+                                <label class="form-label">Order ID</label>
                                 {{ filter_form.order_id }}
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label">Tên người mua</label>
+                                <label class="form-label">Buyer Name</label>
                                 {{ filter_form.buyer_username }}
                             </div>
                         </div>
                         <div class="row mt-3">
                             <div class="col-12">
                                 <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-search"></i> Tìm kiếm
+                                    <i class="fas fa-search"></i> Search
                                 </button>
                                 <a href="{% url 'store_review_list' store.store_id %}" class="btn btn-outline-secondary">
-                                    <i class="fas fa-redo"></i> Đặt lại
+                                    <i class="fas fa-redo"></i> Reset
                                 </a>
                             </div>
                         </div>
@@ -68,7 +68,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Kết quả ({{ reviews.paginator.count }} đánh giá)</h5>
+                    <h5 class="mb-0">Results ({{ reviews.paginator.count }} reviews)</h5>
                 </div>
                 <div class="card-body">
                     {% if reviews %}
@@ -78,8 +78,8 @@
                                 <div class="col-md-8">
                                     <div class="d-flex align-items-start">
                                         <div class="me-3">
-                                            {% if review.product.image %}
-                                                <img src="{{ review.product.image.url }}" alt="{{ review.product.name }}" 
+                                            {% if review.product.get_primary_image %}
+                                                <img src="{{ review.product.get_primary_image.url }}" alt="{{ review.product.name }}" 
                                                      class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
                                             {% else %}
                                                 <img src="/static/images/no-image.jpg" alt="{{ review.product.name }}" 
@@ -100,7 +100,7 @@
                                             <p class="mb-1">{{ review.content }}</p>
                                             <small class="text-muted">
                                                 <i class="fas fa-user"></i> {{ review.user.full_name }} | 
-                                                <i class="fas fa-shopping-bag"></i> Đơn hàng #{{ review.order.order_id }} |
+                                                <i class="fas fa-shopping-bag"></i> Order #{{ review.order.order_id }} |
                                                 <i class="fas fa-calendar"></i> {{ review.created_at|date:"d/m/Y H:i" }}
                                             </small>
                                             
@@ -123,7 +123,7 @@
                                 <div class="col-md-4">
                                     {% if review.has_seller_reply %}
                                         <div class="alert alert-success">
-                                            <strong><i class="fas fa-check-circle"></i> Đã phản hồi</strong>
+                                            <strong><i class="fas fa-check-circle"></i> Replied</strong>
                                             <p class="mb-0 mt-2">{{ review.seller_reply }}</p>
                                             <small class="text-muted">{{ review.seller_replied_at|date:"d/m/Y H:i" }}</small>
                                         </div>
@@ -131,10 +131,10 @@
                                         <form class="reply-form" data-review-id="{{ review.review_id }}">
                                             {% csrf_token %}
                                             <div class="mb-2">
-                                                <textarea class="form-control form-control-sm" name="seller_reply" rows="3" placeholder="Viết phản hồi..."></textarea>
+                                                <textarea class="form-control form-control-sm" name="seller_reply" rows="3" placeholder="Write a reply..."></textarea>
                                             </div>
                                             <button type="submit" class="btn btn-sm btn-primary">
-                                                <i class="fas fa-reply"></i> Phản hồi
+                                                <i class="fas fa-reply"></i> Reply
                                             </button>
                                         </form>
                                     {% endif %}
@@ -149,7 +149,7 @@
                             <ul class="pagination justify-content-center">
                                 {% if reviews.has_previous %}
                                     <li class="page-item">
-                                        <a class="page-link" href="?page={{ reviews.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.rating %}{% for r in request.GET.rating %}&rating={{ r }}{% endfor %}{% endif %}">Trước</a>
+                                        <a class="page-link" href="?page={{ reviews.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.rating %}{% for r in request.GET.rating %}&rating={{ r }}{% endfor %}{% endif %}">Previous</a>
                                     </li>
                                 {% endif %}
                                 {% for num in reviews.paginator.page_range %}
@@ -165,7 +165,7 @@
                                 {% endfor %}
                                 {% if reviews.has_next %}
                                     <li class="page-item">
-                                        <a class="page-link" href="?page={{ reviews.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.rating %}{% for r in request.GET.rating %}&rating={{ r }}{% endfor %}{% endif %}">Sau</a>
+                                        <a class="page-link" href="?page={{ reviews.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.rating %}{% for r in request.GET.rating %}&rating={{ r }}{% endfor %}{% endif %}">Next</a>
                                     </li>
                                 {% endif %}
                             </ul>
@@ -174,7 +174,7 @@
                     {% else %}
                         <div class="text-center py-4">
                             <i class="fas fa-star fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">Không có đánh giá nào.</p>
+                            <p class="text-muted">No reviews yet.</p>
                         </div>
                     {% endif %}
                 </div>

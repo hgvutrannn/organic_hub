@@ -3,7 +3,7 @@
 {% block store_title %}Dashboard{% endblock %}
 
 {% block store_page_title %}Dashboard{% endblock %}
-{% block store_page_subtitle %}Tổng quan cửa hàng của bạn{% endblock %}
+{% block store_page_subtitle %}Your store overview{% endblock %}
 
 {% block store_content %}
 
@@ -18,10 +18,10 @@
                             <i class="fas fa-clock text-warning fs-4"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <h5 class="alert-heading fw-bold mb-2">Yêu cầu xác minh đang được xem xét</h5>
-                            <p class="mb-2">Yêu cầu xác minh #{{ latest_request.request_id }} của bạn đang được admin xem xét. Vui lòng chờ thông báo.</p>
+                            <h5 class="alert-heading fw-bold mb-2">Verification Request Under Review</h5>
+                            <p class="mb-2">Your verification request #{{ latest_request.request_id }} is being reviewed by admin. Please wait for notification.</p>
                             <a href="{% url 'verification_status' store.store_id %}" class="btn btn-outline-warning btn-sm rounded-pill">
-                                <i class="fas fa-eye me-1"></i>Xem trạng thái chi tiết
+                                <i class="fas fa-eye me-1"></i>View Detailed Status
                             </a>
                         </div>
                     </div>
@@ -37,19 +37,19 @@
                             <i class="fas fa-exclamation-triangle text-danger fs-4"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <h5 class="alert-heading fw-bold mb-2">Yêu cầu xác minh bị từ chối</h5>
-                            <p class="mb-2">Yêu cầu xác minh #{{ latest_request.request_id }} của bạn đã bị từ chối. Vui lòng kiểm tra ghi chú của admin và gửi yêu cầu mới.</p>
+                            <h5 class="alert-heading fw-bold mb-2">Verification Request Rejected</h5>
+                            <p class="mb-2">Your verification request #{{ latest_request.request_id }} has been rejected. Please check admin notes and submit a new request.</p>
                             {% if latest_request.admin_notes %}
                             <div class="mb-3">
-                                <strong>Ghi chú từ admin:</strong>
+                                <strong>Admin Notes:</strong>
                                 <p class="mb-2 text-muted">{{ latest_request.admin_notes }}</p>
                             </div>
                             {% endif %}
                             <a href="{% url 'verification_management' store.store_id %}" class="btn btn-outline-danger btn-sm rounded-pill me-2">
-                                <i class="fas fa-plus me-1"></i>Gửi yêu cầu mới
+                                <i class="fas fa-plus me-1"></i>Send New Request
                             </a>
                             <a href="{% url 'verification_status' store.store_id %}" class="btn btn-outline-secondary btn-sm rounded-pill">
-                                <i class="fas fa-eye me-1"></i>Xem trạng thái chi tiết
+                                <i class="fas fa-eye me-1"></i>View Detailed Status
                             </a>
                         </div>
                     </div>
@@ -65,8 +65,8 @@
                             <i class="fas fa-check-circle text-success fs-4"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <h5 class="alert-heading fw-bold mb-2">Yêu cầu xác minh đã được phê duyệt</h5>
-                            <p class="mb-0">Chúc mừng! Yêu cầu xác minh #{{ latest_request.request_id }} của bạn đã được phê duyệt và cửa hàng có thể bắt đầu bán hàng.</p>
+                            <h5 class="alert-heading fw-bold mb-2">Verification Request Approved</h5>
+                            <p class="mb-0">Congratulations! Your verification request #{{ latest_request.request_id }} has been approved and the store can start selling.</p>
                         </div>
                     </div>
                 </div>
@@ -82,8 +82,8 @@
                             <i class="fas fa-info-circle text-info fs-4"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <h5 class="alert-heading fw-bold mb-2">Chưa có yêu cầu xác minh</h5>
-                            <p class="mb-0">Bạn chưa gửi yêu cầu xác minh nào. Hãy tải lên các giấy tờ chứng nhận để bắt đầu quá trình xác minh cửa hàng.</p>
+                            <h5 class="alert-heading fw-bold mb-2">No Verification Request</h5>
+                            <p class="mb-0">You haven't submitted any verification requests. Please upload certification documents to start the store verification process.</p>
                         </div>
                     </div>
                 </div>
@@ -97,35 +97,35 @@
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-header bg-gradient bg-opacity-10 border-0">
                     <h3 class="mb-0 fw-bold">
-                        <i class="fas fa-info-circle me-2"></i>Thông tin cửa hàng
+                        <i class="fas fa-info-circle me-2"></i>Store Information
                     </h3>
                 </div>
                 <div class="card-body p-4">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <h6 class="fw-bold text-muted mb-1">Tên cửa hàng</h6>
+                                <h6 class="fw-bold text-muted mb-1">Store Name</h6>
                                 <p class="mb-0 fs-5">{{ store.store_name }}</p>
                             </div>
                             <div class="mb-3">
-                                <h6 class="fw-bold text-muted mb-1">Mô tả</h6>
-                                <p class="mb-0">{{ store.store_description|default:"Chưa có mô tả" }}</p>
+                                <h6 class="fw-bold text-muted mb-1">Description</h6>
+                                <p class="mb-0">{{ store.store_description|default:"No description" }}</p>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <h6 class="fw-bold text-muted mb-1">Trạng thái xác minh</h6>
+                                <h6 class="fw-bold text-muted mb-1">Verification Status</h6>
                                 <span class="badge {% if store.is_verified_status == 'verified' %}bg-success{% elif store.is_verified_status == 'rejected' %}bg-danger{% else %}bg-warning{% endif %} fs-6">
                                     {{ store.get_is_verified_status_display }}
                                 </span>
                             </div>
                             <div class="mb-3">
-                                <h6 class="fw-bold text-muted mb-1">Ngày tạo</h6>
+                                <h6 class="fw-bold text-muted mb-1">Created Date</h6>
                                 <p class="mb-0">{{ store.created_at|date:"d/m/Y H:i" }}</p>
                             </div>
                             {% if store.verified_at %}
                             <div class="mb-3">
-                                <h6 class="fw-bold text-muted mb-1">Ngày xác minh</h6>
+                                <h6 class="fw-bold text-muted mb-1">Verified Date</h6>
                                 <p class="mb-0">{{ store.verified_at|date:"d/m/Y H:i" }}</p>
                             </div>
                             {% endif %}
@@ -142,7 +142,7 @@
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-header bg-gradient bg-opacity-10 border-0">
                     <h3 class="mb-0 fw-bold">
-                        <i class="fas fa-bolt me-2"></i>Thao tác nhanh
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
                     </h3>
                 </div>
                 <div class="card-body p-4">
@@ -150,40 +150,40 @@
                         <div class="col-md-6 col-lg-4">
                             <a href="{% url 'store_products' store.store_id %}" 
                                class="btn btn-outline-primary btn-lg w-100 rounded-pill">
-                                <i class="fas fa-box me-2"></i>Quản lý sản phẩm
+                                <i class="fas fa-box me-2"></i>Manage Products
                             </a>
                         </div>
                         <div class="col-md-6 col-lg-4">
                             <a href="{% url 'verification_management' store.store_id %}" 
                                class="btn btn-outline-warning btn-lg w-100 rounded-pill">
-                                <i class="fas fa-certificate me-2"></i>Quản lý xác minh
+                                <i class="fas fa-certificate me-2"></i>Manage Verification
                             </a>
                         </div>
                         <div class="col-md-6 col-lg-4">
                             <a href="{% url 'store_orders' store.store_id %}" 
                                class="btn btn-outline-success btn-lg w-100 rounded-pill">
-                                <i class="fas fa-shopping-cart me-2"></i>Xem đơn hàng
+                                <i class="fas fa-shopping-cart me-2"></i>View Orders
                             </a>
                         </div>
                         <div class="col-md-6 col-lg-4">
                             <a href="{% url 'store_review_dashboard' store.store_id %}" 
                                class="btn btn-outline-warning btn-lg w-100 rounded-pill">
-                                <i class="fas fa-star me-2"></i>Quản lý đánh giá
+                                <i class="fas fa-star me-2"></i>Manage Reviews
                             </a>
                         </div>
                         {% if store.is_verified_status == 'verified' %}
                         <div class="col-md-6 col-lg-4">
                             <a href="{% url 'add_product' store.store_id %}" 
                                class="btn btn-outline-info btn-lg w-100 rounded-pill">
-                                <i class="fas fa-plus me-2"></i>Thêm sản phẩm
+                                <i class="fas fa-plus me-2"></i>Add Product
                             </a>
                         </div>
                         {% else %}
                         <div class="col-md-6 col-lg-4">
                             <button class="btn btn-outline-secondary btn-lg w-100 rounded-pill" disabled>
-                                <i class="fas fa-lock me-2"></i>Thêm sản phẩm
+                                <i class="fas fa-lock me-2"></i>Add Product
                             </button>
-                            <small class="text-muted d-block mt-1">Cần xác minh cửa hàng</small>
+                            <small class="text-muted d-block mt-1">Store verification required</small>
                         </div>
                         {% endif %}
                     </div>

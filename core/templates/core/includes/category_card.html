@@ -1,0 +1,13 @@
+{% load static %}
+<div class="col-lg-2 col-md-3 col-sm-4 col-6">
+    <a href="{% url 'product_list' %}?category={{ category.category_id }}" 
+       class="text-decoration-none text-dark">
+        <div class="card border-0 shadow-sm rounded-4 category-card h-100 text-center p-3">
+            <div class="category-icon">
+                <i class="fas fa-leaf"></i>
+            </div>
+            <h6 class="mb-0 fw-semibold">{{ category.name }}</h6>
+        </div>
+    </a>
+</div>
+

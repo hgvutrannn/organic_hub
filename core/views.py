@@ -1,9 +1,11 @@
+import re
+import uuid
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q, Max
+from django.db.models import Q, Max, F
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
@@ -14,7 +16,8 @@ from .models import (
     Category, CartItem, Order, OrderItem, Review, Address, Store, 
     ProductImage, StoreCertification, StoreVerificationRequest,
     ProductComment, ReviewMedia, StoreReviewStats, ProductVariant,
-    FlashSale, FlashSaleProduct, DiscountCode, DiscountCodeProduct
+    FlashSale, FlashSaleProduct, DiscountCode, DiscountCodeProduct,
+    CertificationOrganization
 )
 from .marketing_views import (
     store_flash_sale_list, store_flash_sale_create, store_flash_sale_edit, store_flash_sale_delete,
@@ -25,7 +28,8 @@ from .forms import (
     CustomUserRegistrationForm, LoginForm, ProductForm, AddressForm, ReviewForm, SearchForm, ProfileUpdateForm,
     StoreCertificationForm, AdminStoreReviewForm, PasswordChangeForm, ForgotPasswordForm, 
     PasswordResetConfirmForm, OTPVerificationForm,
-    ProductCommentForm, ProductCommentReplyForm, ReviewReplyForm, StoreReviewFilterForm, ProductVariantForm
+    ProductCommentForm, ProductCommentReplyForm, ReviewReplyForm, StoreReviewFilterForm,
+    CategoryForm, CertificationOrganizationForm
 )
 from chat.models import Message
 from notifications.tasks import create_order_status_notifications
@@ -141,12 +145,86 @@ def get_negative_reviews_needing_reply(store):
 # Home Page
 def home(request):
     """Trang chủ - hiển thị danh mục và sản phẩm gợi ý"""
+    from recommendations.services import RecommendationService
+    
     categories = Category.objects.all()[:12]  # Hiển thị tối đa 12 danh mục
-    suggested_products = Product.objects.filter(is_active=True).order_by('-view_count', '-created_at')[:12]  # Gợi ý sản phẩm
+    
+    # Get all products in ongoing flash sales, sorted by flash sale end_date (ending soonest first)
+    now = timezone.now()
+    flash_sale_products_queryset = FlashSaleProduct.objects.filter(
+        flash_sale__is_active=True,
+        flash_sale__start_date__lte=now,
+        flash_sale__end_date__gte=now,
+        product__is_active=True
+    ).select_related(
+        'product', 
+        'product__store', 
+        'product__category',
+        'flash_sale',
+        'flash_sale__store'
+    ).order_by('flash_sale__end_date', 'sort_order')[:20]  # Limit to 20 products
+    
+    # Calculate discount percentage and time remaining for each product
+    flash_sale_products = []
+    for flash_product in flash_sale_products_queryset:
+        discount_percent = 0
+        if flash_product.product.price > flash_product.flash_price:
+            discount_percent = round(
+                ((float(flash_product.product.price) - float(flash_product.flash_price)) / float(flash_product.product.price)) * 100,
+                0
+            )
+        
+        # Calculate time remaining
+        time_remaining = flash_product.flash_sale.end_date - now
+        total_seconds = int(time_remaining.total_seconds())
+        
+        if total_seconds > 0:
+            days = total_seconds // 86400
+            hours = (total_seconds % 86400) // 3600
+            minutes = (total_seconds % 3600) // 60
+            
+            # Format time remaining
+            if days > 0:
+                time_remaining_display = f"{days} ngày {hours} giờ"
+            elif hours > 0:
+                time_remaining_display = f"{hours} giờ {minutes} phút"
+            else:
+                time_remaining_display = f"{minutes} phút"
+        else:
+            time_remaining_display = "Đã kết thúc"
+        
+        flash_sale_products.append({
+            'flash_product': flash_product,
+            'discount_percent': int(discount_percent),
+            'time_remaining_display': time_remaining_display
+        })
+    
+    # Get personalized recommendations
+    try:
+        if request.user.is_authenticated:
+            suggested_products = RecommendationService.get_personalized_recommendations(
+                request.user, limit=12
+            )
+        else:
+            # Get session key for anonymous users
+            session_key = request.session.session_key
+            if not session_key:
+                request.session.create()
+                session_key = request.session.session_key
+            suggested_products = RecommendationService.get_session_recommendations(
+                session_key, limit=12
+            )
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error getting recommendations in home view: {e}", exc_info=True)
+        # Fallback to best selling
+        suggested_products = RecommendationService.get_best_selling_products(limit=12)
     
     context = {
         'categories': categories,
         'suggested_products': suggested_products,
+        'flash_sale_products': flash_sale_products,
     }
     return render(request, 'core/home.html', context)
 
@@ -182,9 +260,9 @@ def user_login(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
-            phone_number = form.cleaned_data['phone_number']
+            email = form.cleaned_data['email']
             password = form.cleaned_data['password']
-            user = authenticate(request, username=phone_number, password=password)
+            user = authenticate(request, username=email, password=password)
             
             if user is not None:
                 # Check if email is verified
@@ -200,7 +278,7 @@ def user_login(request):
                 messages.success(request, f'Chào mừng {user.full_name}!')
                 return redirect('home')
             else:
-                messages.error(request, 'Số điện thoại hoặc mật khẩu không đúng.')
+                messages.error(request, 'Email hoặc mật khẩu không đúng.')
     else:
         form = LoginForm()
     
@@ -223,17 +301,20 @@ def product_list(request):
     
     logger = logging.getLogger(__name__)
     categories = Category.objects.all()
+    certificates = CertificationOrganization.objects.all()
     
     # Search and filter
     search_form = SearchForm(request.GET)
     query = None
     category = None
+    certificate = None  
     min_price = None
     max_price = None
     
     if search_form.is_valid():
         query = search_form.cleaned_data.get('query')
         category = search_form.cleaned_data.get('category')
+        certificate = search_form.cleaned_data.get('certificate')  
         min_price = search_form.cleaned_data.get('min_price')
         max_price = search_form.cleaned_data.get('max_price')
     
@@ -245,6 +326,8 @@ def product_list(request):
     # Debug: Print search parameters
     print(f"\n{'='*60}")
     print(f"🔍 SEARCH DEBUG - Query: '{query}'")
+    print(f"   Category: {category}")
+    print(f"   Certificate: {certificate}")  # THÊM DÒNG NÀY
     print(f"   USE_ELASTICSEARCH setting: {use_elasticsearch}")
     print(f"{'='*60}\n")
     
@@ -254,6 +337,8 @@ def product_list(request):
             filters = {}
             if category:
                 filters['category_id'] = category.category_id
+            if certificate:  # THÊM ĐIỀU KIỆN NÀY
+                filters['certificate_id'] = certificate.organization_id
             if min_price:
                 filters['min_price'] = min_price
             if max_price:
@@ -266,12 +351,10 @@ def product_list(request):
             products_list = ProductSearchService.search_with_fallback(
                 query=query,
                 filters=filters,
-                size=1000,  # Get enough results for pagination
+                size=1000,
                 use_elasticsearch=True
             )
             
-            # Convert list to queryset-like object for pagination
-            # We'll use the list directly for pagination
             products_queryset = products_list
             search_method_used = 'Elasticsearch'
             print(f"✅ SUCCESS: Using Elasticsearch - Found {len(products_list)} products")
@@ -279,7 +362,6 @@ def product_list(request):
             
         except Exception as e:
             print(f"❌ ERROR: Elasticsearch search failed: {str(e)}")
-            print(f"   Exception type: {type(e).__name__}")
             import traceback
             traceback.print_exc()
             logger.warning(f"Elasticsearch search failed, using Django ORM fallback: {str(e)}")
@@ -297,6 +379,50 @@ def product_list(request):
             )
         if category:
             products = products.filter(category=category)
+
+
+        # SỬA DÒNG NÀY - Filter đúng qua relationship
+        if certificate:
+            # Lặp qua từng product
+            products_to_exclude = []
+        
+            for product in products:
+                # Product thuộc store nào?
+                store_id = product.store_id
+                
+                flag = 0
+                
+                # Store đó có cert trùng với certificate không?
+                # Lấy các request đã được approved của store
+                verification_requests = StoreVerificationRequest.objects.filter(
+                    store_id=store_id,
+                    status='approved'  # status là CharField, dùng 'approved' không phải True
+                )
+                
+                for verification_request in verification_requests:
+                    # Lấy các chứng nhận trong request đã approved
+                    certs = StoreCertification.objects.filter(
+                        verification_request=verification_request,
+                        certification_organization=certificate  # So sánh với CertificationOrganization object
+                    )
+                    
+                    # Kiểm tra xem có chứng nhận nào còn hiệu lực không (chưa hết hạn)
+                    for cert in certs:
+                        # Kiểm tra chứng nhận còn hiệu lực
+                        if cert.expiry_date is None or cert.expiry_date >= timezone.now().date():
+                            flag = 1
+                            break
+                    
+                    if flag == 1:
+                        break
+                
+                # Nếu không tìm thấy chứng nhận phù hợp, đánh dấu để loại bỏ
+                if flag == 0:
+                    products_to_exclude.append(product.product_id)
+        
+            # Loại bỏ các products không có chứng nhận
+            products = products.exclude(product_id__in=products_to_exclude)
+
         if min_price:
             products = products.filter(price__gte=min_price)
         if max_price:
@@ -330,24 +456,43 @@ def product_list(request):
         'categories': categories,
         'search_form': search_form,
         'search_method': search_method_used,  # For debugging
+        'certificates': certificates,
     }
     return render(request, 'core/product_list.html', context)
 
 
 def product_detail(request, product_id):
     """Chi tiết sản phẩm"""
+    from recommendations.services import RecommendationService
+    from recommendations.signals import track_product_view
+    
     product = get_object_or_404(Product, pk=product_id, is_active=True)
     
     # Tăng view count
     product.view_count += 1
     product.save()
     
+    # Track product view for recommendations
+    try:
+        if request.user.is_authenticated:
+            track_product_view(product, user=request.user)
+        else:
+            session_key = request.session.session_key
+            if not session_key:
+                request.session.create()
+                session_key = request.session.session_key
+            track_product_view(product, session_key=session_key)
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error tracking product view: {e}", exc_info=True)
+    
     # Lấy variants nếu có
     variants = []
     default_variant = None
     
     if product.has_variants:
-        variants_queryset = ProductVariant.objects.filter(product=product, is_active=True).order_by('sort_order', 'created_at')
+        variants_queryset = ProductVariant.objects.filter(product=product, is_active=True).order_by('created_at')
         if variants_queryset.exists():
             variants = list(variants_queryset)
             default_variant = variants[0]  # Lấy variant đầu tiên làm mặc định
@@ -356,18 +501,8 @@ def product_detail(request, product_id):
     gallery_images = []
     image_index = 1
     
-    # Thêm hình chính của sản phẩm (nếu có)
-    if product.image:
-        gallery_images.append({
-            'type': 'product',
-            'url': product.image.url,
-            'alt': product.name,
-            'index': image_index,
-        })
-        image_index += 1
-    
-    # Thêm các hình trong gallery của sản phẩm
-    for img in product.images.all().order_by('order', 'created_at'):
+    # Thêm các hình trong gallery của sản phẩm (order=0 là ảnh chính)
+    for img in product.get_images(primary_only=False):
         gallery_images.append({
             'type': 'product',
             'url': img.image.url,
@@ -394,6 +529,18 @@ def product_detail(request, product_id):
     # Lấy đánh giá
     reviews = Review.objects.filter(product=product, is_approved=True).select_related('user').prefetch_related('media_files').order_by('-created_at')
     
+    # Get recommendations
+    try:
+        similar_products = RecommendationService.get_similar_products(product, limit=8)
+        frequently_bought_together = RecommendationService.get_frequently_bought_together(product, limit=4)
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error getting recommendations in product_detail: {e}", exc_info=True)
+        # Fallback to best selling
+        similar_products = RecommendationService.get_best_selling_products(limit=8)
+        frequently_bought_together = RecommendationService.get_best_selling_products(limit=4)
+    
     context = {
         'product': product,
         'variants': variants,
@@ -401,14 +548,68 @@ def product_detail(request, product_id):
         'gallery_images': gallery_images,
         'variant_images_map': variant_images_map,
         'reviews': reviews,
+        'similar_products': similar_products,
+        'frequently_bought_together': frequently_bought_together,
     }
     return render(request, 'core/product_detail.html', context)
 
 
 # Cart Views
 @login_required
+def get_store_discount_codes(request, store_id):
+    """API endpoint to get available discount codes for a store (shop scope only, active)"""
+    try:
+        store = Store.objects.get(store_id=store_id)
+        now = timezone.now()
+        
+        # Get active discount codes with shop scope only
+        discount_codes = DiscountCode.objects.filter(
+            store=store,
+            scope='shop',
+            status='active',
+            is_active=True,
+            start_date__lte=now,
+            end_date__gte=now
+        ).filter(
+            Q(max_usage=0) | Q(used_count__lt=F('max_usage'))
+        ).order_by('-created_at')
+        
+        codes_data = []
+        for code in discount_codes:
+            codes_data.append({
+                'code': code.code,
+                'name': code.name,
+                'description': code.description or '',
+                'discount_type': code.discount_type,
+                'discount_value': float(code.discount_value),
+                'max_discount': float(code.max_discount_amount) if code.max_discount_amount else None,
+                'scope': code.scope,
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'discount_codes': codes_data
+        })
+    except Store.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Store not found'
+        }, status=404)
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error getting discount codes: {e}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
 def cart(request):
     """Shopping Cart - Grouped by Store"""
+    from recommendations.services import RecommendationService
+    
     cart_items = CartItem.objects.filter(user=request.user).select_related('product', 'product__store', 'variant')
     
     # Group cart items by store
@@ -425,10 +626,61 @@ def cart(request):
     # Calculate totals
     total = sum(item.total_price for item in cart_items)
     
+    # Get recommendations based on cart items
+    try:
+        # Get products from cart
+        cart_product_ids = [item.product.product_id for item in cart_items]
+        
+        # Get recommendations based on cart products
+        if cart_product_ids:
+            # Get frequently bought together products
+            recommended_products = []
+            for item in cart_items[:3]:  # Check first 3 products
+                together = RecommendationService.get_frequently_bought_together(
+                    item.product, limit=4
+                )
+                recommended_products.extend(together)
+            
+            # Remove duplicates and products already in cart
+            seen = set(cart_product_ids)
+            unique_recommended = []
+            for p in recommended_products:
+                if p.product_id not in seen:
+                    seen.add(p.product_id)
+                    unique_recommended.append(p)
+                if len(unique_recommended) >= 8:
+                    break
+            
+            # If not enough, fill with personalized recommendations
+            if len(unique_recommended) < 8:
+                remaining = 8 - len(unique_recommended)
+                personalized = RecommendationService.get_personalized_recommendations(
+                    request.user, limit=remaining
+                )
+                for p in personalized:
+                    if p.product_id not in seen:
+                        unique_recommended.append(p)
+                    if len(unique_recommended) >= 8:
+                        break
+            
+            recommendations = unique_recommended[:8]
+        else:
+            # Empty cart, show personalized recommendations
+            recommendations = RecommendationService.get_personalized_recommendations(
+                request.user, limit=8
+            )
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error getting recommendations in cart view: {e}", exc_info=True)
+        # Fallback to best selling
+        recommendations = RecommendationService.get_best_selling_products(limit=8)
+    
     context = {
         'cart_items': cart_items,
         'stores_dict': stores_dict,
         'total': total,
+        'recommendations': recommendations,
     }
     return render(request, 'core/user/cart.html', context)
 
@@ -496,7 +748,7 @@ def update_cart_quantity(request, cart_item_id):
 @login_required
 def checkout(request):
     """Thanh toán"""
-    cart_items = CartItem.objects.filter(user=request.user)
+    cart_items = CartItem.objects.filter(user=request.user).select_related('product', 'product__store', 'variant')
     
     if not cart_items.exists():
         messages.warning(request, 'Giỏ hàng trống.')
@@ -504,55 +756,279 @@ def checkout(request):
     
     addresses = Address.objects.filter(user=request.user)
     
+    # Group cart items by store
+    stores_dict = {}
+    for item in cart_items:
+        store = item.product.store
+        if store.store_id not in stores_dict:
+            stores_dict[store.store_id] = {
+                'store': store,
+                'items': []
+            }
+        stores_dict[store.store_id]['items'].append(item)
+    
+    # Calculate totals and store subtotals
+    subtotal = sum(item.total_price for item in cart_items)
+    store_subtotals = {}
+    for store_id, store_data in stores_dict.items():
+        store_subtotals[store_id] = sum(item.total_price for item in store_data['items'])
+    
+    # Get applied discounts from request.GET (passed from cart via JavaScript)
+    import json
+    applied_discounts = {}
+    if request.method == 'GET':
+        discount_data = request.GET.get('discounts', '{}')
+        try:
+            applied_discounts = json.loads(discount_data)
+        except:
+            applied_discounts = {}
+    
+    # Calculate discount for each store
+    from decimal import Decimal
+    total_discount = Decimal('0')
+    store_discounts = {}
+    for store_id, store_data in stores_dict.items():
+        store_id_str = str(store_id)
+        if store_id_str in applied_discounts:
+            discount = applied_discounts[store_id_str]
+            store_total = store_subtotals[store_id]
+            
+            discount_amount = Decimal('0')
+            if discount.get('discount_type') == 'percentage':
+                discount_amount = Decimal(str(store_total)) * Decimal(str(discount.get('discount_value', 0))) / Decimal('100')
+                if discount.get('max_discount') and discount_amount > Decimal(str(discount.get('max_discount'))):
+                    discount_amount = Decimal(str(discount.get('max_discount')))
+            elif discount.get('discount_type') == 'fixed':
+                discount_amount = Decimal(str(discount.get('discount_value', 0)))
+            
+            store_discounts[store_id] = float(discount_amount)  # Store as float for template
+            total_discount += discount_amount
+    
     if request.method == 'POST':
         shipping_address_id = request.POST.get('shipping_address')
         payment_method = request.POST.get('payment_method', 'cod')
         
+        # Get discounts from POST data
+        import json
+        discount_data = request.POST.get('applied_discounts', '{}')
+        try:
+            applied_discounts = json.loads(discount_data)
+        except:
+            applied_discounts = {}
+        
         if not shipping_address_id:
             messages.error(request, 'Vui lòng chọn địa chỉ giao hàng.')
+            # Recalculate discounts for display
+            from decimal import Decimal
+            total_discount = Decimal('0')
+            store_discounts = {}
+            for store_id, store_data in stores_dict.items():
+                store_id_str = str(store_id)
+                if store_id_str in applied_discounts:
+                    discount = applied_discounts[store_id_str]
+                    store_total = store_subtotals[store_id]
+                    
+                    discount_amount = Decimal('0')
+                    if discount.get('discount_type') == 'percentage':
+                        discount_amount = Decimal(str(store_total)) * Decimal(str(discount.get('discount_value', 0))) / Decimal('100')
+                        if discount.get('max_discount') and discount_amount > Decimal(str(discount.get('max_discount'))):
+                            discount_amount = Decimal(str(discount.get('max_discount')))
+                    elif discount.get('discount_type') == 'fixed':
+                        discount_amount = Decimal(str(discount.get('discount_value', 0)))
+                    
+                    store_discounts[store_id] = float(discount_amount)  # Store as float for template
+                    total_discount += discount_amount
+            
+            # Prepare store data for template
+            stores_data = []
+            for store_id, store_data in stores_dict.items():
+                stores_data.append({
+                    'store': store_data['store'],
+                    'items': store_data['items'],
+                    'subtotal': store_subtotals.get(store_id, 0),
+                    'discount': store_discounts.get(store_id, 0),
+                })
+            
+            from decimal import Decimal
+            shipping_cost = Decimal('30000')
+            final_total = subtotal - total_discount + shipping_cost
+            
+            # Load last checkout info from session
+            last_checkout_info = request.session.get('last_checkout_info', {})
+            default_address_id = last_checkout_info.get('shipping_address_id')
+            default_payment_method = last_checkout_info.get('payment_method', 'cod')
+            default_notes = last_checkout_info.get('notes', '')
+            
             return render(request, 'core/user/checkout.html', {
                 'cart_items': cart_items,
+                'stores_dict': stores_dict,
+                'stores_data': stores_data,
                 'addresses': addresses,
-                'total': sum(item.total_price for item in cart_items)
+                'subtotal': subtotal,
+                'total_discount': total_discount,
+                'shipping_cost': shipping_cost,
+                'final_total': final_total,
+                'default_address_id': default_address_id,
+                'default_payment_method': default_payment_method,
+                'default_notes': default_notes,
             })
         
         shipping_address = get_object_or_404(Address, pk=shipping_address_id, user=request.user)
         
-        # Tạo đơn hàng
-        subtotal = sum(item.total_price for item in cart_items)
-        shipping_cost = 30000  # Phí ship cố định
-        total_amount = subtotal + shipping_cost
+        # Recalculate discounts for order
+        from decimal import Decimal
+        total_discount = Decimal('0')
+        store_discounts = {}
+        for store_id, store_data in stores_dict.items():
+            store_id_str = str(store_id)
+            if store_id_str in applied_discounts:
+                discount = applied_discounts[store_id_str]
+                store_total = store_subtotals[store_id]
+                
+                discount_amount = Decimal('0')
+                if discount.get('discount_type') == 'percentage':
+                    discount_amount = Decimal(str(store_total)) * Decimal(str(discount.get('discount_value', 0))) / Decimal('100')
+                    if discount.get('max_discount') and discount_amount > Decimal(str(discount.get('max_discount'))):
+                        discount_amount = Decimal(str(discount.get('max_discount')))
+                elif discount.get('discount_type') == 'fixed':
+                    discount_amount = Decimal(str(discount.get('discount_value', 0)))
+                
+                store_discounts[store_id] = float(discount_amount)  # Store as float for template
+                total_discount += discount_amount
         
-        order = Order.objects.create(
-            user=request.user,
-            shipping_address=shipping_address,
-            subtotal=subtotal,
-            shipping_cost=shipping_cost,
-            total_amount=total_amount,
-            payment_method=payment_method
-        )
+        # Tạo đơn hàng cho mỗi store (mỗi store một order riêng)
+        shipping_cost = Decimal('30000')  # Phí ship cố định cho mỗi order
+        notes = request.POST.get('notes', '')
+        created_orders = []
         
-        # Tạo order items
-        for cart_item in cart_items:
-            OrderItem.objects.create(
-                order=order,
-                product=cart_item.product,
-                variant=cart_item.variant,
-                quantity=cart_item.quantity,
-                unit_price=cart_item.unit_price,
-                total_price=cart_item.total_price
+        for store_id, store_data in stores_dict.items():
+            # Tính subtotal và discount cho store này
+            store_subtotal = store_subtotals[store_id]
+            store_discount = Decimal(str(store_discounts.get(store_id, 0)))
+            store_total = store_subtotal - store_discount + shipping_cost
+            
+            # Tạo order cho store này
+            order = Order.objects.create(
+                user=request.user,
+                shipping_address=shipping_address,
+                subtotal=store_subtotal,
+                discount_amount=store_discount,
+                shipping_cost=shipping_cost,
+                total_amount=store_total,
+                payment_method=payment_method,
+                notes=notes
             )
+            
+            # Tạo order items cho store này
+            for cart_item in store_data['items']:
+                OrderItem.objects.create(
+                    order=order,
+                    product=cart_item.product,
+                    variant=cart_item.variant,
+                    quantity=cart_item.quantity,
+                    unit_price=cart_item.unit_price,
+                    total_price=cart_item.total_price
+                )
+            
+            created_orders.append(order)
         
         # Xóa giỏ hàng
         cart_items.delete()
         
-        messages.success(request, f'Đặt hàng thành công! Mã đơn hàng: #{order.order_id}')
-        return redirect('order_detail', order_id=order.order_id)
+        # Lưu thông tin checkout vào session để giữ lại cho lần sau
+        request.session['last_checkout_info'] = {
+            'shipping_address_id': shipping_address_id,
+            'payment_method': payment_method,
+            'notes': notes,
+        }
+        
+        # Hiển thị thông báo với tất cả order IDs
+        order_ids = ', '.join([f'#{order.order_id}' for order in created_orders])
+        if len(created_orders) == 1:
+            messages.success(request, f'Đặt hàng thành công! Mã đơn hàng: {order_ids}')
+            return redirect('order_detail', order_id=created_orders[0].order_id)
+        else:
+            messages.success(request, f'Đặt hàng thành công! Đã tạo {len(created_orders)} đơn hàng: {order_ids}')
+            # Redirect đến order list
+            return redirect('orders')
+    
+    # Get frequently bought together recommendations
+    from recommendations.services import RecommendationService
+    
+    try:
+        # Get products from cart
+        cart_product_ids = [item.product.product_id for item in cart_items]
+        
+        # Get frequently bought together products
+        recommended_products = []
+        for item in cart_items[:3]:  # Check first 3 products
+            together = RecommendationService.get_frequently_bought_together(
+                item.product, limit=4
+            )
+            recommended_products.extend(together)
+        
+        # Remove duplicates and products already in cart
+        seen = set(cart_product_ids)
+        unique_recommended = []
+        for p in recommended_products:
+            if p.product_id not in seen:
+                seen.add(p.product_id)
+                unique_recommended.append(p)
+            if len(unique_recommended) >= 6:
+                break
+        
+        # If not enough, fill with best selling
+        if len(unique_recommended) < 6:
+            remaining = 6 - len(unique_recommended)
+            best_selling = RecommendationService.get_best_selling_products(limit=remaining)
+            for p in best_selling:
+                if p.product_id not in seen:
+                    unique_recommended.append(p)
+                if len(unique_recommended) >= 6:
+                    break
+        
+        recommendations = unique_recommended[:6]
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error getting recommendations in checkout view: {e}", exc_info=True)
+        # Fallback to best selling
+        recommendations = RecommendationService.get_best_selling_products(limit=6)
+    
+    # Prepare store data with subtotals and discounts for template
+    stores_data = []
+    for store_id, store_data in stores_dict.items():
+        stores_data.append({
+            'store': store_data['store'],
+            'items': store_data['items'],
+            'subtotal': store_subtotals.get(store_id, 0),
+            'discount': store_discounts.get(store_id, 0),
+        })
+    
+    # Calculate final total
+    from decimal import Decimal
+    shipping_cost = Decimal('30000')
+    final_total = subtotal - total_discount + shipping_cost
+    
+    # Load last checkout info from session để pre-fill form
+    last_checkout_info = request.session.get('last_checkout_info', {})
+    default_address_id = last_checkout_info.get('shipping_address_id')
+    default_payment_method = last_checkout_info.get('payment_method', 'cod')
+    default_notes = last_checkout_info.get('notes', '')
     
     context = {
         'cart_items': cart_items,
+        'stores_dict': stores_dict,
+        'stores_data': stores_data,
         'addresses': addresses,
-        'total': sum(item.total_price for item in cart_items)
+        'subtotal': subtotal,
+        'total_discount': total_discount,
+        'shipping_cost': shipping_cost,
+        'final_total': final_total,
+        'recommendations': recommendations,
+        'default_address_id': default_address_id,
+        'default_payment_method': default_payment_method,
+        'default_notes': default_notes,
     }
     return render(request, 'core/user/checkout.html', context)
 
@@ -573,20 +1049,42 @@ def order_detail(request, order_id):
     """Chi tiết đơn hàng"""
     order = get_object_or_404(Order, pk=order_id, user=request.user)
     
-    # Get reviews for order items
-    order_items_with_reviews = []
-    for item in order.order_items.all():
-        review = Review.objects.filter(user=request.user, order_item=item).first()
-        can_review = can_create_review(request.user, item) if order.status == 'delivered' else False
-        order_items_with_reviews.append({
-            'item': item,
-            'review': review,
-            'can_review': can_review,
+    # Group order items by store
+    stores_dict = {}
+    for item in order.order_items.select_related('product', 'product__store', 'variant').all():
+        store = item.product.store
+        if store.store_id not in stores_dict:
+            stores_dict[store.store_id] = {
+                'store': store,
+                'items': []
+            }
+        stores_dict[store.store_id]['items'].append(item)
+    
+    # Get reviews for order items and group by store
+    stores_data = []
+    for store_id, store_data in stores_dict.items():
+        store_items_with_reviews = []
+        store_subtotal = 0
+        
+        for item in store_data['items']:
+            review = Review.objects.filter(user=request.user, order_item=item).first()
+            can_review = can_create_review(request.user, item) if order.status == 'delivered' else False
+            store_items_with_reviews.append({
+                'item': item,
+                'review': review,
+                'can_review': can_review,
+            })
+            store_subtotal += item.total_price
+        
+        stores_data.append({
+            'store': store_data['store'],
+            'items_with_reviews': store_items_with_reviews,
+            'subtotal': store_subtotal,
         })
     
     context = {
         'order': order,
-        'order_items_with_reviews': order_items_with_reviews,
+        'stores_data': stores_data,
     }
     return render(request, 'core/user/order_detail.html', context)
 
@@ -665,15 +1163,10 @@ def create_store(request):
             
             # Handle certification uploads
             certification_files = request.FILES.getlist('certification_files')
-            certification_types = request.POST.getlist('certification_types')
-            certification_names = request.POST.getlist('certification_names')
-            
-            # Debug: Print what we received
-            print(f"Debug - Files received: {len(certification_files)}")
-            print(f"Debug - Types received: {certification_types}")
-            print(f"Debug - Names received: {certification_names}")
-            print(f"Debug - POST data keys: {list(request.POST.keys())}")
-            print(f"Debug - FILES data keys: {list(request.FILES.keys())}")
+            certificate_numbers = request.POST.getlist('certificate_numbers')
+            issue_dates = request.POST.getlist('issue_dates')
+            expiry_dates = request.POST.getlist('expiry_dates')
+            certification_organizations = request.POST.getlist('certification_organizations')
             
             # Create verification request
             verification_request = StoreVerificationRequest.objects.create(
@@ -682,33 +1175,63 @@ def create_store(request):
             )
             
             # Create certification records - ensure we have matching data
-            if certification_files and certification_types:
-                min_length = min(len(certification_files), len(certification_types))
+            if certification_files:
+                min_length = len(certification_files)
                 for i in range(min_length):
                     file = certification_files[i]
-                    cert_type = certification_types[i]
-                    cert_name = certification_names[i] if i < len(certification_names) else ''
+                    cert_number = certificate_numbers[i] if i < len(certificate_numbers) and certificate_numbers[i] else ''
+                    issue_date_str = issue_dates[i] if i < len(issue_dates) and issue_dates[i] else None
+                    expiry_date_str = expiry_dates[i] if i < len(expiry_dates) and expiry_dates[i] else None
+                    org_id = certification_organizations[i] if i < len(certification_organizations) and certification_organizations[i] else None
                     
-                    if cert_type and file:  # Only create if both type and file are provided
+                    if file:  # Only create if file is provided
                         try:
-                            StoreCertification.objects.create(
-                                verification_request=verification_request,
-                                certification_type=cert_type,
-                                certification_name=cert_name,
-                                document=file
-                            )
-                            print(f"Debug - Created certification: {cert_type} for file: {file.name}")
+                            cert_data = {
+                                'verification_request': verification_request,
+                                'certificate_number': cert_number,
+                                'document': file,
+                                'certification_type': 'other'  # Default value for create_store
+                            }
+                            
+                            # Parse dates
+                            if issue_date_str:
+                                try:
+                                    from datetime import datetime
+                                    cert_data['issue_date'] = datetime.strptime(issue_date_str, '%Y-%m-%d').date()
+                                except ValueError:
+                                    pass
+                            
+                            if expiry_date_str:
+                                try:
+                                    from datetime import datetime
+                                    cert_data['expiry_date'] = datetime.strptime(expiry_date_str, '%Y-%m-%d').date()
+                                except ValueError:
+                                    pass
+                            
+                            # Add organization if provided
+                            if org_id:
+                                try:
+                                    org = CertificationOrganization.objects.get(organization_id=org_id, is_active=True)
+                                    cert_data['certification_organization'] = org
+                                except CertificationOrganization.DoesNotExist:
+                                    pass
+                            
+                            StoreCertification.objects.create(**cert_data)
                         except Exception as e:
-                            print(f"Debug - Error creating certification: {e}")
-            else:
-                print("Debug - No certification files or types received")
+                            print(f"Error creating certification: {e}")
             
             messages.success(request, f'Đã tạo cửa hàng "{store_name}" thành công! Yêu cầu xác minh đã được gửi.')
             return redirect('store_dashboard', store_id=store.store_id)
         else:
             messages.error(request, 'Vui lòng nhập tên cửa hàng.')
     
-    return render(request, 'core/store/create_store.html')
+    # Get active certification organizations for dropdown
+    certification_organizations = CertificationOrganization.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'certification_organizations': certification_organizations,
+    }
+    return render(request, 'core/store/create_store.html', context)
 
 
 @login_required
@@ -775,7 +1298,35 @@ def add_product(request, store_id):
             product.store = store
             has_variants = form.cleaned_data.get('has_variants', False)
             product.has_variants = has_variants
+            
+            # If no variants, stock is required
+            if not has_variants:
+                stock = request.POST.get('stock', 0)
+                try:
+                    product.stock = int(stock)
+                except (ValueError, TypeError):
+                    product.stock = 0
+            else:
+                # If has variants, stock should be 0 (stock managed by variants)
+                product.stock = 0
+            
+            # Save product first to get product_id
             product.save()
+            
+            # Auto-generate SKU if not provided
+            if not product.SKU:
+                # Generate unique SKU
+                max_attempts = 10
+                for _ in range(max_attempts):
+                    sku = f"PROD-{product.store.store_id}-{uuid.uuid4().hex[:8].upper()}"
+                    if not Product.objects.filter(SKU=sku).exclude(pk=product.pk).exists():
+                        product.SKU = sku
+                        product.save(update_fields=['SKU'])
+                        break
+                # If still no SKU after attempts, use product_id
+                if not product.SKU:
+                    product.SKU = f"PROD-{product.store.store_id}-{product.product_id}"
+                    product.save(update_fields=['SKU'])
             
             # Handle multiple gallery images
             gallery_images = request.FILES.getlist('gallery_images')
@@ -784,15 +1335,74 @@ def add_product(request, store_id):
                     product=product,
                     image=image,
                     alt_text=f"{product.name} - Hình {i+1}",
-                    order=i
+                    order=i  # First image is order=0 (primary), then 1, 2, 3...
                 )
             
-            # If has_variants is enabled, redirect to add variant page
+            # Handle variants if has_variants is enabled
             if has_variants:
-                messages.success(request, f'Đã thêm sản phẩm "{product.name}" thành công! Vui lòng thêm phân loại đầu tiên.')
-                return redirect('add_variant', store_id=store.store_id, product_id=product.product_id)
+                # Process variants from form data
+                variants_data = {}
+                for key, value in request.POST.items():
+                    if key.startswith('variants['):
+                        # Extract variant index and field name
+                        # Format: variants[index][field_name]
+                        match = re.match(r'variants\[(\d+)\]\[(\w+)\]', key)
+                        if match:
+                            idx = match.group(1)
+                            field = match.group(2)
+                            if idx not in variants_data:
+                                variants_data[idx] = {}
+                            variants_data[idx][field] = value
+                
+                # Process variant images
+                variant_images = {}
+                for key, file in request.FILES.items():
+                    if key.startswith('variants['):
+                        match = re.match(r'variants\[(\d+)\]\[image\]', key)
+                        if match:
+                            idx = match.group(1)
+                            variant_images[idx] = file
+                
+                # Create variants
+                created_variants = 0
+                for idx, variant_data in variants_data.items():
+                    variant_name = variant_data.get('variant_name', '').strip()
+                    if not variant_name:
+                        continue
+                    
+                    try:
+                        price = float(variant_data.get('price', 0))
+                        stock = int(variant_data.get('stock', 0))
+                        sku_code = variant_data.get('sku_code', '').strip()
+                        variant_description = variant_data.get('variant_description', '').strip()
+                        variant_image = variant_images.get(idx)
+                        
+                        variant = ProductVariant.objects.create(
+                            product=product,
+                            variant_name=variant_name,
+                            variant_description=variant_description if variant_description else None,
+                            price=price,
+                            stock=stock,
+                            sku_code=sku_code if sku_code else None,
+                            image=variant_image
+                        )
+                        
+                        # Auto-generate SKU if not provided
+                        if not variant.sku_code:
+                            variant.sku_code = f"{product.SKU or product.product_id}-{uuid.uuid4().hex[:8].upper()}"
+                            variant.save(update_fields=['sku_code'])
+                        
+                        created_variants += 1
+                    except (ValueError, TypeError) as e:
+                        continue
+                
+                if created_variants > 0:
+                    messages.success(request, f'Đã thêm sản phẩm "{product.name}" với {created_variants} biến thể thành công!')
+                else:
+                    messages.warning(request, f'Đã thêm sản phẩm "{product.name}" nhưng chưa có biến thể nào. Vui lòng chỉnh sửa sản phẩm để thêm biến thể.')
+            else:
+                messages.success(request, f'Đã thêm sản phẩm "{product.name}" thành công!')
             
-            messages.success(request, f'Đã thêm sản phẩm "{product.name}" thành công!')
             return redirect('store_products', store_id=store.store_id)
         else:
             messages.error(request, 'Vui lòng kiểm tra lại thông tin.')
@@ -820,54 +1430,166 @@ def edit_product(request, store_id, product_id):
         return redirect('store_dashboard', store_id=store.store_id)
     
     if request.method == 'POST':
-        form = ProductForm(request.POST, request.FILES, instance=product)
-        if form.is_valid():
-            has_variants = form.cleaned_data.get('has_variants', False)
-            
-            # If enabling has_variants and no variants exist, redirect to add variant
-            if has_variants and not product.variants.exists():
+        action = request.POST.get('action')
+        if action == 'delete':
+            product.delete()
+            messages.success(request, f'Đã xóa sản phẩm "{product.name}" thành công!')
+            return redirect('store_products', store_id=store.store_id)
+        elif action == 'update':
+            form = ProductForm(request.POST, request.FILES, instance=product)
+            if form.is_valid():
+                has_variants = form.cleaned_data.get('has_variants', False)
+                
+                # Handle stock based on has_variants
+                if not has_variants:
+                    stock = request.POST.get('stock', 0)
+                    try:
+                        product.stock = int(stock)
+                    except (ValueError, TypeError):
+                        product.stock = 0
+                else:
+                    # If has variants, stock should be 0 (stock managed by variants)
+                    product.stock = 0
+                
                 form.save()
+                
+                # Auto-generate SKU if not provided (only for existing products that don't have SKU)
+                if not product.SKU:
+                    # Generate unique SKU
+                    max_attempts = 10
+                    for _ in range(max_attempts):
+                        sku = f"PROD-{product.store.store_id}-{uuid.uuid4().hex[:8].upper()}"
+                        if not Product.objects.filter(SKU=sku).exclude(pk=product.pk).exists():
+                            product.SKU = sku
+                            product.save(update_fields=['SKU'])
+                            break
+                    # If still no SKU after attempts, use product_id
+                    if not product.SKU:
+                        product.SKU = f"PROD-{product.store.store_id}-{product.product_id}"
+                        product.save(update_fields=['SKU'])
+                
+                # Handle variants if has_variants is enabled and variants are submitted
+                if has_variants:
+                    # Process variants from form data
+                    variants_data = {}
+                    for key, value in request.POST.items():
+                        if key.startswith('variants['):
+                            # Extract variant index and field name
+                            match = re.match(r'variants\[(\d+)\]\[(\w+)\]', key)
+                            if match:
+                                idx = match.group(1)
+                                field = match.group(2)
+                                if idx not in variants_data:
+                                    variants_data[idx] = {}
+                                variants_data[idx][field] = value
+                
+                    # Process variant images
+                    variant_images = {}
+                    for key, file in request.FILES.items():
+                        if key.startswith('variants['):
+                            match = re.match(r'variants\[(\d+)\]\[image\]', key)
+                            if match:
+                                idx = match.group(1)
+                                variant_images[idx] = file
+                    
+                    # Handle delete variants
+                    delete_variant_ids = request.POST.getlist('delete_variants')
+                    if delete_variant_ids:
+                        ProductVariant.objects.filter(
+                            product=product,
+                            variant_id__in=delete_variant_ids
+                        ).delete()
+                    
+                    # Process variants: update existing or create new
+                    updated_variants = 0
+                    created_variants = 0
+                    
+                    for idx, variant_data in variants_data.items():
+                        variant_name = variant_data.get('variant_name', '').strip()
+                        if not variant_name:
+                            continue
+                        
+                        variant_id = variant_data.get('variant_id', '').strip()
+                        
+                        try:
+                            price = float(variant_data.get('price', 0))
+                            stock = int(variant_data.get('stock', 0))
+                            sku_code = variant_data.get('sku_code', '').strip()
+                            variant_description = variant_data.get('variant_description', '').strip()
+                            variant_image = variant_images.get(idx)
+                            
+                            if variant_id:
+                                # Update existing variant
+                                try:
+                                    variant = ProductVariant.objects.get(
+                                        variant_id=int(variant_id),
+                                        product=product
+                                    )
+                                    variant.variant_name = variant_name
+                                    variant.variant_description = variant_description if variant_description else None
+                                    variant.price = price
+                                    variant.stock = stock
+                                    if sku_code:
+                                        variant.sku_code = sku_code
+                                    if variant_image:
+                                        variant.image = variant_image
+                                    variant.save()
+                                    updated_variants += 1
+                                except (ProductVariant.DoesNotExist, ValueError):
+                                    continue
+                            else:
+                                # Create new variant
+                                variant = ProductVariant.objects.create(
+                                    product=product,
+                                    variant_name=variant_name,
+                                    variant_description=variant_description if variant_description else None,
+                                    price=price,
+                                    stock=stock,
+                                    sku_code=sku_code if sku_code else None,
+                                    image=variant_image
+                                )
+                                
+                                # Auto-generate SKU if not provided
+                                if not variant.sku_code:
+                                    variant.sku_code = f"{product.SKU or product.product_id}-{uuid.uuid4().hex[:8].upper()}"
+                                    variant.save(update_fields=['sku_code'])
+                                
+                                created_variants += 1
+                        except (ValueError, TypeError) as e:
+                            continue
+                    
+                    if created_variants > 0 or updated_variants > 0:
+                        messages.success(request, f'Đã cập nhật {updated_variants} biến thể và tạo {created_variants} biến thể mới.')
+            
                 # Handle additional gallery images
                 gallery_images = request.FILES.getlist('gallery_images')
                 if gallery_images:
                     # Get current max order
-                    max_order = product.images.aggregate(Max('order'))['order__max'] or -1
+                    max_order = product.images.aggregate(Max('order'))['order__max']
+                    if max_order is None:
+                        # No images exist, start from 0
+                        start_order = 0
+                    else:
+                        # Continue from max_order + 1
+                        start_order = max_order + 1
                     
                     for i, image in enumerate(gallery_images[:10]):  # Limit to 10 images
                         ProductImage.objects.create(
                             product=product,
                             image=image,
-                            alt_text=f"{product.name} - Hình {max_order + i + 2}",
-                            order=max_order + i + 1
+                            alt_text=f"{product.name} - Hình {start_order + i + 1}",
+                            order=start_order + i
                         )
-                messages.success(request, f'Đã cập nhật sản phẩm "{product.name}" thành công! Vui lòng thêm phân loại đầu tiên.')
-                return redirect('add_variant', store_id=store.store_id, product_id=product.product_id)
-            
-            form.save()
-            
-            # Handle additional gallery images
-            gallery_images = request.FILES.getlist('gallery_images')
-            if gallery_images:
-                # Get current max order
-                max_order = product.images.aggregate(Max('order'))['order__max'] or -1
                 
-                for i, image in enumerate(gallery_images[:10]):  # Limit to 10 images
-                    ProductImage.objects.create(
-                        product=product,
-                        image=image,
-                        alt_text=f"{product.name} - Hình {max_order + i + 2}",
-                        order=max_order + i + 1
-                    )
-            
-            messages.success(request, f'Đã cập nhật sản phẩm "{product.name}" thành công!')
-            return redirect('store_products', store_id=store.store_id)
-        else:
-            messages.error(request, 'Vui lòng kiểm tra lại thông tin.')
+                messages.success(request, f'Đã cập nhật sản phẩm "{product.name}" thành công!')
+                return redirect('edit_product', store_id=store.store_id, product_id=product.product_id)
+            else:
+                messages.error(request, 'Vui lòng kiểm tra lại thông tin.')
     else:
         form = ProductForm(instance=product)
     
     categories = Category.objects.all()
-    variants = ProductVariant.objects.filter(product=product).order_by('sort_order', 'created_at')
+    variants = ProductVariant.objects.filter(product=product).order_by('created_at')
     context = {
         'store': store,
         'product': product,
@@ -903,7 +1625,7 @@ def get_product_variants(request, product_id):
     if not product.has_variants:
         return JsonResponse({'success': False, 'message': 'Sản phẩm không có phân loại'})
     
-    variants = ProductVariant.objects.filter(product=product, is_active=True).order_by('sort_order', 'created_at')
+    variants = ProductVariant.objects.filter(product=product, is_active=True).order_by('created_at')
     variants_data = []
     
     for variant in variants:
@@ -922,112 +1644,6 @@ def get_product_variants(request, product_id):
     })
 
 
-@login_required
-def add_variant(request, store_id, product_id):
-    """Thêm variant mới cho sản phẩm"""
-    store = get_object_or_404(Store, store_id=store_id, user=request.user)
-    product = get_object_or_404(Product, pk=product_id, store=store)
-    
-    if request.method == 'POST':
-        form = ProductVariantForm(request.POST, request.FILES, product=product)
-        if form.is_valid():
-            variant = form.save(commit=False)
-            variant.product = product
-            
-            # Auto-generate SKU if not provided
-            if not variant.sku_code:
-                import uuid
-                variant.sku_code = f"{product.SKU or product.product_id}-{uuid.uuid4().hex[:8].upper()}"
-            
-            variant.save()
-            
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Đã thêm phân loại thành công',
-                    'variant_id': variant.variant_id,
-                })
-            
-            messages.success(request, f'Đã thêm phân loại "{variant.variant_name}" thành công!')
-            return redirect('edit_product', store_id=store.store_id, product_id=product.product_id)
-        else:
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Dữ liệu không hợp lệ',
-                    'errors': form.errors,
-                })
-            messages.error(request, 'Vui lòng kiểm tra lại thông tin.')
-    else:
-        form = ProductVariantForm(product=product)
-    
-    context = {
-        'store': store,
-        'product': product,
-        'form': form,
-    }
-    return render(request, 'core/store/variant_form.html', context)
-
-
-@login_required
-def edit_variant(request, store_id, product_id, variant_id):
-    """Sửa variant"""
-    store = get_object_or_404(Store, store_id=store_id, user=request.user)
-    product = get_object_or_404(Product, pk=product_id, store=store)
-    variant = get_object_or_404(ProductVariant, pk=variant_id, product=product)
-    
-    if request.method == 'POST':
-        form = ProductVariantForm(request.POST, request.FILES, instance=variant, product=product)
-        if form.is_valid():
-            form.save()
-            
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': True,
-                    'message': 'Đã cập nhật phân loại thành công',
-                })
-            
-            messages.success(request, f'Đã cập nhật phân loại "{variant.variant_name}" thành công!')
-            return redirect('edit_product', store_id=store.store_id, product_id=product.product_id)
-        else:
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Dữ liệu không hợp lệ',
-                    'errors': form.errors,
-                })
-            messages.error(request, 'Vui lòng kiểm tra lại thông tin.')
-    else:
-        form = ProductVariantForm(instance=variant, product=product)
-    
-    context = {
-        'store': store,
-        'product': product,
-        'variant': variant,
-        'form': form,
-    }
-    return render(request, 'core/store/variant_form.html', context)
-
-
-@login_required
-@require_POST
-def delete_variant(request, store_id, product_id, variant_id):
-    """Xóa variant"""
-    store = get_object_or_404(Store, store_id=store_id, user=request.user)
-    product = get_object_or_404(Product, pk=product_id, store=store)
-    variant = get_object_or_404(ProductVariant, pk=variant_id, product=product)
-    
-    variant_name = variant.variant_name
-    variant.delete()
-    
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({
-            'success': True,
-            'message': f'Đã xóa phân loại "{variant_name}" thành công',
-        })
-    
-    messages.success(request, f'Đã xóa phân loại "{variant_name}" thành công!')
-    return redirect('edit_product', store_id=store.store_id, product_id=product.product_id)
 
 
 @login_required
@@ -1121,6 +1737,7 @@ def verification_management(request, store_id):
             certification_files = request.FILES.getlist('certification_files')
             certification_types = request.POST.getlist('certification_types')
             certification_names = request.POST.getlist('certification_names')
+            certification_organizations = request.POST.getlist('certification_organizations')
             
             if certification_files and certification_types:
                 # Create new verification request
@@ -1135,15 +1752,25 @@ def verification_management(request, store_id):
                     file = certification_files[i]
                     cert_type = certification_types[i]
                     cert_name = certification_names[i] if i < len(certification_names) else ''
+                    org_id = certification_organizations[i] if i < len(certification_organizations) and certification_organizations[i] else None
                     
                     if cert_type and file:
                         try:
-                            StoreCertification.objects.create(
-                                verification_request=verification_request,
-                                certification_type=cert_type,
-                                certification_name=cert_name,
-                                document=file
-                            )
+                            cert_data = {
+                                'verification_request': verification_request,
+                                'certification_type': cert_type,
+                                'certification_name': cert_name,
+                                'document': file
+                            }
+                            # Add organization if provided
+                            if org_id:
+                                try:
+                                    org = CertificationOrganization.objects.get(organization_id=org_id, is_active=True)
+                                    cert_data['certification_organization'] = org
+                                except CertificationOrganization.DoesNotExist:
+                                    pass
+                            
+                            StoreCertification.objects.create(**cert_data)
                         except Exception as e:
                             print(f"Error creating certification: {e}")
                 
@@ -1154,11 +1781,15 @@ def verification_management(request, store_id):
         else:
             messages.error(request, 'Bạn không thể gửi yêu cầu mới khi đang có yêu cầu đang chờ xem xét.')
     
+    # Get active certification organizations for dropdown
+    certification_organizations = CertificationOrganization.objects.filter(is_active=True).order_by('name')
+    
     context = {
         'store': store,
         'verification_requests': verification_requests,
         'latest_request': latest_request,
         'can_send_new_request': can_send_new_request,
+        'certification_organizations': certification_organizations,
     }
     return render(request, 'core/store/verification_management.html', context)
 
@@ -1298,6 +1929,178 @@ def admin_reject_store(request, store_id):
     
     messages.success(request, f'Đã từ chối cửa hàng "{store.store_name}"')
     return redirect('admin_store_detail', store_id=store.store_id)
+
+
+# Category Management Views
+@login_required
+@user_passes_test(admin_required)
+def admin_category_list(request):
+    """List all categories"""
+    categories = Category.objects.all().order_by('name')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        categories = categories.filter(
+            Q(name__icontains=search_query) | Q(slug__icontains=search_query)
+        )
+    
+    # Pagination
+    paginator = Paginator(categories, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'categories': page_obj,
+        'search_query': search_query,
+        'total_categories': Category.objects.count(),
+    }
+    return render(request, 'core/admin/category_list.html', context)
+
+
+@login_required
+@user_passes_test(admin_required)
+def admin_category_create(request):
+    """Create a new category"""
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            category = form.save()
+            messages.success(request, f'Đã tạo danh mục "{category.name}" thành công!')
+            return redirect('admin_category_list')
+    else:
+        form = CategoryForm()
+    
+    context = {
+        'form': form,
+        'action': 'create',
+    }
+    return render(request, 'core/admin/category_form.html', context)
+
+
+@login_required
+@user_passes_test(admin_required)
+def admin_category_edit(request, category_id):
+    """Edit an existing category"""
+    category = get_object_or_404(Category, category_id=category_id)
+    
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            category = form.save()
+            messages.success(request, f'Đã cập nhật danh mục "{category.name}" thành công!')
+            return redirect('admin_category_list')
+    else:
+        form = CategoryForm(instance=category)
+    
+    context = {
+        'form': form,
+        'category': category,
+        'action': 'edit',
+    }
+    return render(request, 'core/admin/category_form.html', context)
+
+
+@login_required
+@user_passes_test(admin_required)
+@require_POST
+def admin_category_delete(request, category_id):
+    """Delete a category"""
+    category = get_object_or_404(Category, category_id=category_id)
+    category_name = category.name
+    
+    # Check if category has products
+    product_count = category.products.count()
+    if product_count > 0:
+        messages.error(request, f'Không thể xóa danh mục "{category_name}" vì có {product_count} sản phẩm đang sử dụng danh mục này.')
+        return redirect('admin_category_list')
+    
+    category.delete()
+    messages.success(request, f'Đã xóa danh mục "{category_name}" thành công!')
+    return redirect('admin_category_list')
+
+
+# Certification Organization Management Views
+@login_required
+@user_passes_test(admin_required)
+def admin_certification_organization_list(request):
+    """List all certification organizations"""
+    organizations = CertificationOrganization.objects.all().order_by('name')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        organizations = organizations.filter(
+            Q(name__icontains=search_query) | Q(abbreviation__icontains=search_query)
+        )
+    
+    # Pagination
+    paginator = Paginator(organizations, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'organizations': page_obj,
+        'search_query': search_query,
+        'total_organizations': CertificationOrganization.objects.count(),
+    }
+    return render(request, 'core/admin/certification_organization_list.html', context)
+
+
+@login_required
+@user_passes_test(admin_required)
+def admin_certification_organization_create(request):
+    """Create a new certification organization"""
+    if request.method == 'POST':
+        form = CertificationOrganizationForm(request.POST)
+        if form.is_valid():
+            organization = form.save()
+            messages.success(request, f'Đã tạo tổ chức "{organization.name}" thành công!')
+            return redirect('admin_certification_organization_list')
+    else:
+        form = CertificationOrganizationForm()
+    
+    context = {
+        'form': form,
+        'action': 'create',
+    }
+    return render(request, 'core/admin/certification_organization_form.html', context)
+
+
+@login_required
+@user_passes_test(admin_required)
+def admin_certification_organization_edit(request, organization_id):
+    """Edit an existing certification organization"""
+    organization = get_object_or_404(CertificationOrganization, organization_id=organization_id)
+    
+    if request.method == 'POST':
+        form = CertificationOrganizationForm(request.POST, instance=organization)
+        if form.is_valid():
+            organization = form.save()
+            messages.success(request, f'Đã cập nhật tổ chức "{organization.name}" thành công!')
+            return redirect('admin_certification_organization_list')
+    else:
+        form = CertificationOrganizationForm(instance=organization)
+    
+    context = {
+        'form': form,
+        'organization': organization,
+        'action': 'edit',
+    }
+    return render(request, 'core/admin/certification_organization_form.html', context)
+
+
+@login_required
+@user_passes_test(admin_required)
+@require_POST
+def admin_certification_organization_delete(request, organization_id):
+    """Delete a certification organization"""
+    organization = get_object_or_404(CertificationOrganization, organization_id=organization_id)
+    organization_name = organization.name
+    
+    organization.delete()
+    messages.success(request, f'Đã xóa tổ chức "{organization_name}" thành công!')
+    return redirect('admin_certification_organization_list')
 
 
 # Product Comment Views
@@ -1619,7 +2422,7 @@ def store_review_list(request, store_id):
         if buyer_username:
             reviews = reviews.filter(
                 Q(user__full_name__icontains=buyer_username) |
-                Q(user__phone_number__icontains=buyer_username)
+                Q(user__email__icontains=buyer_username)
             )
     
     # Pagination

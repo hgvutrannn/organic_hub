@@ -11,31 +11,31 @@
     
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-header bg-white border-0">
-            <h5 class="mb-0 fw-bold">Thông tin chương trình</h5>
+            <h5 class="mb-0 fw-bold">Program Information</h5>
         </div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label fw-bold">Tên chương trình <span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold">Program Name <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" name="name" 
                            value="{% if flash_sale %}{{ flash_sale.name }}{% endif %}" 
                            required>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="form-label fw-bold">Mô tả</label>
+                    <label class="form-label fw-bold">Description</label>
                     <textarea class="form-control" name="description" rows="2">{% if flash_sale %}{{ flash_sale.description }}{% endif %}</textarea>
                 </div>
             </div>
             
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label fw-bold">Ngày bắt đầu <span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold">Start Date <span class="text-danger">*</span></label>
                     <input type="datetime-local" class="form-control" name="start_date" 
                            value="{% if flash_sale %}{{ flash_sale.start_date|date:'Y-m-d\TH:i' }}{% endif %}" 
                            required>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="form-label fw-bold">Ngày kết thúc <span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold">End Date <span class="text-danger">*</span></label>
                     <input type="datetime-local" class="form-control" name="end_date" 
                            value="{% if flash_sale %}{{ flash_sale.end_date|date:'Y-m-d\TH:i' }}{% endif %}" 
                            required>
@@ -48,9 +48,9 @@
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-header bg-white border-0">
             <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold">Sản phẩm tham gia Flash Sale</h5>
+                <h5 class="mb-0 fw-bold">Products Participating in Flash Sale</h5>
                 <button type="button" class="btn btn-primary rounded-pill" onclick="openProductSelector()">
-                    <i class="fas fa-plus me-2"></i>Thêm sản phẩm
+                    <i class="fas fa-plus me-2"></i>Add Product
                 </button>
             </div>
         </div>
@@ -74,17 +74,17 @@
                             </div>
                             <div class="col-md-4">
                                 <strong>{{ flash_product.product.name }}</strong>
-                                <br><small class="text-muted">Giá gốc: {{ flash_product.product.price|floatformat:0 }} VNĐ</small>
+                                <br><small class="text-muted">Original Price: {{ flash_product.product.price|floatformat:0 }} VNĐ</small>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label small">Giá Flash Sale</label>
+                                <label class="form-label small">Flash Sale Price</label>
                                 <input type="number" class="form-control form-control-sm" 
                                        name="flash_price_{{ flash_product.product.product_id }}"
                                        value="{{ flash_product.flash_price|floatformat:0 }}"
                                        min="0" step="1000" required>
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label small">Số lượng</label>
+                                <label class="form-label small">Quantity</label>
                                 <input type="number" class="form-control form-control-sm" 
                                        name="flash_stock_{{ flash_product.product.product_id }}"
                                        value="{{ flash_product.flash_stock }}"
@@ -103,7 +103,7 @@
                 {% else %}
                     <div class="text-center py-4 text-muted">
                         <i class="fas fa-box fa-2x mb-2"></i>
-                        <p class="mb-0">Chưa có sản phẩm nào. Nhấn "Thêm sản phẩm" để chọn.</p>
+                        <p class="mb-0">No products yet. Click "Add Product" to select.</p>
                     </div>
                 {% endif %}
             </div>
@@ -112,10 +112,10 @@
     
     <div class="d-flex justify-content-between">
         <a href="{% url 'store_flash_sale_list' store.store_id %}" class="btn btn-outline-secondary rounded-pill">
-            <i class="fas fa-arrow-left me-2"></i>Quay lại
+            <i class="fas fa-arrow-left me-2"></i>Back
         </a>
         <button type="submit" class="btn btn-primary rounded-pill">
-            <i class="fas fa-save me-2"></i>Lưu
+            <i class="fas fa-save me-2"></i>Save
         </button>
     </div>
 </form>
@@ -125,14 +125,14 @@
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="productSelectorModalLabel">Chọn sản phẩm</h5>
+                <h5 class="modal-title" id="productSelectorModalLabel">Select Products</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <!-- Search -->
                 <div class="mb-3">
                     <input type="text" class="form-control" id="productSearchInput" 
-                           placeholder="Tìm kiếm sản phẩm..." 
+                           placeholder="Search products..." 
                            onkeyup="searchProducts()">
                 </div>
                 
@@ -142,8 +142,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-primary" onclick="confirmProductSelection()">Xác nhận</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="confirmProductSelection()">Confirm</button>
             </div>
         </div>
     </div>

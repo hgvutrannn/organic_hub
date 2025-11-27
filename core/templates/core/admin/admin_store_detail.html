@@ -14,11 +14,11 @@
                     </div>
                     <div>
                         <h1 class="display-6 fw-bold mb-1">{{ store.store_name }}</h1>
-                        <p class="text-muted mb-0">Xem chi tiết và xác minh cửa hàng</p>
+                        <p class="text-muted mb-0">View details and verify store</p>
                     </div>
                 </div>
                 <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary rounded-pill">
-                    <i class="fas fa-arrow-left me-2"></i>Quay lại Dashboard
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
                 </a>
             </div>
         </div>
@@ -30,41 +30,41 @@
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-header bg-gradient bg-opacity-10 border-0">
                     <h3 class="mb-0 fw-bold">
-                        <i class="fas fa-info-circle me-2"></i>Thông tin cửa hàng
+                        <i class="fas fa-info-circle me-2"></i>Store Information
                     </h3>
                 </div>
                 <div class="card-body p-4">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <h6 class="fw-bold text-muted mb-1">Tên cửa hàng</h6>
+                                <h6 class="fw-bold text-muted mb-1">Store Name</h6>
                                 <p class="mb-0 fs-5">{{ store.store_name }}</p>
                             </div>
                             <div class="mb-3">
-                                <h6 class="fw-bold text-muted mb-1">Mô tả</h6>
-                                <p class="mb-0">{{ store.store_description|default:"Chưa có mô tả" }}</p>
+                                <h6 class="fw-bold text-muted mb-1">Description</h6>
+                                <p class="mb-0">{{ store.store_description|default:"No description" }}</p>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <h6 class="fw-bold text-muted mb-1">Trạng thái hiện tại</h6>
+                                <h6 class="fw-bold text-muted mb-1">Current Status</h6>
                                 <span class="badge {% if store.is_verified_status == 'verified' %}bg-success{% elif store.is_verified_status == 'rejected' %}bg-danger{% else %}bg-warning{% endif %} fs-6">
                                     {{ store.get_is_verified_status_display }}
                                 </span>
                             </div>
                             <div class="mb-3">
-                                <h6 class="fw-bold text-muted mb-1">Ngày tạo</h6>
+                                <h6 class="fw-bold text-muted mb-1">Created Date</h6>
                                 <p class="mb-0">{{ store.created_at|date:"d/m/Y H:i" }}</p>
                             </div>
                             {% if store.verified_at %}
                             <div class="mb-3">
-                                <h6 class="fw-bold text-muted mb-1">Ngày xác minh</h6>
+                                <h6 class="fw-bold text-muted mb-1">Verified Date</h6>
                                 <p class="mb-0">{{ store.verified_at|date:"d/m/Y H:i" }}</p>
                             </div>
                             {% endif %}
                             {% if store.verified_by %}
                             <div class="mb-3">
-                                <h6 class="fw-bold text-muted mb-1">Xác minh bởi</h6>
+                                <h6 class="fw-bold text-muted mb-1">Verified By</h6>
                                 <p class="mb-0">{{ store.verified_by.full_name }}</p>
                             </div>
                             {% endif %}
@@ -75,16 +75,16 @@
                     <hr>
                     <div class="row">
                         <div class="col-12">
-                            <h6 class="fw-bold text-muted mb-3">Thông tin chủ cửa hàng</h6>
+                            <h6 class="fw-bold text-muted mb-3">Store Owner Information</h6>
                             <div class="row">
                                 <div class="col-md-4">
-                                    <p class="mb-1"><strong>Tên:</strong> {{ store.user.full_name }}</p>
+                                    <p class="mb-1"><strong>Name:</strong> {{ store.user.full_name }}</p>
                                 </div>
                                 <div class="col-md-4">
-                                    <p class="mb-1"><strong>Số điện thoại:</strong> {{ store.user.phone_number }}</p>
+                                    <p class="mb-1"><strong>Email:</strong> {{ store.user.email }}</p>
                                 </div>
                                 <div class="col-md-4">
-                                    <p class="mb-1"><strong>Email:</strong> {{ store.user.email|default:"Chưa cập nhật" }}</p>
+                                    <p class="mb-1"><strong>Email:</strong> {{ store.user.email|default:"Not updated" }}</p>
                                 </div>
                             </div>
                         </div>
@@ -94,7 +94,7 @@
                     <hr>
                     <div class="row">
                         <div class="col-12">
-                            <h6 class="fw-bold text-muted mb-3">Ghi chú của admin</h6>
+                            <h6 class="fw-bold text-muted mb-3">Admin Notes</h6>
                             <div class="alert alert-info">
                                 <i class="fas fa-info-circle me-2"></i>{{ store.admin_notes }}
                             </div>
@@ -112,7 +112,7 @@
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-header bg-gradient bg-opacity-10 border-0">
                     <h3 class="mb-0 fw-bold">
-                        <i class="fas fa-certificate me-2"></i>Chứng nhận cửa hàng ({{ certifications.count }})
+                        <i class="fas fa-certificate me-2"></i>Store Certifications ({{ certifications.count }})
                     </h3>
                 </div>
                 <div class="card-body p-4">
@@ -125,7 +125,7 @@
                                         <div class="d-flex justify-content-between align-items-start mb-3">
                                             <h6 class="fw-bold mb-1">{{ cert.get_certification_type_display }}</h6>
                                             <span class="badge {% if cert.is_verified %}bg-success{% else %}bg-warning{% endif %}">
-                                                {% if cert.is_verified %}Đã xác minh{% else %}Chờ xác minh{% endif %}
+                                                {% if cert.is_verified %}Verified{% else %}Pending Verification{% endif %}
                                             </span>
                                         </div>
                                         
@@ -140,15 +140,15 @@
                                         <div class="d-flex gap-2">
                                             {% if cert.is_image %}
                                                 <button type="button" class="btn btn-outline-primary btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#imageModal{{ cert.certification_id }}">
-                                                    <i class="fas fa-image me-1"></i>Xem ảnh
+                                                    <i class="fas fa-image me-1"></i>View Image
                                                 </button>
                                             {% else %}
                                                 <a href="{{ cert.document.url }}" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill">
-                                                    <i class="fas fa-file-pdf me-1"></i>Xem PDF
+                                                    <i class="fas fa-file-pdf me-1"></i>View PDF
                                                 </a>
                                             {% endif %}
                                             <a href="{{ cert.document.url }}" download class="btn btn-outline-secondary btn-sm rounded-pill">
-                                                <i class="fas fa-download me-1"></i>Tải xuống
+                                                <i class="fas fa-download me-1"></i>Download
                                             </a>
                                         </div>
                                     </div>
@@ -169,7 +169,7 @@
                                         </div>
                                         <div class="modal-footer">
                                             <a href="{{ cert.document.url }}" download class="btn btn-primary">
-                                                <i class="fas fa-download me-1"></i>Tải xuống
+                                                <i class="fas fa-download me-1"></i>Download
                                             </a>
                                         </div>
                                     </div>
@@ -183,8 +183,8 @@
                             <div class="bg-warning bg-opacity-10 rounded-circle p-4 mx-auto mb-3" style="width: 80px; height: 80px;">
                                 <i class="fas fa-exclamation-triangle text-warning fs-2"></i>
                             </div>
-                            <h5 class="fw-bold">Chưa có chứng nhận nào</h5>
-                            <p class="text-muted">Cửa hàng này chưa tải lên chứng nhận nào.</p>
+                            <h5 class="fw-bold">No certifications yet</h5>
+                            <p class="text-muted">This store has not uploaded any certifications.</p>
                         </div>
                     {% endif %}
                 </div>

@@ -1,0 +1,159 @@
+/* ============================================
+   Base Styles - Global styles for Organic Hub
+   ============================================ */
+
+/* Square Image Styles */
+/* Make all product images, avatars, and review images square with center crop */
+.square-image,
+img[src*="products/"],
+img[src*="avatars/"],
+img[src*="reviews/"],
+.card-img-top,
+.product-image,
+.thumbnail-img {
+    aspect-ratio: 1 / 1 !important;
+    object-fit: cover !important;
+    object-position: center !important;
+}
+
+/* Override any height constraints */
+img[src*="products/"],
+img[src*="avatars/"],
+img[src*="reviews/"],
+.card-img-top {
+    height: auto !important;
+}
+
+/* ============================================
+   Organic Theme Colors
+   ============================================ */
+:root {
+    --organic-primary: #28a745;
+    --organic-primary-dark: #218838;
+    --organic-primary-darker: #1e7e34;
+    --organic-light: #e8f5e9;
+    --organic-lighter: #c8e6c9;
+}
+
+/* ============================================
+   Bootstrap Primary Color Overrides
+   ============================================ */
+.btn-primary {
+    background-color: var(--organic-primary) !important;
+    border-color: var(--organic-primary) !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+    background-color: var(--organic-primary-dark) !important;
+    border-color: var(--organic-primary-dark) !important;
+}
+
+.btn-primary:active:focus {
+    box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.5) !important;
+}
+
+.text-primary {
+    color: var(--organic-primary) !important;
+}
+
+.bg-primary {
+    background-color: var(--organic-primary) !important;
+}
+
+.bg-primary.bg-opacity-10 {
+    background-color: rgba(40, 167, 69, 0.1) !important;
+}
+
+.border-primary {
+    border-color: var(--organic-primary) !important;
+}
+
+.badge.bg-primary {
+    background-color: var(--organic-primary) !important;
+}
+
+/* ============================================
+   Bootstrap Info Color Overrides (match organic theme)
+   ============================================ */
+.btn-info {
+    background-color: var(--organic-primary) !important;
+    border-color: var(--organic-primary) !important;
+    color: #fff !important;
+}
+
+.btn-info:hover,
+.btn-info:focus,
+.btn-info:active {
+    background-color: var(--organic-primary-dark) !important;
+    border-color: var(--organic-primary-dark) !important;
+    color: #fff !important;
+}
+
+.text-info {
+    color: var(--organic-primary) !important;
+}
+
+.bg-info {
+    background-color: var(--organic-primary) !important;
+}
+
+.bg-info.bg-opacity-10 {
+    background-color: rgba(40, 167, 69, 0.1) !important;
+}
+
+.badge.bg-info {
+    background-color: var(--organic-primary) !important;
+}
+
+/* ============================================
+   Navbar Styles
+   ============================================ */
+.navbar-dark .navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.95) !important;
+    font-weight: 500;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.navbar-dark .navbar-brand {
+    color: #ffffff !important;
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+.navbar-dark .navbar-brand:hover {
+    color: #ffffff !important;
+}
+
+.navbar-dark .dropdown-toggle::after {
+    border-top-color: rgba(255, 255, 255, 0.95);
+}
+
+.navbar-dark .navbar-nav .dropdown-menu {
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.navbar-dark .navbar-nav .dropdown-item {
+    color: #212529;
+}
+
+.navbar-dark .navbar-nav .dropdown-item:hover {
+    background-color: var(--organic-light);
+    color: var(--organic-primary-dark);
+}
+
+.navbar-dark .navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.navbar-dark .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.95%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+

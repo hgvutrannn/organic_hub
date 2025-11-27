@@ -1,0 +1,66 @@
+/* ============================================
+   Home Page Styles
+   ============================================ */
+
+/* Category Card Styles */
+.category-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--organic-primary);
+    box-shadow: 0 0.5rem 1rem rgba(40, 167, 69, 0.15);
+}
+
+.category-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--organic-primary) 0%, var(--organic-primary-dark) 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    margin: 0 auto 1rem;
+}
+
+/* Product Card Home Styles */
+.product-card-home {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.product-card-home:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 0.75rem 1.5rem rgba(40, 167, 69, 0.2) !important;
+}
+
+.product-card-home:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+.product-card-home .card-img-top {
+    transition: transform 0.3s ease;
+}
+
+.product-card-home .position-relative {
+    overflow: hidden;
+    border-radius: 1rem 1rem 0 0;
+}
+
+.product-card-home:hover .card-title a {
+    color: var(--organic-primary) !important;
+}
+
+.product-card-home .badge.bg-primary.bg-opacity-10 {
+    background-color: rgba(40, 167, 69, 0.15) !important;
+    color: var(--organic-primary-dark) !important;
+    font-weight: 500;
+    padding: 0.4em 0.8em;
+    border: 1px solid rgba(40, 167, 69, 0.2);
+}
+

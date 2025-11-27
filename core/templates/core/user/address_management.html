@@ -13,16 +13,16 @@
                         <i class="fas fa-map-marker-alt text-primary fs-1"></i>
                     </div>
                     <div>
-                        <h1 class="display-6 fw-bold mb-1">Quản lý địa chỉ</h1>
-                        <p class="text-muted mb-0">Thêm và quản lý địa chỉ giao hàng</p>
+                        <h1 class="display-6 fw-bold mb-1">Address Management</h1>
+                        <p class="text-muted mb-0">Add and manage shipping addresses</p>
                     </div>
                 </div>
                 <div class="d-flex gap-2">
                     <a href="/checkout/" class="btn btn-outline-primary rounded-pill">
-                        <i class="fas fa-arrow-left me-2"></i>Quay lại thanh toán
+                        <i class="fas fa-arrow-left me-2"></i>Back to Checkout
                     </a>
                     <a href="/cart/" class="btn btn-outline-secondary rounded-pill">
-                        <i class="fas fa-shopping-cart me-2"></i>Giỏ hàng
+                        <i class="fas fa-shopping-cart me-2"></i>Cart
                     </a>
                 </div>
             </div>
@@ -35,7 +35,7 @@
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-header bg-gradient bg-opacity-10 border-0">
                     <h3 class="mb-0 fw-bold">
-                        <i class="fas fa-plus me-2"></i>Thêm địa chỉ mới
+                        <i class="fas fa-plus me-2"></i>Add New Address
                     </h3>
                 </div>
                 <div class="card-body p-4">
@@ -44,60 +44,60 @@
                         
                         <div class="mb-3">
                             <label class="form-label fw-semibold">
-                                <i class="fas fa-user me-1"></i>Tên người nhận <span class="text-danger">*</span>
+                                <i class="fas fa-user me-1"></i>Recipient Name <span class="text-danger">*</span>
                             </label>
                             <input type="text" 
                                    name="contact_person" 
                                    class="form-control form-control-lg" 
                                    required 
-                                   placeholder="Nhập tên người nhận">
+                                   placeholder="Enter recipient name">
                         </div>
                         
                         <div class="mb-3">
                             <label class="form-label fw-semibold">
-                                <i class="fas fa-phone me-1"></i>Số điện thoại <span class="text-danger">*</span>
+                                <i class="fas fa-phone me-1"></i>Phone Number <span class="text-danger">*</span>
                             </label>
                             <input type="tel" 
                                    name="contact_phone" 
                                    class="form-control form-control-lg" 
                                    required 
-                                   placeholder="Nhập số điện thoại">
+                                   placeholder="Enter phone number">
                         </div>
                         
                         <div class="mb-3">
                             <label class="form-label fw-semibold">
-                                <i class="fas fa-map-marker-alt me-1"></i>Địa chỉ <span class="text-danger">*</span>
+                                <i class="fas fa-map-marker-alt me-1"></i>Address <span class="text-danger">*</span>
                             </label>
                             <input type="text" 
                                    name="street" 
                                    class="form-control form-control-lg" 
                                    required 
-                                   placeholder="Số nhà, tên đường">
+                                   placeholder="House number, street name">
                         </div>
                         
                         <div class="row g-2">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">
-                                        <i class="fas fa-building me-1"></i>Phường/Xã <span class="text-danger">*</span>
+                                        <i class="fas fa-building me-1"></i>Ward/Commune <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" 
                                            name="ward" 
                                            class="form-control form-control-lg" 
                                            required 
-                                           placeholder="Phường/Xã">
+                                           placeholder="Ward/Commune">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">
-                                        <i class="fas fa-city me-1"></i>Tỉnh/Thành phố <span class="text-danger">*</span>
+                                        <i class="fas fa-city me-1"></i>Province/City <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" 
                                            name="province" 
                                            class="form-control form-control-lg" 
                                            required 
-                                           placeholder="Tỉnh/Thành phố">
+                                           placeholder="Province/City">
                                 </div>
                             </div>
                         </div>
@@ -106,14 +106,14 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="is_default" value="1" id="is_default">
                                 <label class="form-check-label fw-semibold" for="is_default">
-                                    <i class="fas fa-star me-1"></i>Đặt làm địa chỉ mặc định
+                                    <i class="fas fa-star me-1"></i>Set as default address
                                 </label>
                             </div>
                         </div>
                         
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary btn-lg rounded-pill">
-                                <i class="fas fa-plus me-2"></i>Thêm địa chỉ
+                                <i class="fas fa-plus me-2"></i>Add Address
                             </button>
                         </div>
                     </form>
@@ -126,7 +126,7 @@
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-header bg-gradient bg-opacity-10 border-0">
                     <h3 class="mb-0 fw-bold">
-                        <i class="fas fa-list me-2"></i>Địa chỉ hiện có
+                        <i class="fas fa-list me-2"></i>Existing Addresses
                     </h3>
                 </div>
                 <div class="card-body p-0">
@@ -144,7 +144,7 @@
                                                     <h6 class="fw-bold mb-0 me-2">{{ address.contact_person }}</h6>
                                                     {% if address.is_default %}
                                                         <span class="badge bg-primary rounded-pill">
-                                                            <i class="fas fa-star me-1"></i>Mặc định
+                                                            <i class="fas fa-star me-1"></i>Default
                                                         </span>
                                                     {% endif %}
                                                 </div>
@@ -157,7 +157,7 @@
                                                 </p>
                                                 <p class="text-muted small mb-0">
                                                     <i class="fas fa-calendar me-1"></i>
-                                                    Thêm ngày {{ address.created_at|date:"d/m/Y" }}
+                                                    Added on {{ address.created_at|date:"d/m/Y" }}
                                                 </p>
                                             </div>
                                         </div>
@@ -165,7 +165,7 @@
                                     <div class="col-md-4 text-end">
                                         <div class="d-grid gap-2">
                                             <a href="/checkout/" class="btn btn-success btn-sm rounded-pill">
-                                                <i class="fas fa-check me-1"></i>Sử dụng địa chỉ này
+                                                <i class="fas fa-check me-1"></i>Use This Address
                                             </a>
                                         </div>
                                     </div>
@@ -178,8 +178,8 @@
                                  style="width: 100px; height: 100px;">
                                 <i class="fas fa-map-marker-alt text-muted" style="font-size: 3rem;"></i>
                             </div>
-                            <h5 class="fw-bold text-muted mb-3">Chưa có địa chỉ</h5>
-                            <p class="text-muted mb-4">Bạn chưa có địa chỉ nào. Hãy thêm địa chỉ đầu tiên!</p>
+                            <h5 class="fw-bold text-muted mb-3">No Addresses</h5>
+                            <p class="text-muted mb-4">You don't have any addresses yet. Add your first address!</p>
                         </div>
                     {% endif %}
                 </div>
@@ -193,7 +193,7 @@
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-header bg-gradient bg-opacity-10 border-0">
                     <h3 class="mb-0 fw-bold">
-                        <i class="fas fa-info-circle me-2"></i>Hướng dẫn sử dụng
+                        <i class="fas fa-info-circle me-2"></i>Usage Instructions
                     </h3>
                 </div>
                 <div class="card-body">
@@ -204,8 +204,8 @@
                                     <i class="fas fa-plus text-primary"></i>
                                 </div>
                                 <div>
-                                    <h6 class="fw-bold mb-1">Thêm địa chỉ</h6>
-                                    <small class="text-muted">Điền thông tin địa chỉ mới</small>
+                                    <h6 class="fw-bold mb-1">Add Address</h6>
+                                    <small class="text-muted">Fill in new address information</small>
                                 </div>
                             </div>
                         </div>
@@ -215,8 +215,8 @@
                                     <i class="fas fa-star text-warning"></i>
                                 </div>
                                 <div>
-                                    <h6 class="fw-bold mb-1">Địa chỉ mặc định</h6>
-                                    <small class="text-muted">Chỉ có 1 địa chỉ mặc định</small>
+                                    <h6 class="fw-bold mb-1">Default Address</h6>
+                                    <small class="text-muted">Only one default address</small>
                                 </div>
                             </div>
                         </div>
@@ -226,8 +226,8 @@
                                     <i class="fas fa-check text-success"></i>
                                 </div>
                                 <div>
-                                    <h6 class="fw-bold mb-1">Sử dụng địa chỉ</h6>
-                                    <small class="text-muted">Chọn địa chỉ để giao hàng</small>
+                                    <h6 class="fw-bold mb-1">Use Address</h6>
+                                    <small class="text-muted">Select address for delivery</small>
                                 </div>
                             </div>
                         </div>
@@ -237,8 +237,8 @@
                                     <i class="fas fa-shopping-cart text-info"></i>
                                 </div>
                                 <div>
-                                    <h6 class="fw-bold mb-1">Quay lại thanh toán</h6>
-                                    <small class="text-muted">Hoàn tất đơn hàng</small>
+                                    <h6 class="fw-bold mb-1">Back to Checkout</h6>
+                                    <small class="text-muted">Complete order</small>
                                 </div>
                             </div>
                         </div>
@@ -253,16 +253,16 @@
         <div class="col-12">
             <div class="d-flex gap-2 flex-wrap">
                 <a href="/checkout/" class="btn btn-outline-primary rounded-pill">
-                    <i class="fas fa-arrow-left me-2"></i>Quay lại thanh toán
+                    <i class="fas fa-arrow-left me-2"></i>Back to Checkout
                 </a>
                 <a href="/cart/" class="btn btn-outline-secondary rounded-pill">
-                    <i class="fas fa-shopping-cart me-2"></i>Giỏ hàng
+                    <i class="fas fa-shopping-cart me-2"></i>Cart
                 </a>
                 <a href="/products/" class="btn btn-outline-success rounded-pill">
-                    <i class="fas fa-shopping-bag me-2"></i>Tiếp tục mua sắm
+                    <i class="fas fa-shopping-bag me-2"></i>Continue Shopping
                 </a>
                 <a href="/" class="btn btn-outline-info rounded-pill">
-                    <i class="fas fa-home me-2"></i>Về trang chủ
+                    <i class="fas fa-home me-2"></i>Home
                 </a>
             </div>
         </div>

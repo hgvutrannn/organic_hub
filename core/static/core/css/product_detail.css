@@ -1,0 +1,55 @@
+/* ============================================
+   Product Detail Page Styles
+   ============================================ */
+
+/* Square image display styles with center crop */
+.square-image,
+#main-image,
+.thumbnail-img,
+.product-image,
+.card-img-top img,
+img[src*="products/"],
+img[src*="avatars/"],
+img[src*="reviews/"] {
+    aspect-ratio: 1 / 1 !important;
+    object-fit: cover !important;
+    object-position: center !important;
+}
+
+/* Ensure main image is square and properly sized */
+#main-image {
+    width: 100% !important;
+    max-width: 500px !important;
+    height: auto !important;
+    margin: 0 auto !important;
+    display: block !important;
+}
+
+/* Ensure thumbnails are square and properly sized */
+.thumbnail-wrapper {
+    flex-shrink: 0;
+}
+
+.thumbnail-img {
+    width: 80px !important;
+    height: 80px !important;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.thumbnail-img:hover {
+    border-color: #0d6efd;
+    transform: scale(1.05);
+}
+
+.thumbnail-img.active {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+}
+
+/* Thumbnail gallery container - compact spacing */
+#thumbnail-gallery {
+    gap: 8px !important;
+}
+

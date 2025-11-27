@@ -1,30 +1,41 @@
 {% extends 'core/store/store_base.html' %}
+{% load static %}
 
-{% block store_title %}{% if discount_code %}Sửa{% else %}Tạo{% endif %} Mã Giảm Giá{% endblock %}
+{% block store_title %}{% if discount_code %}Edit{% else %}Create{% endif %} Discount Code{% endblock %}
 
-{% block store_page_title %}{% if discount_code %}Sửa Mã Giảm Giá{% else %}Tạo Mã Giảm Giá{% endif %}{% endblock %}
-{% block store_page_subtitle %}{% if discount_code %}Chỉnh sửa mã giảm giá{% else %}Tạo mã giảm giá mới{% endif %}{% endblock %}
+{% block store_page_title %}{% if discount_code %}Edit Discount Code{% else %}Create Discount Code{% endif %}{% endblock %}
+{% block store_page_subtitle %}{% if discount_code %}Edit discount code{% else %}Create new discount code{% endif %}{% endblock %}
 
 {% block store_content %}
 <form method="post" id="discountCodeForm">
     {% csrf_token %}
     
+    <!-- Action Buttons at Top -->
+    <div class="d-flex justify-content-between mb-4">
+        <a href="{% url 'store_discount_code_list' store.store_id %}" class="btn btn-outline-secondary rounded-pill">
+            <i class="fas fa-arrow-left me-2"></i>Back
+        </a>
+        <button type="submit" class="btn btn-primary rounded-pill">
+            <i class="fas fa-save me-2"></i>Save
+        </button>
+    </div>
+    
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-header bg-white border-0">
-            <h5 class="mb-0 fw-bold">Thông tin mã giảm giá</h5>
+            <h5 class="mb-0 fw-bold">Discount Code Information</h5>
         </div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label fw-bold">Mã giảm giá <span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold">Discount Code <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" name="code" 
                            value="{% if discount_code %}{{ discount_code.code }}{% endif %}" 
                            {% if discount_code %}readonly{% endif %}
                            required maxlength="50" style="text-transform: uppercase;">
-                    <small class="text-muted">Mã sẽ được chuyển thành chữ hoa tự động</small>
+                    <small class="text-muted">Code will be automatically converted to uppercase</small>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="form-label fw-bold">Tên mã giảm giá <span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold">Discount Code Name <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" name="name" 
                            value="{% if discount_code %}{{ discount_code.name }}{% endif %}" 
                            required>
@@ -32,72 +43,69 @@
             </div>
             
             <div class="mb-3">
-                <label class="form-label fw-bold">Mô tả</label>
+                <label class="form-label fw-bold">Description</label>
                 <textarea class="form-control" name="description" rows="2">{% if discount_code %}{{ discount_code.description }}{% endif %}</textarea>
             </div>
             
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label fw-bold">Loại giảm giá <span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold">Discount Type <span class="text-danger">*</span></label>
                     <select class="form-select" name="discount_type" id="discountType" required>
-                        <option value="percentage" {% if discount_code and discount_code.discount_type == 'percentage' %}selected{% endif %}>Phần trăm (%)</option>
-                        <option value="fixed" {% if discount_code and discount_code.discount_type == 'fixed' %}selected{% endif %}>Số tiền cố định (VNĐ)</option>
+                        <option value="percentage" {% if discount_code and discount_code.discount_type == 'percentage' %}selected{% endif %}>Percentage (%)</option>
+                        <option value="fixed" {% if discount_code and discount_code.discount_type == 'fixed' %}selected{% endif %}>Fixed Amount (VNĐ)</option>
                     </select>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="form-label fw-bold">Giá trị giảm giá <span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold">Discount Value <span class="text-danger">*</span></label>
                     <div class="input-group">
                         <input type="number" class="form-control" name="discount_value" 
-                               value="{% if discount_code %}{{ discount_code.discount_value }}{% endif %}" 
-                               required min="0" step="0.01">
+                               value="{% if discount_code %}{{ discount_code.discount_value|floatformat:0 }}{% endif %}" 
+                               required min="0" step="{% if discount_code and discount_code.discount_type == 'percentage' %}0.01{% else %}1{% endif %}">
                         <span class="input-group-text" id="discountUnit">{% if discount_code and discount_code.discount_type == 'percentage' %}%{% else %}VNĐ{% endif %}</span>
                     </div>
                 </div>
             </div>
             
             <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label fw-bold">Đơn hàng tối thiểu</label>
-                    <input type="number" class="form-control" name="min_order_amount" 
-                           value="{% if discount_code %}{{ discount_code.min_order_amount }}{% else %}0{% endif %}" 
-                           min="0" step="1000">
-                    <small class="text-muted">Đơn hàng phải đạt số tiền này để áp dụng mã</small>
-                </div>
-                <div class="col-md-6 mb-3" id="maxDiscountContainer" style="display: {% if discount_code and discount_code.discount_type == 'percentage' %}block{% else %}none{% endif %};">
-                    <label class="form-label fw-bold">Giảm tối đa</label>
+                <div class="col-md-6 mb-3" id="maxDiscountContainer" {% if not discount_code or discount_code.discount_type != 'percentage' %}style="display: none;"{% endif %}>
+                    <label class="form-label fw-bold">Maximum Discount</label>
                     <input type="number" class="form-control" name="max_discount_amount" 
-                           value="{% if discount_code %}{{ discount_code.max_discount_amount|default:'' }}{% endif %}" 
+                           value="{% if discount_code %}{{ discount_code.max_discount_amount|default:''|floatformat:0 }}{% endif %}" 
                            min="0" step="1000">
-                    <small class="text-muted">Chỉ áp dụng khi loại giảm giá là phần trăm</small>
+                    <small class="text-muted">Only applies when discount type is percentage</small>
                 </div>
             </div>
             
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label fw-bold">Phạm vi áp dụng <span class="text-danger">*</span></label>
-                    <select class="form-select" name="scope" id="scopeSelect" required onchange="toggleProductSelection()">
-                        <option value="shop" {% if not discount_code or discount_code.scope == 'shop' %}selected{% endif %}>Toàn Shop</option>
-                        <option value="products" {% if discount_code and discount_code.scope == 'products' %}selected{% endif %}>Sản phẩm cụ thể</option>
-                    </select>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label fw-bold">Số lượt sử dụng tối đa</label>
+                    <label class="form-label fw-bold">Maximum Usage</label>
                     <input type="number" class="form-control" name="max_usage" 
                            value="{% if discount_code %}{{ discount_code.max_usage }}{% else %}0{% endif %}" 
                            min="0">
-                    <small class="text-muted">0 = không giới hạn</small>
+                    <small class="text-muted">0 = unlimited</small>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Status</label>
+                    <select class="form-select" name="status" id="statusSelect">
+                        <option value="draft" {% if discount_code and discount_code.status == 'draft' %}selected{% endif %}>Draft</option>
+                        <option value="active" {% if discount_code and discount_code.status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="inactive" {% if discount_code and discount_code.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                    </select>
                 </div>
             </div>
             
+            <!-- Hidden field for scope (always shop) -->
+            <input type="hidden" name="scope" value="shop">
+            
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label fw-bold">Ngày bắt đầu <span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold">Start Date <span class="text-danger">*</span></label>
                     <input type="datetime-local" class="form-control" name="start_date" 
                            value="{% if discount_code %}{{ discount_code.start_date|date:'Y-m-d\TH:i' }}{% endif %}" 
                            required>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="form-label fw-bold">Ngày kết thúc <span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold">End Date <span class="text-danger">*</span></label>
                     <input type="datetime-local" class="form-control" name="end_date" 
                            value="{% if discount_code %}{{ discount_code.end_date|date:'Y-m-d\TH:i' }}{% endif %}" 
                            required>
@@ -105,298 +113,33 @@
             </div>
         </div>
     </div>
-    
-    <!-- Products Selection (only if scope is 'products') -->
-    <div class="card border-0 shadow-sm rounded-4 mb-4" id="productsSelectionCard" style="display: {% if discount_code and discount_code.scope == 'products' %}block{% else %}none{% endif %};">
-        <div class="card-header bg-white border-0">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold">Sản phẩm áp dụng mã giảm giá</h5>
-                <button type="button" class="btn btn-primary rounded-pill" onclick="openProductSelector()">
-                    <i class="fas fa-plus me-2"></i>Thêm sản phẩm
-                </button>
-            </div>
-        </div>
-        <div class="card-body">
-            <div id="selected-products-list">
-                {% if discount_code and discount_code.scope == 'products' and selected_products %}
-                    {% for discount_product in selected_products %}
-                    <div class="border rounded-3 p-3 mb-3 selected-product-item" data-product-id="{{ discount_product.product.product_id }}">
-                        <div class="row align-items-center">
-                            <div class="col-md-1">
-                                {% if discount_product.product.get_primary_image %}
-                                <img src="{{ discount_product.product.get_primary_image.url }}" 
-                                     alt="{{ discount_product.product.name }}" 
-                                     class="img-fluid rounded square-image" 
-                                     style="width: 60px; height: 60px; object-fit: cover;">
-                                {% else %}
-                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                                    <i class="fas fa-image text-muted"></i>
-                                </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-10">
-                                <strong>{{ discount_product.product.name }}</strong>
-                                <br><small class="text-muted">Giá: {{ discount_product.product.price|floatformat:0 }} VNĐ</small>
-                            </div>
-                            <div class="col-md-1 text-end">
-                                <button type="button" class="btn btn-sm btn-outline-danger" 
-                                        onclick="removeProduct({{ discount_product.product.product_id }})">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <input type="hidden" name="products" value="{{ discount_product.product.product_id }}">
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="text-center py-4 text-muted">
-                        <i class="fas fa-box fa-2x mb-2"></i>
-                        <p class="mb-0">Chưa có sản phẩm nào. Nhấn "Thêm sản phẩm" để chọn.</p>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    
-    <div class="d-flex justify-content-between">
-        <a href="{% url 'store_discount_code_list' store.store_id %}" class="btn btn-outline-secondary rounded-pill">
-            <i class="fas fa-arrow-left me-2"></i>Quay lại
-        </a>
-        <button type="submit" class="btn btn-primary rounded-pill">
-            <i class="fas fa-save me-2"></i>Lưu
-        </button>
-    </div>
 </form>
 
-<!-- Product Selector Modal (same as flash sale) -->
-<div class="modal fade" id="productSelectorModal" tabindex="-1" aria-labelledby="productSelectorModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="productSelectorModalLabel">Chọn sản phẩm</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <!-- Search -->
-                <div class="mb-3">
-                    <input type="text" class="form-control" id="productSearchInput" 
-                           placeholder="Tìm kiếm sản phẩm..." 
-                           onkeyup="searchProducts()">
-                </div>
-                
-                <!-- Products Grid -->
-                <div id="products-grid" class="row g-3" style="max-height: 500px; overflow-y: auto;">
-                    <!-- Products will be loaded here via AJAX -->
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-primary" onclick="confirmProductSelection()">Xác nhận</button>
-            </div>
-        </div>
-    </div>
-</div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
-let selectedProductIds = new Set();
-{% if discount_code and discount_code.scope == 'products' and selected_product_ids %}
-    selectedProductIds = new Set([{% for pid in selected_product_ids %}{{ pid }}{% if not forloop.last %},{% endif %}{% endfor %}]);
-{% endif %}
-
-// Handle discount type change
-document.getElementById('discountType').addEventListener('change', function() {
-    const unit = this.value === 'percentage' ? '%' : 'VNĐ';
-    document.getElementById('discountUnit').textContent = unit;
-    document.getElementById('maxDiscountContainer').style.display = this.value === 'percentage' ? 'block' : 'none';
-});
-
-// Handle scope change
-function toggleProductSelection() {
-    const scope = document.getElementById('scopeSelect').value;
-    const productsCard = document.getElementById('productsSelectionCard');
-    if (scope === 'products') {
-        productsCard.style.display = 'block';
-    } else {
-        productsCard.style.display = 'none';
-        // Clear selected products
-        selectedProductIds.clear();
-        document.getElementById('selected-products-list').innerHTML = `
-            <div class="text-center py-4 text-muted">
-                <i class="fas fa-box fa-2x mb-2"></i>
-                <p class="mb-0">Chưa có sản phẩm nào. Nhấn "Thêm sản phẩm" để chọn.</p>
-            </div>
-        `;
-    }
-}
-
-function openProductSelector() {
-    loadProducts();
-    const modal = new bootstrap.Modal(document.getElementById('productSelectorModal'));
-    modal.show();
-}
-
-function loadProducts(search = '') {
-    const url = `{% url 'get_store_products_ajax' store.store_id %}?search=${encodeURIComponent(search)}`;
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                displayProducts(data.products);
-            }
-        })
-        .catch(error => {
-            console.error('Error loading products:', error);
-        });
-}
-
-function displayProducts(products) {
-    const grid = document.getElementById('products-grid');
-    grid.innerHTML = '';
-    
-    products.forEach(product => {
-        const isSelected = selectedProductIds.has(product.product_id);
-        const productCard = `
-            <div class="col-md-3">
-                <div class="card border ${isSelected ? 'border-primary' : ''} product-select-card" 
-                     data-product-id="${product.product_id}"
-                     onclick="toggleProductSelection(${product.product_id})"
-                     style="cursor: pointer;">
-                    <div class="card-body p-2">
-                        <div class="position-relative">
-                            ${product.image_url ? 
-                                `<img src="${product.image_url}" class="card-img-top square-image" style="width: 100%; height: 120px; object-fit: cover;">` :
-                                `<div class="bg-light d-flex align-items-center justify-content-center" style="height: 120px;">
-                                    <i class="fas fa-image fa-2x text-muted"></i>
-                                </div>`
-                            }
-                            ${isSelected ? 
-                                `<div class="position-absolute top-0 end-0 m-2">
-                                    <span class="badge bg-primary"><i class="fas fa-check"></i></span>
-                                </div>` : ''
-                            }
-                        </div>
-                        <h6 class="card-title mt-2 small">${product.name}</h6>
-                        <p class="card-text small text-primary mb-0">${product.price.toLocaleString('vi-VN')} VNĐ</p>
-                    </div>
-                </div>
-            </div>
-        `;
-        grid.innerHTML += productCard;
-    });
-}
-
-function toggleProductSelection(productId) {
-    if (selectedProductIds.has(productId)) {
-        selectedProductIds.delete(productId);
-    } else {
-        selectedProductIds.add(productId);
-    }
-    loadProducts(document.getElementById('productSearchInput').value);
-}
-
-function confirmProductSelection() {
-    // Add selected products to form
-    const selectedList = document.getElementById('selected-products-list');
-    const existingIds = new Set();
-    
-    // Get existing product IDs
-    document.querySelectorAll('.selected-product-item').forEach(item => {
-        const pid = item.getAttribute('data-product-id');
-        existingIds.add(parseInt(pid));
-    });
-    
-    // Add new products
-    selectedProductIds.forEach(productId => {
-        if (!existingIds.has(productId)) {
-            // Fetch product details and add to form
-            fetch(`{% url 'get_store_products_ajax' store.store_id %}?search=`)
-                .then(response => response.json())
-                .then(data => {
-                    const product = data.products.find(p => p.product_id === productId);
-                    if (product) {
-                        addProductToForm(product);
-                    }
-                });
+    // Update discount unit display based on discount type
+    document.getElementById('discountType').addEventListener('change', function() {
+        const unit = this.value === 'percentage' ? '%' : 'VNĐ';
+        document.getElementById('discountUnit').textContent = unit;
+        
+        // Update step attribute for discount value input
+        const discountValueInput = document.querySelector('input[name="discount_value"]');
+        if (this.value === 'percentage') {
+            discountValueInput.step = '0.01';
+        } else {
+            discountValueInput.step = '1';
+        }
+        
+        // Show/hide max discount field
+        const maxDiscountContainer = document.getElementById('maxDiscountContainer');
+        if (this.value === 'percentage') {
+            maxDiscountContainer.style.display = 'block';
+        } else {
+            maxDiscountContainer.style.display = 'none';
         }
     });
-    
-    // Close modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('productSelectorModal'));
-    modal.hide();
-}
-
-function addProductToForm(product) {
-    const selectedList = document.getElementById('selected-products-list');
-    
-    // Remove empty message if exists
-    const emptyMsg = selectedList.querySelector('.text-center');
-    if (emptyMsg) {
-        emptyMsg.remove();
-    }
-    
-    const productItem = `
-        <div class="border rounded-3 p-3 mb-3 selected-product-item" data-product-id="${product.product_id}">
-            <div class="row align-items-center">
-                <div class="col-md-1">
-                    ${product.image_url ? 
-                        `<img src="${product.image_url}" alt="${product.name}" class="img-fluid rounded square-image" style="width: 60px; height: 60px; object-fit: cover;">` :
-                        `<div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                            <i class="fas fa-image text-muted"></i>
-                        </div>`
-                    }
-                </div>
-                <div class="col-md-10">
-                    <strong>${product.name}</strong>
-                    <br><small class="text-muted">Giá: ${product.price.toLocaleString('vi-VN')} VNĐ</small>
-                </div>
-                <div class="col-md-1 text-end">
-                    <button type="button" class="btn btn-sm btn-outline-danger" 
-                            onclick="removeProduct(${product.product_id})">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-            <input type="hidden" name="products" value="${product.product_id}">
-        </div>
-    `;
-    selectedList.innerHTML += productItem;
-}
-
-function removeProduct(productId) {
-    selectedProductIds.delete(productId);
-    const item = document.querySelector(`.selected-product-item[data-product-id="${productId}"]`);
-    if (item) {
-        item.remove();
-    }
-    
-    // Show empty message if no products
-    const selectedList = document.getElementById('selected-products-list');
-    if (selectedList.querySelectorAll('.selected-product-item').length === 0) {
-        selectedList.innerHTML = `
-            <div class="text-center py-4 text-muted">
-                <i class="fas fa-box fa-2x mb-2"></i>
-                <p class="mb-0">Chưa có sản phẩm nào. Nhấn "Thêm sản phẩm" để chọn.</p>
-            </div>
-        `;
-    }
-}
-
-function searchProducts() {
-    const search = document.getElementById('productSearchInput').value;
-    loadProducts(search);
-}
-
-// Auto-uppercase code input
-document.querySelector('input[name="code"]').addEventListener('input', function() {
-    this.value = this.value.toUpperCase();
-});
-
-// Check scope from URL parameter
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.get('scope') === 'products') {
-    document.getElementById('scopeSelect').value = 'products';
-    toggleProductSelection();
-}
 </script>
 {% endblock %}
 

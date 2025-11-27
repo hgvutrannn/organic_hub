@@ -24,6 +24,7 @@ class ProductDocument(Document):
     category_name = fields.KeywordField()
     store_id = fields.IntegerField()
     store_name = fields.KeywordField()
+    certification_organization_ids = fields.KeywordField(multi=True)  # Multi-value field
     is_active = fields.BooleanField()
     created_at = fields.DateField()
     view_count = fields.IntegerField()
@@ -78,6 +79,28 @@ class ProductDocument(Document):
         """Prepare store_name field"""
         return instance.store.store_name
 
+    # THÊM METHOD NÀY
+    def prepare_certification_organization_ids(self, instance):
+        """
+        Prepare certification_organization_ids field
+        Lấy tất cả certification_organization_id từ Store của Product
+        """
+        certification_ids = []
+        store = instance.store
+        
+        # Lấy tất cả StoreVerificationRequest của Store
+        verification_requests = store.verification_requests.all()
+        
+        for request in verification_requests:
+            # Lấy tất cả StoreCertification của request
+            certifications = request.certifications.all()
+            for cert in certifications:
+                # Chỉ lấy certification_organization_id nếu có và chưa tồn tại trong list
+                if cert.certification_organization and cert.certification_organization.organization_id not in certification_ids:
+                    certification_ids.append(cert.certification_organization.organization_id)
+        
+        return certification_ids
+        
     def prepare_is_active(self, instance):
         """Prepare is_active field"""
         return instance.is_active

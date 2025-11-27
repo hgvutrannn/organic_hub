@@ -1,0 +1,208 @@
+{% extends 'core/admin/admin_base.html' %}
+
+{% block admin_title %}Category Management{% endblock %}
+{% block admin_page_title %}Category Management{% endblock %}
+{% block admin_page_subtitle %}Manage product categories{% endblock %}
+
+{% block admin_content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="mb-0">Category List</h4>
+                <small class="text-muted">Total: {{ total_categories }} categories</small>
+            </div>
+            <a href="{% url 'admin_category_create' %}" class="btn btn-danger rounded-pill">
+                <i class="fas fa-plus me-2"></i>Add New Category
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="row mb-4">
+    <div class="col-12">
+        <form method="get" action="{% url 'admin_category_list' %}">
+            <div class="input-group">
+                <input type="text" name="search" class="form-control form-control-lg rounded-3" 
+                       placeholder="Search categories..." value="{{ search_query }}">
+                <button class="btn btn-danger rounded-3" type="submit">
+                    <i class="fas fa-search me-2"></i>Search
+                </button>
+                {% if search_query %}
+                <a href="{% url 'admin_category_list' %}" class="btn btn-outline-secondary rounded-3">
+                    <i class="fas fa-times me-2"></i>Clear Filter
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Categories Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-0">
+                {% if categories %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px;">ID</th>
+                                <th>Category Name</th>
+                                <th>Slug</th>
+                                <th style="width: 150px;">Products</th>
+                                <th style="width: 200px;" class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for category in categories %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-secondary">#{{ category.category_id }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-danger bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="fas fa-folder text-danger"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-bold mb-0">{{ category.name }}</h6>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <code class="text-muted">{{ category.slug }}</code>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ category.products.count }} products</span>
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'admin_category_edit' category.category_id %}" 
+                                           class="btn btn-sm btn-outline-primary rounded-pill">
+                                            <i class="fas fa-edit me-1"></i>Edit
+                                        </a>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-danger rounded-pill"
+                                                onclick="confirmDelete({{ category.category_id }}, '{{ category.name }}', {{ category.products.count }})">
+                                            <i class="fas fa-trash me-1"></i>Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if categories.has_other_pages %}
+                <div class="d-flex justify-content-center py-3">
+                    <nav aria-label="Category pagination">
+                        <ul class="pagination">
+                            {% if categories.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ categories.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Previous</a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in categories.paginator.page_range %}
+                                {% if categories.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > categories.number|add:'-3' and num < categories.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if categories.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ categories.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Next</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="bg-danger bg-opacity-10 rounded-circle p-4 mx-auto mb-3" style="width: 80px; height: 80px;">
+                        <i class="fas fa-folder-open text-danger fs-2"></i>
+                    </div>
+                    <h5 class="fw-bold">No Categories Found</h5>
+                    <p class="text-muted">
+                        {% if search_query %}
+                            No categories match the keyword "{{ search_query }}"
+                        {% else %}
+                            No categories in the system yet.
+                        {% endif %}
+                    </p>
+                    {% if not search_query %}
+                    <a href="{% url 'admin_category_create' %}" class="btn btn-danger rounded-pill mt-3">
+                        <i class="fas fa-plus me-2"></i>Add First Category
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete category <strong id="categoryName"></strong>?</p>
+                <div id="productWarning" class="alert alert-warning d-none">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    This category has <span id="productCount"></span> products. Cannot delete category with products.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger rounded-pill">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(categoryId, categoryName, productCount) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    document.getElementById('categoryName').textContent = categoryName;
+    document.getElementById('deleteForm').action = `/admin-dashboard/categories/${categoryId}/delete/`;
+    
+    const productWarning = document.getElementById('productWarning');
+    const productCountSpan = document.getElementById('productCount');
+    const deleteButton = document.querySelector('#deleteForm button[type="submit"]');
+    
+    if (productCount > 0) {
+        productWarning.classList.remove('d-none');
+        productCountSpan.textContent = productCount;
+        deleteButton.disabled = true;
+        deleteButton.classList.add('disabled');
+    } else {
+        productWarning.classList.add('d-none');
+        deleteButton.disabled = false;
+        deleteButton.classList.remove('disabled');
+    }
+    
+    modal.show();
+}
+</script>
+{% endblock %}
+

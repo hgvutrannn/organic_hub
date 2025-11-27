@@ -257,13 +257,11 @@ def store_discount_code_create(request, store_id):
         description = request.POST.get('description', '')
         discount_type = request.POST.get('discount_type')
         discount_value = request.POST.get('discount_value')
-        min_order_amount = request.POST.get('min_order_amount', 0)
         max_discount_amount = request.POST.get('max_discount_amount') or None
-        scope = request.POST.get('scope', 'shop')
         start_date = request.POST.get('start_date')
         end_date = request.POST.get('end_date')
         max_usage = request.POST.get('max_usage', 0)
-        product_ids = request.POST.getlist('products')
+        status = request.POST.get('status', 'draft')
         
         if code and name and discount_type and discount_value and start_date and end_date:
             # Check if code already exists
@@ -294,38 +292,22 @@ def store_discount_code_create(request, store_id):
                         description=description,
                         discount_type=discount_type,
                         discount_value=Decimal(discount_value),
-                        min_order_amount=Decimal(min_order_amount) if min_order_amount else Decimal('0'),
+                        min_order_amount=Decimal('0'),  # Default to 0, field kept for backward compatibility
                         max_discount_amount=Decimal(max_discount_amount) if max_discount_amount else None,
-                        scope=scope,
+                        scope='shop',  # Always shop scope
                         start_date=start_dt,
                         end_date=end_dt,
                         max_usage=int(max_usage) if max_usage else 0,
-                        status='draft'
+                        status=status
                     )
-                    
-                    # Add products if scope is 'products'
-                    if scope == 'products' and product_ids:
-                        for product_id in product_ids:
-                            try:
-                                product = Product.objects.get(product_id=product_id, store=store)
-                                DiscountCodeProduct.objects.create(
-                                    discount_code=discount_code,
-                                    product=product
-                                )
-                            except Product.DoesNotExist:
-                                continue
                     
                     messages.success(request, 'Tạo mã giảm giá thành công!')
                     return redirect('store_discount_code_list', store_id=store.store_id)
                 except Exception as e:
                     messages.error(request, f'Có lỗi xảy ra: {str(e)}')
     
-    # Get store products
-    products = Product.objects.filter(store=store, is_active=True).order_by('-created_at')
-    
     context = {
         'store': store,
-        'products': products,
     }
     return render(request, 'core/store/discount_code_form.html', context)
 
@@ -343,15 +325,13 @@ def store_discount_code_edit(request, store_id, discount_code_id):
         discount_code.discount_type = request.POST.get('discount_type', discount_code.discount_type)
         discount_value = request.POST.get('discount_value', discount_code.discount_value)
         discount_code.discount_value = Decimal(discount_value) if discount_value else discount_code.discount_value
-        min_order_amount = request.POST.get('min_order_amount', 0) or 0
-        discount_code.min_order_amount = Decimal(min_order_amount) if min_order_amount else Decimal('0')
         max_discount_amount = request.POST.get('max_discount_amount') or None
         discount_code.max_discount_amount = Decimal(max_discount_amount) if max_discount_amount else None
-        scope = request.POST.get('scope', discount_code.scope)
-        discount_code.scope = scope
+        discount_code.scope = 'shop'  # Always shop scope
         start_date = request.POST.get('start_date')
         end_date = request.POST.get('end_date')
         discount_code.max_usage = int(request.POST.get('max_usage', 0)) if request.POST.get('max_usage') else 0
+        discount_code.status = request.POST.get('status', discount_code.status)
         
         if start_date:
             from datetime import datetime
@@ -372,40 +352,12 @@ def store_discount_code_edit(request, store_id, discount_code_id):
         
         discount_code.save()
         
-        # Update products if scope is 'products'
-        if scope == 'products':
-            product_ids = request.POST.getlist('products')
-            # Remove old products not in new list
-            DiscountCodeProduct.objects.filter(discount_code=discount_code).exclude(product_id__in=product_ids).delete()
-            
-            # Add new products
-            for product_id in product_ids:
-                try:
-                    product = Product.objects.get(product_id=product_id, store=store)
-                    DiscountCodeProduct.objects.get_or_create(
-                        discount_code=discount_code,
-                        product=product
-                    )
-                except Product.DoesNotExist:
-                    continue
-        else:
-            # Remove all products if scope changed to 'shop'
-            DiscountCodeProduct.objects.filter(discount_code=discount_code).delete()
-        
         messages.success(request, 'Cập nhật mã giảm giá thành công!')
         return redirect('store_discount_code_list', store_id=store.store_id)
-    
-    # Get store products and selected products
-    products = Product.objects.filter(store=store, is_active=True).order_by('-created_at')
-    selected_products = discount_code.products.all() if discount_code.scope == 'products' else []
-    selected_product_ids = [p.product_id for p in selected_products]
     
     context = {
         'store': store,
         'discount_code': discount_code,
-        'products': products,
-        'selected_products': selected_products,
-        'selected_product_ids': selected_product_ids,
     }
     return render(request, 'core/store/discount_code_form.html', context)
 

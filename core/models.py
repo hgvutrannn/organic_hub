@@ -6,14 +6,11 @@ from django.core.validators import RegexValidator
 
 # Custom User Manager
 class CustomUserManager(BaseUserManager):
-    def create_user(self, phone_number, password=None, email=None, full_name=None, **extra_fields):
-        if not phone_number:
-            raise ValueError('Số điện thoại là bắt buộc')
+    def create_user(self, email, password=None, full_name=None, **extra_fields):
         if not email:
             raise ValueError('Email là bắt buộc')
         
         user = self.model(
-            phone_number=phone_number,
             email=self.normalize_email(email),
             full_name=full_name,
             **extra_fields
@@ -22,7 +19,7 @@ class CustomUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, phone_number, password=None, email=None, full_name=None, **extra_fields):
+    def create_superuser(self, email, password=None, full_name=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
@@ -33,25 +30,14 @@ class CustomUserManager(BaseUserManager):
         if extra_fields.get('is_superuser') is not True:
             raise ValueError('Superuser must have is_superuser=True.')
         
-        return self.create_user(phone_number, password, email, full_name, **extra_fields)
+        return self.create_user(email, password, full_name, **extra_fields)
 
 
 # Custom User Model
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     user_id = models.AutoField(primary_key=True)
-    phone_number = models.CharField(
-        max_length=20,
-        unique=True,
-        validators=[
-            RegexValidator(
-                regex=r'^\+?1?\d{9,15}$',
-                message="Số điện thoại phải theo định dạng: '+999999999'. Tối đa 15 chữ số."
-            )
-        ],
-        verbose_name='Số điện thoại'
-    )
     full_name = models.CharField(max_length=100, verbose_name='Họ và tên')
-    email = models.EmailField(max_length=255, unique=True, null=True, blank=True)
+    email = models.EmailField(max_length=255, unique=True, verbose_name='Email')
     email_verified = models.BooleanField(default=False, verbose_name='Email đã xác thực')
     created_at = models.DateTimeField(default=timezone.now)
     status = models.CharField(
@@ -71,15 +57,15 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
 
-    USERNAME_FIELD = 'phone_number'
-    REQUIRED_FIELDS = ['full_name', 'email']
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['full_name']
 
     class Meta:
         verbose_name = 'Người dùng'
         verbose_name_plural = 'Người dùng'
 
     def __str__(self):
-        return self.phone_number
+        return self.email
 
     def get_full_name(self):
         return self.full_name
@@ -202,6 +188,27 @@ class StoreVerificationRequest(models.Model):
         return self.certifications.count()
 
 
+# Certification Organization Model
+class CertificationOrganization(models.Model):
+    """Tổ chức cấp phép chứng nhận hữu cơ"""
+    organization_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255, unique=True, verbose_name='Tên tổ chức')
+    abbreviation = models.CharField(max_length=50, unique=True, verbose_name='Viết tắt')
+    description = models.TextField(blank=True, null=True, verbose_name='Mô tả')
+    website = models.URLField(blank=True, null=True, verbose_name='Website')
+    is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
+    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
+    
+    class Meta:
+        verbose_name = 'Tổ chức cấp phép'
+        verbose_name_plural = 'Tổ chức cấp phép'
+        ordering = ['name']
+    
+    def __str__(self):
+        return f"{self.name} ({self.abbreviation})"
+
+
 # Store Certification Model
 class StoreCertification(models.Model):
     CERTIFICATION_TYPES = [
@@ -218,9 +225,22 @@ class StoreCertification(models.Model):
     certification_type = models.CharField(
         max_length=50, 
         choices=CERTIFICATION_TYPES, 
-        verbose_name='Loại chứng nhận'
+        verbose_name='Loại chứng nhận',
+        blank=True,
+        null=True
+    )
+    certification_organization = models.ForeignKey(
+        CertificationOrganization,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='certifications',
+        verbose_name='Tổ chức cấp phép'
     )
     certification_name = models.CharField(max_length=255, blank=True, null=True, verbose_name='Tên chứng nhận')
+    certificate_number = models.CharField(max_length=255, blank=True, null=True, verbose_name='Mã số chứng chỉ')
+    issue_date = models.DateField(null=True, blank=True, verbose_name='Ngày cấp')
+    expiry_date = models.DateField(null=True, blank=True, verbose_name='Ngày hết hạn')
     document = models.FileField(upload_to='certifications/', verbose_name='Tài liệu chứng nhận')
     uploaded_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tải lên')
     
@@ -254,9 +274,9 @@ class Product(models.Model):
     description = models.TextField(blank=True, null=True, verbose_name='Mô tả')
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Giá')
     base_unit = models.CharField(max_length=50, verbose_name='Đơn vị')
+    stock = models.IntegerField(default=0, verbose_name='Số lượng tồn kho', help_text='Chỉ áp dụng cho sản phẩm không có biến thể')
     SKU = models.CharField(max_length=255, unique=True, blank=True, null=True, verbose_name='Mã SKU')
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
-    image = models.ImageField(upload_to='products/', null=True, blank=True, verbose_name='Ảnh sản phẩm chính')
     view_count = models.PositiveIntegerField(default=0, verbose_name='Số lượt xem')
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
     
@@ -270,14 +290,35 @@ class Product(models.Model):
     def __str__(self):
         return self.name
     
+    def get_images(self, primary_only=False):
+        """
+        Lấy ảnh của sản phẩm
+        
+        Args:
+            primary_only (bool): Nếu True, chỉ trả về ảnh chính (order=0). 
+                                Nếu False, trả về list tất cả ảnh theo thứ tự.
+        
+        Returns:
+            - Nếu primary_only=True: Trả về ProductImage object hoặc None
+            - Nếu primary_only=False: Trả về QuerySet của ProductImage
+        """
+        if primary_only:
+            # Trả về ảnh chính (order=0) hoặc ảnh đầu tiên
+            primary_image = self.images.filter(order=0).first() or self.images.first()
+            return primary_image
+        else:
+            # Trả về tất cả ảnh theo thứ tự
+            return self.images.all().order_by('order', 'created_at')
+    
     @property
     def get_primary_image(self):
-        """Lấy ảnh chính hoặc ảnh đầu tiên"""
-        if self.image:
-            return self.image
-        first_image = self.images.first()
-        if first_image:
-            return first_image.image
+        """
+        Property để tương thích ngược - trả về ảnh chính (ImageField object)
+        Sử dụng get_images(primary_only=True) thay thế
+        """
+        primary_image = self.get_images(primary_only=True)
+        if primary_image:
+            return primary_image.image
         return None
     
     @property
@@ -298,7 +339,7 @@ class Product(models.Model):
     def default_variant(self):
         """Lấy variant mặc định (variant đầu tiên hoặc variant có giá thấp nhất)"""
         if self.has_variants and self.variants.exists():
-            return self.variants.filter(is_active=True).order_by('sort_order', 'price').first()
+            return self.variants.filter(is_active=True).order_by('price', 'created_at').first()
         return None
 
 
@@ -307,8 +348,7 @@ class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images', verbose_name='Sản phẩm')
     image = models.ImageField(upload_to='products/gallery/', verbose_name='Hình ảnh')
     alt_text = models.CharField(max_length=255, blank=True, null=True, verbose_name='Mô tả ảnh')
-    is_primary = models.BooleanField(default=False, verbose_name='Ảnh chính')
-    order = models.PositiveIntegerField(default=0, verbose_name='Thứ tự')
+    order = models.PositiveIntegerField(default=0, verbose_name='Thứ tự', help_text='Ảnh có order=0 sẽ là ảnh chính')
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
 
     class Meta:
@@ -330,16 +370,14 @@ class ProductVariant(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Giá')
     stock = models.IntegerField(default=0, verbose_name='Số lượng tồn kho')
     image = models.ImageField(upload_to='products/variants/', null=True, blank=True, verbose_name='Hình ảnh phân loại')
-    attributes = models.JSONField(blank=True, null=True, verbose_name='Thuộc tính', help_text='Ví dụ: {"Size": "M", "Color": "Đỏ"}')
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
-    sort_order = models.IntegerField(default=0, verbose_name='Thứ tự hiển thị')
     created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
 
     class Meta:
         verbose_name = 'Phân loại sản phẩm'
         verbose_name_plural = 'Phân loại sản phẩm'
-        ordering = ['sort_order', 'created_at']
+        ordering = ['created_at']
 
     def __str__(self):
         return f"{self.product.name} - {self.variant_name}"
@@ -390,7 +428,7 @@ class CartItem(models.Model):
 
     def __str__(self):
         variant_str = f" - {self.variant.variant_name}" if self.variant else ""
-        return f"{self.quantity} x {self.product.name}{variant_str} by {self.user.phone_number}"
+        return f"{self.quantity} x {self.product.name}{variant_str} by {self.user.email}"
     
     @property
     def total_price(self):
@@ -456,7 +494,7 @@ class Order(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"Đơn hàng #{self.order_id} - {self.user.phone_number} - {self.get_status_display()}"
+        return f"Đơn hàng #{self.order_id} - {self.user.email} - {self.get_status_display()}"
 
 
 # Order Item Model
@@ -521,7 +559,7 @@ class Review(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"Đánh giá {self.rating} sao cho {self.product.name} bởi {self.user.phone_number}"
+        return f"Đánh giá {self.rating} sao cho {self.product.name} bởi {self.user.email}"
     
     @property
     def has_seller_reply(self):

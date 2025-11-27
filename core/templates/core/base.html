@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,155 +13,13 @@
     
     {% load static %}
     
-    <!-- Global Square Image Styles -->
-    <style>
-        /* Make all product images, avatars, and review images square with center crop */
-        .square-image,
-        img[src*="products/"],
-        img[src*="avatars/"],
-        img[src*="reviews/"],
-        .card-img-top,
-        .product-image,
-        .thumbnail-img {
-            aspect-ratio: 1 / 1 !important;
-            object-fit: cover !important;
-            object-position: center !important;
-        }
-        
-        /* Override any height constraints */
-        img[src*="products/"],
-        img[src*="avatars/"],
-        img[src*="reviews/"],
-        .card-img-top {
-            height: auto !important;
-        }
-
-        /* Organic Theme Colors - Option 1: Natural Green */
-        :root {
-            --organic-primary: #28a745;
-            --organic-primary-dark: #218838;
-            --organic-primary-darker: #1e7e34;
-            --organic-light: #e8f5e9;
-            --organic-lighter: #c8e6c9;
-        }
-
-        /* Override Bootstrap primary colors */
-        .btn-primary {
-            background-color: var(--organic-primary) !important;
-            border-color: var(--organic-primary) !important;
-        }
-
-        .btn-primary:hover,
-        .btn-primary:focus,
-        .btn-primary:active {
-            background-color: var(--organic-primary-dark) !important;
-            border-color: var(--organic-primary-dark) !important;
-        }
-
-        .btn-primary:active:focus {
-            box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.5) !important;
-        }
-
-        .text-primary {
-            color: var(--organic-primary) !important;
-        }
-
-        .bg-primary {
-            background-color: var(--organic-primary) !important;
-        }
-
-        .bg-primary.bg-opacity-10 {
-            background-color: rgba(40, 167, 69, 0.1) !important;
-        }
-
-        .border-primary {
-            border-color: var(--organic-primary) !important;
-        }
-
-        .badge.bg-primary {
-            background-color: var(--organic-primary) !important;
-        }
-
-        /* Override info colors to match organic theme */
-        .btn-info {
-            background-color: var(--organic-primary) !important;
-            border-color: var(--organic-primary) !important;
-            color: #fff !important;
-        }
-
-        .btn-info:hover,
-        .btn-info:focus,
-        .btn-info:active {
-            background-color: var(--organic-primary-dark) !important;
-            border-color: var(--organic-primary-dark) !important;
-            color: #fff !important;
-        }
-
-        .text-info {
-            color: var(--organic-primary) !important;
-        }
-
-        .bg-info {
-            background-color: var(--organic-primary) !important;
-        }
-
-        .bg-info.bg-opacity-10 {
-            background-color: rgba(40, 167, 69, 0.1) !important;
-        }
-
-        .badge.bg-info {
-            background-color: var(--organic-primary) !important;
-        }
-
-        /* Navbar text styling - ensure bright white text */
-        .navbar-dark .navbar-nav .nav-link {
-            color: rgba(255, 255, 255, 0.95) !important;
-            font-weight: 500;
-        }
-
-        .navbar-dark .navbar-nav .nav-link:hover {
-            color: #ffffff !important;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-
-        .navbar-dark .navbar-brand {
-            color: #ffffff !important;
-            font-weight: 600;
-            font-size: 1.25rem;
-        }
-
-        .navbar-dark .navbar-brand:hover {
-            color: #ffffff !important;
-        }
-
-        .navbar-dark .dropdown-toggle::after {
-            border-top-color: rgba(255, 255, 255, 0.95);
-        }
-
-        .navbar-dark .navbar-nav .dropdown-menu {
-            border: none;
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-        }
-
-        .navbar-dark .navbar-nav .dropdown-item {
-            color: #212529;
-        }
-
-        .navbar-dark .navbar-nav .dropdown-item:hover {
-            background-color: var(--organic-light);
-            color: var(--organic-primary-dark);
-        }
-
-        .navbar-dark .navbar-toggler {
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .navbar-dark .navbar-toggler-icon {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.95%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-        }
-
-    </style>
+    <!-- Base CSS -->
+    <link rel="stylesheet" href="{% static 'core/css/base.css' %}">
+    
+    <!-- Chat Widget CSS (available on all pages for authenticated users) -->
+    {% if user.is_authenticated %}
+    <link rel="stylesheet" href="{% static 'chat/css/chat-widget.css' %}">
+    {% endif %}
     
     {% block extra_css %}{% endblock %}
 </head>
@@ -181,12 +39,12 @@
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'home' %}">
-                            <i class="fas fa-home me-1"></i>Trang chủ
+                            <i class="fas fa-home me-1"></i>Home
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'product_list' %}">
-                            <i class="fas fa-store me-1"></i>Sản phẩm
+                            <i class="fas fa-store me-1"></i>Products
                         </a>
                     </li>
                 </ul>
@@ -200,24 +58,24 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="notificationDropdown">
                                 <li class="dropdown-header d-flex justify-content-between align-items-center">
-                                    <span>Thông báo</span>
-                                    <button class="btn btn-link btn-sm text-decoration-none" type="button" id="notificationsMarkAll" disabled>Đánh dấu đã đọc</button>
+                                    <span>Notifications</span>
+                                    <button class="btn btn-link btn-sm text-decoration-none" type="button" id="notificationsMarkAll" disabled>Mark all as read</button>
                                 </li>
                                 <li>
                                     <div class="list-group list-group-flush notification-list" id="notificationList">
-                                        <div class="text-center text-muted py-3">Đang tải...</div>
+                                        <div class="text-center text-muted py-3">Loading...</div>
                                     </div>
                                 </li>
                             </ul>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'cart' %}">
-                                <i class="fas fa-shopping-cart me-1"></i>Giỏ hàng
+                                <i class="fas fa-shopping-cart me-1"></i>Cart
                             </a>
                         </li>
                         
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'chat_list' %}">
+                            <a class="nav-link" href="#" onclick="if(typeof openChatWidget === 'function') { openChatWidget(); } else { document.getElementById('chatToggleBtn')?.click(); } return false;">
                                 <i class="fas fa-comments me-1"></i>Chat
                             </a>
                         </li>
@@ -227,7 +85,7 @@
                             </a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="{% url 'profile' %}">
-                                    <i class="fas fa-user-circle me-1"></i>Tài khoản
+                                    <i class="fas fa-user-circle me-1"></i>Account
                                 </a></li>
                                 
                                 {% if user.is_staff or user.is_superuser %}
@@ -238,47 +96,47 @@
                                 
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{% url 'orders' %}">
-                                    <i class="fas fa-box me-1"></i>Đơn hàng
+                                    <i class="fas fa-box me-1"></i>Orders
                                 </a></li>
                                 
                                 <!-- Store Management Options -->
                                 <li><hr class="dropdown-divider"></li>
                                 <li><h6 class="dropdown-header">
-                                    <i class="fas fa-store me-1"></i>Nhà cung cấp
+                                    <i class="fas fa-store me-1"></i>Suppliers
                                 </h6></li>
                                 
                                 {% if user.stores.exists %}
                                     <!-- User has stores -->
                                     {% for store in user.stores.all %}
                                         <li><a class="dropdown-item" href="{% url 'store_dashboard' store.store_id %}">
-                                            <i class="fas fa-tachometer-alt me-1"></i>Quản lý {{ store.store_name }}
+                                            <i class="fas fa-tachometer-alt me-1"></i>Manage {{ store.store_name }}
                                         </a></li>
                                     {% endfor %}
                                     <li><a class="dropdown-item" href="{% url 'create_store' %}">
-                                        <i class="fas fa-plus me-1"></i>Thêm cửa hàng
+                                        <i class="fas fa-plus me-1"></i>Add Store
                                     </a></li>
                                 {% else %}
                                     <!-- User has no stores -->
                                     <li><a class="dropdown-item" href="{% url 'create_store' %}">
-                                        <i class="fas fa-plus me-1"></i>Thêm cửa hàng
+                                        <i class="fas fa-plus me-1"></i>Add Store
                                     </a></li>
                                 {% endif %}
                                 
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="{% url 'logout' %}">
-                                    <i class="fas fa-sign-out-alt me-1"></i>Đăng xuất
+                                    <i class="fas fa-sign-out-alt me-1"></i>Logout
                                 </a></li>
                             </ul>
                         </li>
                     {% else %}
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'login' %}">
-                                <i class="fas fa-sign-in-alt me-1"></i>Đăng nhập
+                                <i class="fas fa-sign-in-alt me-1"></i>Login
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'register' %}">
-                                <i class="fas fa-user-plus me-1"></i>Đăng ký
+                                <i class="fas fa-user-plus me-1"></i>Register
                             </a>
                         </li>
                     {% endif %}
@@ -298,6 +156,20 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script src="{% static 'js/notifications.js' %}"></script>
+    
+    <!-- Chat Widget (available on all pages for authenticated users) -->
+    {% if user.is_authenticated %}
+    <script>
+        // Pass data from Django to JavaScript
+        window.currentUserId = {{ user.user_id }};
+        window.currentUserAvatar = {% if user.avatar %}'{{ user.avatar.url }}'{% else %}null{% endif %};
+        window.chatRoomsApiUrl = '{% url "chat_rooms_api" %}';
+        window.csrfToken = '{{ csrf_token }}';
+    </script>
+    <script src="{% static 'chat/js/chat-widget.js' %}"></script>
+    {% include 'chat/includes/chat_widget.html' %}
+    {% endif %}
+    
     {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -49,9 +49,6 @@ urlpatterns = [
     path('store/<int:store_id>/products/', views.store_products, name='store_products'),
     path('store/<int:store_id>/products/add/', views.add_product, name='add_product'),
     path('store/<int:store_id>/products/<int:product_id>/edit/', views.edit_product, name='edit_product'),
-    path('store/<int:store_id>/products/<int:product_id>/variants/add/', views.add_variant, name='add_variant'),
-    path('store/<int:store_id>/products/<int:product_id>/variants/<int:variant_id>/edit/', views.edit_variant, name='edit_variant'),
-    path('store/<int:store_id>/products/<int:product_id>/variants/<int:variant_id>/delete/', views.delete_variant, name='delete_variant'),
     path('store/<int:store_id>/orders/', views.store_orders, name='store_orders'),
     path('store/<int:store_id>/orders/<int:order_id>/', views.store_order_detail, name='store_order_detail'),
     path('store/<int:store_id>/verification/', views.verification_status, name='verification_status'),
@@ -74,12 +71,27 @@ urlpatterns = [
     # AJAX - Get store products for selection
     path('store/<int:store_id>/products/ajax/', views.get_store_products_ajax, name='get_store_products_ajax'),
     
+    # API - Get store discount codes for cart
+    path('api/store/<int:store_id>/discount-codes/', views.get_store_discount_codes, name='get_store_discount_codes'),
+    
     # Admin URLs
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('admin-dashboard/store/<int:store_id>/', views.admin_store_detail, name='admin_store_detail'),
     path('admin-dashboard/request/<int:request_id>/', views.admin_request_detail, name='admin_request_detail'),
     path('admin-dashboard/store/<int:store_id>/approve/', views.admin_approve_store, name='admin_approve_store'),
     path('admin-dashboard/store/<int:store_id>/reject/', views.admin_reject_store, name='admin_reject_store'),
+    
+    # Admin Category Management URLs
+    path('admin-dashboard/categories/', views.admin_category_list, name='admin_category_list'),
+    path('admin-dashboard/categories/create/', views.admin_category_create, name='admin_category_create'),
+    path('admin-dashboard/categories/<int:category_id>/edit/', views.admin_category_edit, name='admin_category_edit'),
+    path('admin-dashboard/categories/<int:category_id>/delete/', views.admin_category_delete, name='admin_category_delete'),
+    
+    # Admin Certification Organization Management URLs
+    path('admin-dashboard/certification-organizations/', views.admin_certification_organization_list, name='admin_certification_organization_list'),
+    path('admin-dashboard/certification-organizations/create/', views.admin_certification_organization_create, name='admin_certification_organization_create'),
+    path('admin-dashboard/certification-organizations/<int:organization_id>/edit/', views.admin_certification_organization_edit, name='admin_certification_organization_edit'),
+    path('admin-dashboard/certification-organizations/<int:organization_id>/delete/', views.admin_certification_organization_delete, name='admin_certification_organization_delete'),
     
     # Password Change & Reset URLs
     path('password/change/request-otp/', views.request_password_change_otp, name='request_password_change_otp'),

@@ -13,7 +13,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
                     <h3 class="text-primary">{{ stats.avg_rating_30d|floatformat:1 }}/5.0</h3>
-                    <p class="text-muted mb-0">Đánh giá trung bình<br>(30 ngày)</p>
+                    <p class="text-muted mb-0">Average Rating<br>(30 days)</p>
                 </div>
             </div>
         </div>
@@ -21,7 +21,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
                     <h3 class="text-info">{{ order_review_rate }}%</h3>
-                    <p class="text-muted mb-0">Tỷ lệ đánh giá<br>đơn hàng</p>
+                    <p class="text-muted mb-0">Review Rate<br>per Order</p>
                 </div>
             </div>
         </div>
@@ -29,7 +29,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
                     <h3 class="text-success">{{ stats.good_reviews_count }}</h3>
-                    <p class="text-muted mb-0">Đánh giá tốt<br>(4-5 sao)</p>
+                    <p class="text-muted mb-0">Good Reviews<br>(4-5 stars)</p>
                 </div>
             </div>
         </div>
@@ -37,7 +37,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
                     <h3 class="text-danger">{{ stats.negative_reviews_count }}</h3>
-                    <p class="text-muted mb-0">Cần phản hồi<br>(1-2 sao)</p>
+                    <p class="text-muted mb-0">Need Reply<br>(1-2 stars)</p>
                 </div>
             </div>
         </div>
@@ -49,8 +49,8 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h4 class="mb-0"><i class="fas fa-clock"></i> Đánh giá gần đây</h4>
-                    <small class="text-muted">Từ lần truy cập trước</small>
+                    <h4 class="mb-0"><i class="fas fa-clock"></i> Recent Reviews</h4>
+                    <small class="text-muted">Since last visit</small>
                 </div>
                 <div class="card-body">
                     {% for review in recent_reviews %}
@@ -86,7 +86,7 @@
         <div class="col-12">
             <div class="card border-danger">
                 <div class="card-header bg-danger text-white">
-                    <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Đánh giá tiêu cực cần phản hồi</h4>
+                    <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Negative Reviews Needing Reply</h4>
                 </div>
                 <div class="card-body">
                     {% for review in negative_reviews %}

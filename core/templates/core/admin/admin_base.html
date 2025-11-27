@@ -1,0 +1,103 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{% block admin_title %}Admin Dashboard{% endblock %} - Organic Hub{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/css/admin_base.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Sidebar Navigation -->
+        <div class="col-md-3 col-lg-2 admin-sidebar">
+            <div class="sidebar-header">
+                <h5 class="mb-0 fw-bold">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    Admin Dashboard
+                </h5>
+                <small class="text-muted">System Administration</small>
+            </div>
+            
+            <nav class="nav flex-column">
+                <!-- Dashboard -->
+                <a class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}" 
+                   href="{% url 'admin_dashboard' %}">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Overview
+                </a>
+                
+                <!-- Store Verification Management -->
+                <div class="nav-item has-submenu {% if 'admin_store' in request.resolver_match.url_name or 'admin_request' in request.resolver_match.url_name %}expanded{% endif %}">
+                    <a class="nav-link {% if 'admin_store' in request.resolver_match.url_name or 'admin_request' in request.resolver_match.url_name %}active{% endif %}" 
+                       href="#" onclick="toggleSubmenu(this); return false;">
+                        <i class="fas fa-store"></i>
+                        Store Management
+                    </a>
+                    <div class="submenu">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}" 
+                           href="{% url 'admin_dashboard' %}">
+                            Store Verification
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Category Management -->
+                <div class="nav-item has-submenu {% if 'admin_category' in request.resolver_match.url_name %}expanded{% endif %}">
+                    <a class="nav-link {% if 'admin_category' in request.resolver_match.url_name %}active{% endif %}" 
+                       href="#" onclick="toggleSubmenu(this); return false;">
+                        <i class="fas fa-folder"></i>
+                        Category Management
+                    </a>
+                    <div class="submenu">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'admin_category_list' %}active{% endif %}" 
+                           href="{% url 'admin_category_list' %}">
+                            Category List
+                        </a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'admin_category_create' %}active{% endif %}" 
+                           href="{% url 'admin_category_create' %}">
+                            Add Category
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Certification Organization Management -->
+                <div class="nav-item has-submenu {% if 'admin_certification_organization' in request.resolver_match.url_name %}expanded{% endif %}">
+                    <a class="nav-link {% if 'admin_certification_organization' in request.resolver_match.url_name %}active{% endif %}" 
+                       href="#" onclick="toggleSubmenu(this); return false;">
+                        <i class="fas fa-certificate"></i>
+                        Certification Organizations
+                    </a>
+                    <div class="submenu">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'admin_certification_organization_list' %}active{% endif %}" 
+                           href="{% url 'admin_certification_organization_list' %}">
+                            Organization List
+                        </a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'admin_certification_organization_create' %}active{% endif %}" 
+                           href="{% url 'admin_certification_organization_create' %}">
+                            Add Organization
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 admin-content">
+            <div class="admin-header">
+                <h2 class="mb-0 fw-bold">{% block admin_page_title %}Admin Dashboard{% endblock %}</h2>
+                <p class="text-muted mb-0">{% block admin_page_subtitle %}System Administration{% endblock %}</p>
+            </div>
+            
+            {% block admin_content %}
+            {% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'core/js/admin_base.js' %}"></script>
+{% endblock %}
+

@@ -1,56 +1,10 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
-{% block title %}Danh sách sản phẩm - Organic Hub{% endblock %}
+{% block title %}Product List - Organic Hub{% endblock %}
 
 {% block extra_css %}
-<style>
-    /* Product Card Hover Effects */
-    .product-card {
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-
-    .product-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 0.75rem 1.5rem rgba(40, 167, 69, 0.2) !important;
-    }
-
-    .product-card:hover .card-img-top {
-        transform: scale(1.05);
-    }
-
-    .product-card .card-img-top {
-        transition: transform 0.3s ease;
-    }
-
-    .product-card .position-relative {
-        overflow: hidden;
-        border-radius: 1rem 1rem 0 0;
-    }
-
-    .product-card:hover .card-title a {
-        color: var(--organic-primary) !important;
-    }
-
-    /* Category Badge - Ensure text is visible */
-    .product-card .badge.bg-primary.bg-opacity-10 {
-        background-color: rgba(40, 167, 69, 0.15) !important;
-        color: var(--organic-primary-dark) !important;
-        font-weight: 500;
-        padding: 0.4em 0.8em;
-        border: 1px solid rgba(40, 167, 69, 0.2);
-    }
-
-    .product-card:hover .badge.bg-primary.bg-opacity-10 {
-        background-color: rgba(40, 167, 69, 0.25) !important;
-        border-color: rgba(40, 167, 69, 0.4);
-    }
-
-    /* Price hover effect */
-    .product-card:hover .text-success {
-        color: var(--organic-primary-dark) !important;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'core/css/product_list.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -59,7 +13,7 @@
     <div class="row">
         <div class="col-12">
             <div class="d-flex align-items-center justify-content-between">
-                <h1 class="display-6 fw-bold mb-1">Danh sách sản phẩm</h1>
+                <h1 class="display-6 fw-bold mb-1">Product List</h1>
             </div>
         </div>
     </div>
@@ -67,36 +21,52 @@
     <!-- Search and Filter -->
     <div class="row mb-4">
         <div class="col-12">
+            
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body p-4">
                     <form method="get" class="row g-3 align-items-end">
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">
-                                <i class="fas fa-search me-1"></i>Tìm kiếm sản phẩm
+                                <i class="fas fa-search me-1"></i>Search Products
                             </label>
                             <input type="text" 
                                    name="query" 
                                    class="form-control form-control-lg" 
-                                   placeholder="Nhập tên sản phẩm..." 
+                                   placeholder="Enter product name..." 
                                    value="{{ search_form.query.value|default:'' }}">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-2">
                             <label class="form-label fw-semibold">
-                                <i class="fas fa-tags me-1"></i>Danh mục
+                                <i class="fas fa-tags me-1"></i>Category
                             </label>
                             <select name="category" class="form-select form-select-lg">
-                                <option value="">Tất cả danh mục</option>
+                                <option value="">All Categories</option>
                                 {% for category in categories %}
                                     <option value="{{ category.category_id }}" 
-                                            {% if search_form.category.value == category.category_id %}selected{% endif %}>
+                                    
+                                            {% if request.GET.category == category.category_id|stringformat:"s" %}selected{% endif %}>
                                         {{ category.name }}
                                     </option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-2">
+                            <label class="form-label fw-semibold">
+                                <i class="fas fa-tags me-1"></i>Certificate
+                            </label>
+                            <select name="certificate" class="form-select form-select-lg">
+                                <option value="">All Certificates</option>
+                                {% for certificate in certificates %}
+                                    <option value="{{ certificate.organization_id }}" 
+                                            {% if request.GET.certificate == certificate.organization_id|stringformat:"s" %}selected{% endif %}>
+                                        {{ certificate.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
                             <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill">
-                                <i class="fas fa-search me-1"></i>Tìm kiếm
+                                <i class="fas fa-search me-1"></i>Search
                             </button>
                         </div>
                     </form>
@@ -109,63 +79,7 @@
     {% if page_obj %}
         <div class="row g-4">
             {% for product in page_obj %}
-                <div class="col-lg-3 col-md-4 col-sm-6">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 product-card">
-                        <!-- Product Image -->
-                        <div class="position-relative">
-                            {% if product.get_primary_image %}
-                                <img src="{{ product.get_primary_image.url }}" 
-                                     alt="{{ product.name }}" 
-                                     class="card-img-top square-image" 
-                                     style="width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: center;">
-                            {% else %}
-                                <img src="/static/images/no-image.jpg" 
-                                     alt="{{ product.name }}" 
-                                     class="card-img-top square-image" 
-                                     style="width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: center;">
-                            {% endif %}                        
-                            
-                            <!-- View Count -->
-                            <div class="position-absolute top-0 start-0 m-2">
-                                <span class="badge bg-dark bg-opacity-75 rounded-pill">
-                                    <i class="fas fa-eye me-1"></i>{{ product.view_count }}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <!-- Product Info -->
-                        <div class="card-body d-flex flex-column">
-                            <!-- Category Badge -->
-                            <div class="mb-2">
-                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill">
-                                    {{ product.category.name|default:"Chưa phân loại" }}
-                                </span>
-                            </div>
-                            
-                            <!-- Product Title -->
-                            <h5 class="card-title fw-bold mb-2">
-                                <a href="{% url 'product_detail' product.product_id %}" 
-                                   class="text-decoration-none text-dark stretched-link">
-                                    {{ product.name|truncatechars:50 }}
-                                </a>
-                            </h5>
-                            
-                            <!-- Price -->
-                            <div class="mb-3">
-                                <span class="h5 fw-bold text-success mb-0">
-                                    {{ product.price|floatformat:0 }} VNĐ
-                                </span>
-                            </div>
-                            
-                            <!-- Description -->
-                            {% if product.description %}
-                                <p class="card-text text-muted small flex-grow-1">
-                                    {{ product.description|truncatewords:15 }}
-                                </p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
+                {% include 'core/includes/product_card_list.html' with product=product %}
             {% endfor %}
         </div>
 
@@ -179,7 +93,7 @@
                                 <li class="page-item">
                                     <a class="page-link rounded-pill me-1" 
                                        href="?page={{ page_obj.previous_page_number }}{% if search_form.query.value %}&query={{ search_form.query.value }}{% endif %}{% if search_form.category.value %}&category={{ search_form.category.value }}{% endif %}">
-                                        <i class="fas fa-chevron-left"></i> Trước
+                                        <i class="fas fa-chevron-left"></i> Previous
                                     </a>
                                 </li>
                             {% endif %}
@@ -203,7 +117,7 @@
                                 <li class="page-item">
                                     <a class="page-link rounded-pill ms-1" 
                                        href="?page={{ page_obj.next_page_number }}{% if search_form.query.value %}&query={{ search_form.query.value }}{% endif %}{% if search_form.category.value %}&category={{ search_form.category.value }}{% endif %}">
-                                        Tiếp <i class="fas fa-chevron-right"></i>
+                                        Next <i class="fas fa-chevron-right"></i>
                                     </a>
                                 </li>
                             {% endif %}
@@ -211,8 +125,8 @@
                         
                         <div class="text-center mt-3">
                             <small class="text-muted">
-                                Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} 
-                                ({{ page_obj.paginator.count }} sản phẩm)
+                                Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} 
+                                ({{ page_obj.paginator.count }} products)
                             </small>
                         </div>
                     </nav>
@@ -228,10 +142,10 @@
                          style="width: 120px; height: 120px;">
                         <i class="fas fa-search text-muted" style="font-size: 4rem;"></i>
                     </div>
-                    <h4 class="fw-bold text-muted mb-3">Không tìm thấy sản phẩm</h4>
-                    <p class="text-muted mb-4">Hãy thử thay đổi từ khóa tìm kiếm hoặc danh mục</p>
+                    <h4 class="fw-bold text-muted mb-3">No Products Found</h4>
+                    <p class="text-muted mb-4">Try changing your search keywords or category</p>
                     <a href="/products/" class="btn btn-primary rounded-pill px-4">
-                        <i class="fas fa-refresh me-2"></i>Xem tất cả sản phẩm
+                        <i class="fas fa-refresh me-2"></i>View All Products
                     </a>
                 </div>
             </div>

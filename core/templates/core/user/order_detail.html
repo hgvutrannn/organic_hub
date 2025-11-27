@@ -13,13 +13,13 @@
                         <i class="fas fa-receipt text-primary fs-1"></i>
                     </div>
                     <div>
-                        <h1 class="display-6 fw-bold mb-1">Chi tiết đơn hàng #{{ order.order_id }}</h1>
-                        <p class="text-muted mb-0">Thông tin chi tiết về đơn hàng của bạn</p>
+                        <h1 class="display-6 fw-bold mb-1">Order Details #{{ order.order_id }}</h1>
+                        <p class="text-muted mb-0">Detailed information about your order</p>
                     </div>
                 </div>
                 <div>
                     <a href="/orders/" class="btn btn-outline-primary rounded-pill">
-                        <i class="fas fa-arrow-left me-2"></i>Danh sách đơn hàng
+                        <i class="fas fa-arrow-left me-2"></i>Order List
                     </a>
                 </div>
             </div>
@@ -32,7 +32,7 @@
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-header bg-gradient bg-opacity-10 border-0">
                     <h3 class="mb-0 fw-bold">
-                        <i class="fas fa-info-circle me-2"></i>Thông tin đơn hàng
+                        <i class="fas fa-info-circle me-2"></i>Order Information
                     </h3>
                 </div>
                 <div class="card-body">
@@ -43,7 +43,7 @@
                                     <i class="fas fa-hashtag text-primary"></i>
                                 </div>
                                 <div>
-                                    <small class="text-muted d-block">Mã đơn hàng</small>
+                                    <small class="text-muted d-block">Order ID</small>
                                     <strong>#{{ order.order_id }}</strong>
                                 </div>
                             </div>
@@ -55,7 +55,7 @@
                                     <i class="fas fa-clock text-warning"></i>
                                 </div>
                                 <div>
-                                    <small class="text-muted d-block">Trạng thái</small>
+                                    <small class="text-muted d-block">Status</small>
                                     {% if order.status == 'pending' %}
                                         <span class="badge bg-warning rounded-pill">{{ order.get_status_display }}</span>
                                     {% elif order.status == 'waiting_pickup' %}
@@ -77,7 +77,7 @@
                                     <i class="fas fa-credit-card text-success"></i>
                                 </div>
                                 <div>
-                                    <small class="text-muted d-block">Thanh toán</small>
+                                    <small class="text-muted d-block">Payment</small>
                                     <strong>{{ order.get_payment_method_display }}</strong>
                                 </div>
                             </div>
@@ -89,7 +89,7 @@
                                     <i class="fas fa-calendar text-info"></i>
                                 </div>
                                 <div>
-                                    <small class="text-muted d-block">Ngày đặt</small>
+                                    <small class="text-muted d-block">Order Date</small>
                                     <strong>{{ order.created_at|date:"d/m/Y H:i" }}</strong>
                                 </div>
                             </div>
@@ -102,7 +102,7 @@
                                     <i class="fas fa-check-circle text-success"></i>
                                 </div>
                                 <div>
-                                    <small class="text-muted d-block">Ngày thanh toán</small>
+                                    <small class="text-muted d-block">Payment Date</small>
                                     <strong>{{ order.paid_at|date:"d/m/Y H:i" }}</strong>
                                 </div>
                             </div>
@@ -118,7 +118,7 @@
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-header bg-gradient bg-opacity-10 border-0">
                     <h3 class="mb-0 fw-bold">
-                        <i class="fas fa-map-marker-alt me-2"></i>Địa chỉ giao hàng
+                        <i class="fas fa-map-marker-alt me-2"></i>Shipping Address
                     </h3>
                 </div>
                 <div class="card-body">
@@ -141,7 +141,7 @@
                     {% else %}
                         <div class="text-center text-muted">
                             <i class="fas fa-exclamation-triangle fs-1 mb-3"></i>
-                            <p>Không có thông tin địa chỉ giao hàng</p>
+                            <p>No shipping address information</p>
                         </div>
                     {% endif %}
                 </div>
@@ -153,25 +153,25 @@
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-header bg-gradient bg-opacity-10 border-0">
                     <h3 class="mb-0 fw-bold">
-                        <i class="fas fa-calculator me-2"></i>Tóm tắt đơn hàng
+                        <i class="fas fa-calculator me-2"></i>Order Summary
                     </h3>
                 </div>
                 <div class="card-body">
                     <div class="d-flex justify-content-between mb-2">
-                        <span>Tổng tiền hàng:</span>
+                        <span>Subtotal:</span>
                         <span>{{ order.subtotal|floatformat:0 }} VNĐ</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
-                        <span>Giảm giá:</span>
+                        <span>Discount:</span>
                         <span class="text-success">-{{ order.discount_amount|floatformat:0 }} VNĐ</span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
-                        <span>Phí vận chuyển:</span>
+                        <span>Shipping Fee:</span>
                         <span>{{ order.shipping_cost|floatformat:0 }} VNĐ</span>
                     </div>
                     <hr>
                     <div class="d-flex justify-content-between mb-3">
-                        <span class="h5 fw-bold">Tổng cộng:</span>
+                        <span class="h5 fw-bold">Total:</span>
                         <span class="h5 fw-bold text-success">{{ order.total_amount|floatformat:0 }} VNĐ</span>
                     </div>
                 </div>
@@ -185,104 +185,120 @@
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-header bg-gradient bg-opacity-10 border-0">
                     <h3 class="mb-0 fw-bold">
-                        <i class="fas fa-box me-2"></i>Chi tiết sản phẩm
+                        <i class="fas fa-box me-2"></i>Product Details
                     </h3>
                 </div>
                 <div class="card-body p-0">
-                    {% if order_items_with_reviews %}
-                        {% for item_data in order_items_with_reviews %}
-                            {% with item=item_data.item review=item_data.review can_review=item_data.can_review %}
-                            <div class="border-bottom p-4 {% if forloop.last %}border-0{% endif %}">
-                                <div class="row align-items-center">
-                                    <div class="col-md-6">
-                                        <div class="d-flex align-items-center">
-                                            <div class="me-3">
-                                                {% if item.product.image %}
-                                                    <img src="{{ item.product.image.url }}" 
-                                                         alt="{{ item.product.name }}" 
-                                                         class="rounded-3" 
-                                                         style="width: 60px; height: 60px; object-fit: cover;">
-                                                {% else %}
-                                                    <img src="/static/images/no-image.jpg" 
-                                                         alt="{{ item.product.name }}" 
-                                                         class="rounded-3" 
-                                                         style="width: 60px; height: 60px; object-fit: cover;">
-                                                {% endif %}
-                                            </div>
-                                            <div>
-                                                <h6 class="fw-bold mb-1">{{ item.product.name }}</h6>
-                                                {% if item.variant %}
-                                                    <p class="text-primary small mb-1">
-                                                        <i class="fas fa-tag me-1"></i>{{ item.variant.variant_name }}
-                                                    </p>
-                                                {% endif %}
-                                                <small class="text-muted">
-                                                    <i class="fas fa-store me-1"></i>{{ item.product.store.store_name }}
-                                                </small>
-                                                {% if item.product.description %}
-                                                    <p class="text-muted small mb-0 mt-1">{{ item.product.description|truncatewords:15 }}</p>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2 text-center">
-                                        <span class="fw-bold">{{ item.unit_price|floatformat:0 }} VNĐ</span>
-                                        <small class="text-muted d-block">/ đơn vị</small>
-                                    </div>
-                                    <div class="col-md-2 text-center">
-                                        <span class="badge bg-primary rounded-pill fs-6">{{ item.quantity }}</span>
-                                    </div>
-                                    <div class="col-md-2 text-end">
-                                        <span class="h6 fw-bold text-success">{{ item.total_price|floatformat:0 }} VNĐ</span>
-                                    </div>
+                    {% if stores_data %}
+                        {% for store_data in stores_data %}
+                            <div class="p-4 {% if not forloop.last %}border-bottom{% endif %}">
+                                <!-- Store Header -->
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="fas fa-store text-primary me-2"></i>
+                                    <h5 class="fw-bold mb-0">{{ store_data.store.store_name }}</h5>
                                 </div>
                                 
-                                <!-- Review Section for each item -->
-                                {% if order.status == 'delivered' %}
-                                    <div class="mt-3 pt-3 border-top">
-                                        {% if review %}
-                                            <div class="alert alert-success">
-                                                <strong><i class="fas fa-star"></i> Bạn đã đánh giá sản phẩm này:</strong>
-                                                <div class="mt-2">
-                                                    {% for i in "12345" %}
-                                                        {% if forloop.counter <= review.rating %}
-                                                            <i class="fas fa-star text-warning"></i>
+                                <!-- Store Items -->
+                                {% for item_data in store_data.items_with_reviews %}
+                                    {% with item=item_data.item review=item_data.review can_review=item_data.can_review %}
+                                    <div class="ms-3 mb-4 {% if not forloop.last %}border-bottom pb-4{% endif %}">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-6">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="me-3">
+                                                        {% if item.product.get_primary_image %}
+                                                            <img src="{{ item.product.get_primary_image.url }}" 
+                                                                 alt="{{ item.product.name }}" 
+                                                                 class="rounded-3" 
+                                                                 style="width: 60px; height: 60px; object-fit: cover;">
                                                         {% else %}
-                                                            <i class="far fa-star text-warning"></i>
+                                                            <img src="/static/images/no-image.jpg" 
+                                                                 alt="{{ item.product.name }}" 
+                                                                 class="rounded-3" 
+                                                                 style="width: 60px; height: 60px; object-fit: cover;">
                                                         {% endif %}
-                                                    {% endfor %}
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="fw-bold mb-1">{{ item.product.name }}</h6>
+                                                        {% if item.variant %}
+                                                            <p class="text-primary small mb-1">
+                                                                <i class="fas fa-tag me-1"></i>{{ item.variant.variant_name }}
+                                                            </p>
+                                                        {% endif %}
+                                                        {% if item.product.description %}
+                                                            <p class="text-muted small mb-0">{{ item.product.description|truncatewords:15 }}</p>
+                                                        {% endif %}
+                                                    </div>
                                                 </div>
-                                                <p class="mb-1 mt-2">{{ review.content }}</p>
-                                                {% if review.media_files.exists %}
-                                                    <div class="mt-2">
-                                                        {% for media in review.media_files.all %}
-                                                            {% if media.media_type == 'image' %}
-                                                                <img src="{{ media.file.url }}" alt="Review image" class="img-thumbnail me-2" style="max-height: 100px;">
-                                                            {% endif %}
-                                                        {% endfor %}
+                                            </div>
+                                            <div class="col-md-2 text-center">
+                                                <span class="fw-bold">{{ item.unit_price|floatformat:0 }}₫</span>
+                                                <small class="text-muted d-block">/ unit</small>
+                                            </div>
+                                            <div class="col-md-2 text-center">
+                                                <span class="badge bg-primary rounded-pill fs-6">{{ item.quantity }}</span>
+                                            </div>
+                                            <div class="col-md-2 text-end">
+                                                <span class="h6 fw-bold text-success">{{ item.total_price|floatformat:0 }}₫</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Review Section for each item -->
+                                        {% if order.status == 'delivered' %}
+                                            <div class="mt-3 pt-3 border-top">
+                                                {% if review %}
+                                                    <div class="alert alert-success">
+                                                        <strong><i class="fas fa-star"></i> You have reviewed this product:</strong>
+                                                        <div class="mt-2">
+                                                            {% for i in "12345" %}
+                                                                {% if forloop.counter <= review.rating %}
+                                                                    <i class="fas fa-star text-warning"></i>
+                                                                {% else %}
+                                                                    <i class="far fa-star text-warning"></i>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </div>
+                                                        <p class="mb-1 mt-2">{{ review.content }}</p>
+                                                        {% if review.media_files.exists %}
+                                                            <div class="mt-2">
+                                                                {% for media in review.media_files.all %}
+                                                                    {% if media.media_type == 'image' %}
+                                                                        <img src="{{ media.file.url }}" alt="Review image" class="img-thumbnail me-2" style="max-height: 100px;">
+                                                                    {% endif %}
+                                                                {% endfor %}
+                                                            </div>
+                                                        {% endif %}
+                                                        {% if review.has_seller_reply %}
+                                                            <div class="alert alert-light mt-2 mb-0">
+                                                                <strong><i class="fas fa-store"></i> Store Reply:</strong>
+                                                                <p class="mb-0 mt-1">{{ review.seller_reply }}</p>
+                                                            </div>
+                                                        {% endif %}
                                                     </div>
-                                                {% endif %}
-                                                {% if review.has_seller_reply %}
-                                                    <div class="alert alert-light mt-2 mb-0">
-                                                        <strong><i class="fas fa-store"></i> Phản hồi từ cửa hàng:</strong>
-                                                        <p class="mb-0 mt-1">{{ review.seller_reply }}</p>
-                                                    </div>
+                                                {% elif can_review %}
+                                                    <a href="{% url 'create_review' order.order_id item.order_item_id %}" class="btn btn-outline-primary btn-sm">
+                                                        <i class="fas fa-star"></i> Review This Product
+                                                    </a>
                                                 {% endif %}
                                             </div>
-                                        {% elif can_review %}
-                                            <a href="{% url 'create_review' order.order_id item.order_item_id %}" class="btn btn-outline-primary btn-sm">
-                                                <i class="fas fa-star"></i> Đánh giá sản phẩm này
-                                            </a>
                                         {% endif %}
                                     </div>
-                                {% endif %}
+                                    {% endwith %}
+                                {% endfor %}
+                                
+                                <!-- Store Subtotal -->
+                                <div class="ms-3 mt-3 pt-3 border-top">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="fw-bold">Store Subtotal:</span>
+                                        <span class="fw-bold">{{ store_data.subtotal|floatformat:0 }}₫</span>
+                                    </div>
+                                </div>
                             </div>
-                            {% endwith %}
                         {% endfor %}
                     {% else %}
                         <div class="text-center py-4">
                             <i class="fas fa-box text-muted fs-1 mb-3"></i>
-                            <p class="text-muted">Không có sản phẩm nào trong đơn hàng</p>
+                            <p class="text-muted">No products in this order</p>
                         </div>
                     {% endif %}
                 </div>
@@ -297,7 +313,7 @@
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-header bg-gradient bg-opacity-10 border-0">
                     <h3 class="mb-0 fw-bold">
-                        <i class="fas fa-sticky-note me-2"></i>Ghi chú đơn hàng
+                        <i class="fas fa-sticky-note me-2"></i>Order Notes
                     </h3>
                 </div>
                 <div class="card-body">
@@ -313,16 +329,16 @@
         <div class="col-12">
             <div class="d-flex gap-2 flex-wrap">
                 <a href="/orders/" class="btn btn-outline-primary rounded-pill">
-                    <i class="fas fa-arrow-left me-2"></i>Danh sách đơn hàng
+                    <i class="fas fa-arrow-left me-2"></i>Order List
                 </a>
                 <a href="/products/" class="btn btn-outline-success rounded-pill">
-                    <i class="fas fa-shopping-bag me-2"></i>Tiếp tục mua sắm
+                    <i class="fas fa-shopping-bag me-2"></i>Continue Shopping
                 </a>
                 <a href="/profile/" class="btn btn-outline-info rounded-pill">
-                    <i class="fas fa-user me-2"></i>Trang cá nhân
+                    <i class="fas fa-user me-2"></i>Profile
                 </a>
                 <a href="/" class="btn btn-outline-secondary rounded-pill">
-                    <i class="fas fa-home me-2"></i>Về trang chủ
+                    <i class="fas fa-home me-2"></i>Home
                 </a>
             </div>
         </div>

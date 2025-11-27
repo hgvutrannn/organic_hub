@@ -1,6 +1,6 @@
 {% extends 'core/base.html' %}
 
-{% block title %}Thanh toán - Organic Hub{% endblock %}
+{% block title %}Checkout - Organic Hub{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
@@ -12,8 +12,8 @@
                     <i class="fas fa-credit-card text-primary fs-1"></i>
                 </div>
                 <div>
-                    <h1 class="display-6 fw-bold mb-1">Thanh toán</h1>
-                    <p class="text-muted mb-0">Hoàn tất đơn hàng của bạn</p>
+                    <h1 class="display-6 fw-bold mb-1">Checkout</h1>
+                    <p class="text-muted mb-0">Complete your order</p>
                 </div>
             </div>
         </div>
@@ -23,14 +23,15 @@
         <div class="row g-4">
             <!-- Checkout Form -->
             <div class="col-lg-8">
-                <form method="post">
+                <form method="post" id="checkoutForm">
                     {% csrf_token %}
+                    <input type="hidden" name="applied_discounts" id="appliedDiscountsInput" value="">
                     
                     <!-- Shipping Address -->
                     <div class="card border-0 shadow-sm rounded-4 mb-4">
                         <div class="card-header bg-gradient bg-opacity-10 border-0">
                             <h3 class="mb-0 fw-bold">
-                                <i class="fas fa-map-marker-alt me-2"></i>Địa chỉ giao hàng
+                                <i class="fas fa-map-marker-alt me-2"></i>Shipping Address
                             </h3>
                         </div>
                         <div class="card-body p-4">
@@ -46,7 +47,7 @@
                                                            name="shipping_address" 
                                                            value="{{ address.address_id }}" 
                                                            id="address_{{ address.address_id }}" 
-                                                           {% if address.is_default %}checked{% endif %}>
+                                                           {% if address.is_default or address.address_id == default_address_id %}checked{% endif %}>
                                                     <label class="form-check-label w-100" for="address_{{ address.address_id }}">
                                                         <div class="d-flex justify-content-between align-items-start">
                                                             <div>
@@ -60,7 +61,7 @@
                                                                 </p>
                                                             </div>
                                                             {% if address.is_default %}
-                                                                <span class="badge bg-primary rounded-pill">Mặc định</span>
+                                                                <span class="badge bg-primary rounded-pill">Default</span>
                                                             {% endif %}
                                                         </div>
                                                     </label>
@@ -73,7 +74,7 @@
                                 
                                 <div class="mt-3">
                                     <a href="/addresses/" class="btn btn-outline-primary rounded-pill">
-                                        <i class="fas fa-plus me-2"></i>Quản lý địa chỉ
+                                        <i class="fas fa-plus me-2"></i>Manage Addresses
                                     </a>
                                 </div>
                             {% else %}
@@ -82,10 +83,10 @@
                                          style="width: 80px; height: 80px;">
                                         <i class="fas fa-map-marker-alt text-warning fs-2"></i>
                                     </div>
-                                    <h5 class="fw-bold mb-3">Chưa có địa chỉ</h5>
-                                    <p class="text-muted mb-3">Bạn cần thêm địa chỉ để có thể giao hàng</p>
+                                    <h5 class="fw-bold mb-3">No Address</h5>
+                                    <p class="text-muted mb-3">You need to add an address for delivery</p>
                                     <a href="/addresses/" class="btn btn-warning rounded-pill">
-                                        <i class="fas fa-plus me-2"></i>Thêm địa chỉ
+                                        <i class="fas fa-plus me-2"></i>Add Address
                                     </a>
                                 </div>
                             {% endif %}
@@ -96,7 +97,7 @@
                     <div class="card border-0 shadow-sm rounded-4 mb-4">
                         <div class="card-header bg-gradient bg-opacity-10 border-0">
                             <h3 class="mb-0 fw-bold">
-                                <i class="fas fa-credit-card me-2"></i>Phương thức thanh toán
+                                <i class="fas fa-credit-card me-2"></i>Payment Method
                             </h3>
                         </div>
                         <div class="card-body p-4">
@@ -105,13 +106,13 @@
                                     <div class="card border-2 border-success rounded-3">
                                         <div class="card-body">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="payment_method" value="cod" id="cod" checked>
+                                                <input class="form-check-input" type="radio" name="payment_method" value="cod" id="cod" {% if default_payment_method == 'cod' or not default_payment_method %}checked{% endif %}>
                                                 <label class="form-check-label w-100" for="cod">
                                                     <div class="d-flex align-items-center">
                                                         <i class="fas fa-money-bill-wave text-success fs-4 me-3"></i>
                                                         <div>
-                                                            <h6 class="fw-bold mb-1">Thanh toán khi nhận hàng</h6>
-                                                            <small class="text-muted">COD - Trả tiền mặt khi nhận hàng</small>
+                                                            <h6 class="fw-bold mb-1">Cash on Delivery</h6>
+                                                            <small class="text-muted">COD - Pay cash when receiving goods</small>
                                                         </div>
                                                     </div>
                                                 </label>
@@ -124,13 +125,13 @@
                                     <div class="card border-2 border-light rounded-3">
                                         <div class="card-body">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="payment_method" value="bank_transfer" id="bank_transfer">
+                                                <input class="form-check-input" type="radio" name="payment_method" value="bank_transfer" id="bank_transfer" {% if default_payment_method == 'bank_transfer' %}checked{% endif %}>
                                                 <label class="form-check-label w-100" for="bank_transfer">
                                                     <div class="d-flex align-items-center">
                                                         <i class="fas fa-university text-primary fs-4 me-3"></i>
                                                         <div>
-                                                            <h6 class="fw-bold mb-1">Chuyển khoản ngân hàng</h6>
-                                                            <small class="text-muted">Thanh toán qua ngân hàng</small>
+                                                            <h6 class="fw-bold mb-1">Bank Transfer</h6>
+                                                            <small class="text-muted">Pay via bank transfer</small>
                                                         </div>
                                                     </div>
                                                 </label>
@@ -143,13 +144,13 @@
                                     <div class="card border-2 border-light rounded-3">
                                         <div class="card-body">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="payment_method" value="vnpay" id="vnpay">
+                                                <input class="form-check-input" type="radio" name="payment_method" value="vnpay" id="vnpay" {% if default_payment_method == 'vnpay' %}checked{% endif %}>
                                                 <label class="form-check-label w-100" for="vnpay">
                                                     <div class="d-flex align-items-center">
                                                         <i class="fas fa-mobile-alt text-info fs-4 me-3"></i>
                                                         <div>
                                                             <h6 class="fw-bold mb-1">VnPay</h6>
-                                                            <small class="text-muted">Thanh toán qua VnPay</small>
+                                                            <small class="text-muted">Pay via VnPay</small>
                                                         </div>
                                                     </div>
                                                 </label>
@@ -162,13 +163,13 @@
                                     <div class="card border-2 border-light rounded-3">
                                         <div class="card-body">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="payment_method" value="zalopay" id="zalopay">
+                                                <input class="form-check-input" type="radio" name="payment_method" value="zalopay" id="zalopay" {% if default_payment_method == 'zalopay' %}checked{% endif %}>
                                                 <label class="form-check-label w-100" for="zalopay">
                                                     <div class="d-flex align-items-center">
                                                         <i class="fas fa-mobile-alt text-warning fs-4 me-3"></i>
                                                         <div>
                                                             <h6 class="fw-bold mb-1">ZaloPay</h6>
-                                                            <small class="text-muted">Thanh toán qua ZaloPay</small>
+                                                            <small class="text-muted">Pay via ZaloPay</small>
                                                         </div>
                                                     </div>
                                                 </label>
@@ -184,14 +185,14 @@
                     <div class="card border-0 shadow-sm rounded-4 mb-4">
                         <div class="card-header bg-gradient bg-opacity-10 border-0">
                             <h3 class="mb-0 fw-bold">
-                                <i class="fas fa-sticky-note me-2"></i>Ghi chú đơn hàng
+                                <i class="fas fa-sticky-note me-2"></i>Order Notes
                             </h3>
                         </div>
                         <div class="card-body p-4">
                             <textarea name="notes" 
                                       class="form-control" 
                                       rows="4" 
-                                      placeholder="Ghi chú cho đơn hàng (tùy chọn)..."></textarea>
+                                      placeholder="Order notes (optional)...">{{ default_notes }}</textarea>
                         </div>
                     </div>
                     
@@ -200,7 +201,7 @@
                         <div class="card-body p-4">
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-success btn-lg rounded-pill">
-                                    <i class="fas fa-check me-2"></i>Xác nhận đặt hàng
+                                    <i class="fas fa-check me-2"></i>Confirm Order
                                 </button>
                             </div>
                         </div>
@@ -213,33 +214,58 @@
                 <div class="card border-0 shadow-sm rounded-4 sticky-top" style="top: 2rem;">
                     <div class="card-header bg-gradient bg-opacity-10 border-0">
                         <h4 class="mb-0 fw-bold">
-                            <i class="fas fa-receipt me-2"></i>Tóm tắt đơn hàng
+                            <i class="fas fa-receipt me-2"></i>Order Summary
                         </h4>
                     </div>
                     <div class="card-body p-0">
-                        <!-- Order Items -->
+                        <!-- Order Items Grouped by Store -->
                         <div class="p-4">
-                            {% for item in cart_items %}
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="me-3">
-                                        {% if item.product.image %}
-                                            <img src="{{ item.product.image.url }}" 
-                                                 alt="{{ item.product.name }}" 
-                                                 class="rounded-3" 
-                                                 style="width: 50px; height: 50px; object-fit: cover;">
-                                        {% else %}
-                                            <img src="/static/images/no-image.jpg" 
-                                                 alt="{{ item.product.name }}" 
-                                                 class="rounded-3" 
-                                                 style="width: 50px; height: 50px; object-fit: cover;">
+                            {% for store_data in stores_data %}
+                                <div class="mb-4 {% if not forloop.last %}border-bottom pb-4{% endif %}">
+                                    <!-- Store Header -->
+                                    <div class="d-flex align-items-center mb-3">
+                                        <i class="fas fa-store text-primary me-2"></i>
+                                        <h6 class="fw-bold mb-0">{{ store_data.store.store_name }}</h6>
+                                    </div>
+                                    
+                                    <!-- Store Items -->
+                                    {% for item in store_data.items %}
+                                        <div class="d-flex align-items-center mb-3 ms-3">
+                                            <div class="me-3">
+                                                {% if item.product.get_primary_image %}
+                                                    <img src="{{ item.product.get_primary_image.url }}" 
+                                                         alt="{{ item.product.name }}" 
+                                                         class="rounded-3" 
+                                                         style="width: 50px; height: 50px; object-fit: cover;">
+                                                {% else %}
+                                                    <img src="/static/images/no-image.jpg" 
+                                                         alt="{{ item.product.name }}" 
+                                                         class="rounded-3" 
+                                                         style="width: 50px; height: 50px; object-fit: cover;">
+                                                {% endif %}
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <h6 class="fw-bold mb-1 small">{{ item.product.name|truncatechars:30 }}</h6>
+                                                <small class="text-muted">{{ item.quantity }} x {{ item.unit_price|floatformat:0 }}₫</small>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="fw-bold small">{{ item.total_price|floatformat:0 }}₫</span>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                    
+                                    <!-- Store Subtotal and Discount -->
+                                    <div class="ms-3 mt-2">
+                                        <div class="d-flex justify-content-between small text-muted mb-1">
+                                            <span>Store Subtotal:</span>
+                                            <span>{{ store_data.subtotal|floatformat:0 }}₫</span>
+                                        </div>
+                                        {% if store_data.discount > 0 %}
+                                        <div class="d-flex justify-content-between small text-success mb-1">
+                                            <span><i class="fas fa-tag me-1"></i>Discount:</span>
+                                            <span>-{{ store_data.discount|floatformat:0 }}₫</span>
+                                        </div>
                                         {% endif %}
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <h6 class="fw-bold mb-1">{{ item.product.name|truncatechars:30 }}</h6>
-                                        <small class="text-muted">{{ item.quantity }} x {{ item.product.price|floatformat:0 }} VNĐ</small>
-                                    </div>
-                                    <div class="text-end">
-                                        <span class="fw-bold">{{ item.total_price|floatformat:0 }} VNĐ</span>
                                     </div>
                                 </div>
                             {% endfor %}
@@ -248,21 +274,29 @@
                         <!-- Order Total -->
                         <div class="border-top p-4">
                             <div class="d-flex justify-content-between mb-2">
-                                <span>Tạm tính:</span>
-                                <span>{{ total|floatformat:0 }} VNĐ</span>
+                                <span>Subtotal:</span>
+                                <span>{{ subtotal|floatformat:0 }}₫</span>
                             </div>
+                            {% if total_discount > 0 %}
+                            <div class="d-flex justify-content-between mb-2 text-success">
+                                <span><i class="fas fa-tag me-1"></i>Discount:</span>
+                                <span>-{{ total_discount|floatformat:0 }}₫</span>
+                            </div>
+                            {% endif %}
                             <div class="d-flex justify-content-between mb-2">
-                                <span>Phí vận chuyển:</span>
-                                <span>30,000 VNĐ</span>
+                                <span>Shipping Fee:</span>
+                                <span>30,000₫</span>
                             </div>
                             <hr>
                             <div class="d-flex justify-content-between mb-3">
-                                <span class="h5 fw-bold">Tổng cộng:</span>
-                                <span class="h5 fw-bold text-success">{{ total|add:30000|floatformat:0 }} VNĐ</span>
+                                <span class="h5 fw-bold">Total:</span>
+                                <span class="h5 fw-bold text-success" id="finalTotal">
+                                    {{ final_total|floatformat:0 }}₫
+                                </span>
                             </div>
                             <small class="text-muted">
                                 <i class="fas fa-info-circle me-1"></i>
-                                Bao gồm phí vận chuyển 30,000 VNĐ
+                                Includes shipping fee 30,000₫
                             </small>
                         </div>
                     </div>
@@ -278,15 +312,78 @@
                          style="width: 120px; height: 120px;">
                         <i class="fas fa-shopping-cart text-muted" style="font-size: 4rem;"></i>
                     </div>
-                    <h4 class="fw-bold text-muted mb-3">Giỏ hàng trống</h4>
-                    <p class="text-muted mb-4">Bạn cần có sản phẩm trong giỏ hàng để thanh toán</p>
+                    <h4 class="fw-bold text-muted mb-3">Empty Cart</h4>
+                    <p class="text-muted mb-4">You need items in your cart to checkout</p>
                     <a href="{% url 'product_list' %}" class="btn btn-primary rounded-pill px-4">
-                        <i class="fas fa-shopping-bag me-2"></i>Bắt đầu mua sắm
+                        <i class="fas fa-shopping-bag me-2"></i>Start Shopping
                     </a>
                 </div>
             </div>
         </div>
     {% endif %}
+
+    <!-- Frequently Bought Together Recommendations -->
+    {% if recommendations %}
+    <div class="row mt-5 mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <h3 class="fw-bold mb-0">Frequently Bought Together</h3>
+            </div>
+            <div class="row g-4">
+                {% for product in recommendations %}
+                <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 product-card-home">
+                        <div class="position-relative">
+                            {% if product.get_primary_image %}
+                                <img src="{{ product.get_primary_image.url }}" 
+                                     alt="{{ product.name }}" 
+                                     class="card-img-top square-image" 
+                                     style="width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: center;">
+                            {% else %}
+                                <img src="/static/images/no-image.jpg" 
+                                     alt="{{ product.name }}" 
+                                     class="card-img-top square-image" 
+                                     style="width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: center;">
+                            {% endif %}
+                        </div>
+                        <div class="card-body d-flex flex-column p-2">
+                            <h6 class="card-title fw-bold mb-2 small">
+                                <a href="{% url 'product_detail' product.product_id %}" 
+                                   class="text-decoration-none text-dark stretched-link">
+                                    {{ product.name|truncatechars:40 }}
+                                </a>
+                            </h6>
+                            <div class="mb-2">
+                                <span class="h6 fw-bold text-success mb-0 small">
+                                    {{ product.min_price|floatformat:0 }}₫
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
+<script>
+    // Load applied discounts from sessionStorage and send to backend via URL
+    document.addEventListener('DOMContentLoaded', function() {
+        const appliedDiscounts = JSON.parse(sessionStorage.getItem('checkout_discounts') || '{}');
+        const discountInput = document.getElementById('appliedDiscountsInput');
+        
+        if (discountInput && Object.keys(appliedDiscounts).length > 0) {
+            discountInput.value = JSON.stringify(appliedDiscounts);
+            
+            // Reload page with discount data in URL to calculate discounts on backend
+            if (!window.location.search.includes('discounts=')) {
+                const url = new URL(window.location);
+                url.searchParams.set('discounts', JSON.stringify(appliedDiscounts));
+                window.location.href = url.toString();
+            }
+        }
+    });
+</script>
 {% endblock %}

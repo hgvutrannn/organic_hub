@@ -1,0 +1,109 @@
+{% extends 'core/admin/admin_base.html' %}
+
+{% block admin_title %}{% if action == 'create' %}Add Category{% else %}Edit Category{% endif %}{% endblock %}
+{% block admin_page_title %}{% if action == 'create' %}Add New Category{% else %}Edit Category{% endif %}{% endblock %}
+{% block admin_page_subtitle %}{% if action == 'create' %}Create new product category{% else %}Update category information{% endif %}{% endblock %}
+
+{% block admin_content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger rounded-3">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Category Name -->
+                    <div class="mb-4">
+                        <label for="{{ form.name.id_for_label }}" class="form-label fw-bold">
+                            Category Name <span class="text-danger">*</span>
+                        </label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.name.errors }}
+                        </div>
+                        {% endif %}
+                        {% if form.name.help_text %}
+                        <div class="form-text">{{ form.name.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Category Slug -->
+                    <div class="mb-4">
+                        <label for="{{ form.slug.id_for_label }}" class="form-label fw-bold">
+                            Slug
+                        </label>
+                        {{ form.slug }}
+                        {% if form.slug.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.slug.errors }}
+                        </div>
+                        {% endif %}
+                        {% if form.slug.help_text %}
+                        <div class="form-text">{{ form.slug.help_text }}</div>
+                        {% endif %}
+                        <small class="text-muted">Slug is used in URL. If left empty, slug will be automatically generated from category name.</small>
+                    </div>
+                    
+                    <!-- Product Count Info (only when editing) -->
+                    {% if action == 'edit' and category %}
+                    <div class="alert alert-info rounded-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        This category currently has <strong>{{ category.products.count }}</strong> products.
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between align-items-center mt-4 pt-4 border-top">
+                        <a href="{% url 'admin_category_list' %}" class="btn btn-outline-secondary rounded-pill">
+                            <i class="fas fa-arrow-left me-2"></i>Back
+                        </a>
+                        <button type="submit" class="btn btn-danger rounded-pill">
+                            <i class="fas fa-save me-2"></i>
+                            {% if action == 'create' %}Create Category{% else %}Save Changes{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-generate slug from name
+document.addEventListener('DOMContentLoaded', function() {
+    const nameField = document.getElementById('{{ form.name.id_for_label }}');
+    const slugField = document.getElementById('{{ form.slug.id_for_label }}');
+    
+    if (nameField && slugField) {
+        let slugManuallyEdited = false;
+        
+        // Track if user manually edits slug
+        slugField.addEventListener('input', function() {
+            slugManuallyEdited = true;
+        });
+        
+        // Auto-generate slug when name changes (only if slug wasn't manually edited)
+        nameField.addEventListener('input', function() {
+            if (!slugManuallyEdited || slugField.value === '') {
+                const name = nameField.value;
+                // Simple slug generation (you might want to use a library for better results)
+                const slug = name.toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+                slugField.value = slug;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+

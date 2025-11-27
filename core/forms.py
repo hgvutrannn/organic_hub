@@ -1,20 +1,10 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
-from .models import CustomUser, Product, Order, Review, Address, ProductImage, StoreCertification, ProductComment, OrderItem, ProductVariant
+from .models import CustomUser, Product, Order, Review, Address, ProductImage, StoreCertification, ProductComment, OrderItem, ProductVariant, Category, CertificationOrganization
 
 
 class CustomUserRegistrationForm(UserCreationForm):
-    phone_number = forms.CharField(
-        max_length=20,
-        validators=[
-            RegexValidator(
-                regex=r'^\+?1?\d{9,15}$',
-                message="Số điện thoại phải theo định dạng: '+999999999'. Tối đa 15 chữ số."
-            )
-        ],
-        widget=forms.TextInput(attrs={'placeholder': 'Số điện thoại'})
-    )
     full_name = forms.CharField(
         max_length=100,
         widget=forms.TextInput(attrs={'placeholder': 'Họ và tên'})
@@ -26,7 +16,7 @@ class CustomUserRegistrationForm(UserCreationForm):
 
     class Meta:
         model = CustomUser
-        fields = ('phone_number', 'full_name', 'email', 'password1', 'password2')
+        fields = ('email', 'full_name', 'password1', 'password2')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -35,9 +25,8 @@ class CustomUserRegistrationForm(UserCreationForm):
 
 
 class LoginForm(forms.Form):
-    phone_number = forms.CharField(
-        max_length=20,
-        widget=forms.TextInput(attrs={'placeholder': 'Số điện thoại'})
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'placeholder': 'Email'})
     )
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={'placeholder': 'Mật khẩu'})
@@ -47,10 +36,9 @@ class LoginForm(forms.Form):
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = CustomUser
-        fields = ['full_name', 'phone_number', 'email', 'avatar']
+        fields = ['full_name', 'email', 'avatar']
         widgets = {
             'full_name': forms.TextInput(attrs={'placeholder': 'Họ và tên'}),
-            'phone_number': forms.TextInput(attrs={'placeholder': 'Số điện thoại'}),
             'email': forms.EmailInput(attrs={'placeholder': 'Email'}),
             'avatar': forms.FileInput(attrs={'accept': 'image/*'}),
         }
@@ -66,22 +54,23 @@ class ProductForm(forms.ModelForm):
     
     class Meta:
         model = Product
-        fields = ['name', 'description', 'price', 'base_unit', 'category', 'image', 'has_variants']
+        fields = ['name', 'description', 'price', 'base_unit', 'stock', 'SKU', 'category', 'has_variants']
         widgets = {
             'name': forms.TextInput(attrs={'placeholder': 'Tên sản phẩm', 'class': 'form-control form-control-lg rounded-3'}),
             'description': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Mô tả sản phẩm', 'class': 'form-control rounded-3'}),
             'price': forms.NumberInput(attrs={'placeholder': 'Giá sản phẩm', 'step': '0.01', 'class': 'form-control form-control-lg rounded-3'}),
             'base_unit': forms.TextInput(attrs={'placeholder': 'Đơn vị (kg, gói, chiếc...)', 'class': 'form-control form-control-lg rounded-3'}),
+            'stock': forms.NumberInput(attrs={'placeholder': 'Số lượng tồn kho', 'min': '0', 'class': 'form-control form-control-lg rounded-3'}),
+            'SKU': forms.TextInput(attrs={'placeholder': 'Mã SKU (tự động nếu để trống)', 'class': 'form-control form-control-lg rounded-3'}),
             'category': forms.Select(attrs={'class': 'form-select form-select-lg rounded-3'}),
-            'image': forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control form-control-lg rounded-3'}),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Make image field optional
-        self.fields['image'].required = False
+        # Make fields optional
         self.fields['category'].required = False
         self.fields['base_unit'].required = False
+        self.fields['SKU'].required = False
         
         # Disable has_variants checkbox if product has variants
         if self.instance and self.instance.pk:
@@ -101,18 +90,22 @@ class ProductForm(forms.ModelForm):
 class ProductImageForm(forms.ModelForm):
     class Meta:
         model = ProductImage
-        fields = ['image', 'alt_text', 'is_primary', 'order']
+        fields = ['image', 'alt_text', 'order']
         widgets = {
             'image': forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control form-control-lg rounded-3'}),
             'alt_text': forms.TextInput(attrs={'placeholder': 'Mô tả hình ảnh', 'class': 'form-control rounded-3'}),
-            'is_primary': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'order': forms.NumberInput(attrs={'placeholder': 'Thứ tự hiển thị', 'class': 'form-control rounded-3'}),
+            'order': forms.NumberInput(attrs={
+                'placeholder': 'Thứ tự hiển thị (0 = ảnh chính)', 
+                'class': 'form-control rounded-3',
+                'min': '0'
+            }),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['alt_text'].required = False
         self.fields['order'].required = False
+        self.fields['order'].help_text = 'Đặt order=0 để làm ảnh chính'
 
 
 class AddressForm(forms.ModelForm):
@@ -153,6 +146,11 @@ class SearchForm(forms.Form):
         required=False,
         empty_label="Tất cả danh mục"
     )
+    certificate = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        empty_label="Tất cả chứng nhận"
+    )
     min_price = forms.DecimalField(
         required=False,
         widget=forms.NumberInput(attrs={'placeholder': 'Giá tối thiểu', 'step': '0.01'})
@@ -164,16 +162,18 @@ class SearchForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        from .models import Category
+        from .models import Category, CertificationOrganization
         self.fields['category'].queryset = Category.objects.all()
+        self.fields['certificate'].queryset = CertificationOrganization.objects.filter(is_active=True)
 
 
 class StoreCertificationForm(forms.ModelForm):
     class Meta:
         model = StoreCertification
-        fields = ['certification_type', 'certification_name', 'document']
+        fields = ['certification_type', 'certification_organization', 'certification_name', 'document']
         widgets = {
             'certification_type': forms.Select(attrs={'class': 'form-select form-select-lg rounded-3'}),
+            'certification_organization': forms.Select(attrs={'class': 'form-select form-select-lg rounded-3'}),
             'certification_name': forms.TextInput(attrs={'placeholder': 'Tên chứng nhận (tùy chọn)', 'class': 'form-control rounded-3'}),
             'document': forms.FileInput(attrs={
                 'accept': 'image/*,.pdf',
@@ -185,6 +185,9 @@ class StoreCertificationForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['certification_name'].required = False
+        self.fields['certification_organization'].required = False
+        self.fields['certification_organization'].queryset = CertificationOrganization.objects.filter(is_active=True).order_by('name')
+        self.fields['certification_organization'].empty_label = 'Chọn tổ chức cấp phép (tùy chọn)'
 
 
 class AdminStoreReviewForm(forms.Form):
@@ -450,87 +453,72 @@ class StoreReviewFilterForm(forms.Form):
     )
 
 
-# Product Variant Forms
-class ProductVariantForm(forms.ModelForm):
+# Certification Organization Forms
+class CertificationOrganizationForm(forms.ModelForm):
     class Meta:
-        model = ProductVariant
-        fields = ['variant_name', 'variant_description', 'sku_code', 'price', 'stock', 'image', 'attributes', 'is_active', 'sort_order']
+        model = CertificationOrganization
+        fields = ['name', 'abbreviation', 'description', 'website', 'is_active']
         widgets = {
-            'variant_name': forms.TextInput(attrs={
-                'placeholder': 'Tên phân loại (ví dụ: 500g, Size M - Màu Đỏ)',
-                'class': 'form-control'
+            'name': forms.TextInput(attrs={
+                'placeholder': 'Tên tổ chức',
+                'class': 'form-control form-control-lg rounded-3'
             }),
-            'variant_description': forms.Textarea(attrs={
-                'rows': 2,
-                'placeholder': 'Mô tả phân loại (tùy chọn)',
-                'class': 'form-control'
+            'abbreviation': forms.TextInput(attrs={
+                'placeholder': 'Viết tắt',
+                'class': 'form-control form-control-lg rounded-3'
             }),
-            'sku_code': forms.TextInput(attrs={
-                'placeholder': 'Mã SKU (tự động nếu để trống)',
-                'class': 'form-control'
+            'description': forms.Textarea(attrs={
+                'rows': 4,
+                'placeholder': 'Mô tả về tổ chức',
+                'class': 'form-control rounded-3'
             }),
-            'price': forms.NumberInput(attrs={
-                'step': '0.01',
-                'class': 'form-control',
-                'required': True
-            }),
-            'stock': forms.NumberInput(attrs={
-                'min': '0',
-                'class': 'form-control'
-            }),
-            'image': forms.FileInput(attrs={
-                'accept': 'image/*',
-                'class': 'form-control'
-            }),
-            'attributes': forms.Textarea(attrs={
-                'rows': 2,
-                'placeholder': 'JSON: {"Size": "M", "Color": "Đỏ"}',
-                'class': 'form-control'
+            'website': forms.URLInput(attrs={
+                'placeholder': 'https://example.com',
+                'class': 'form-control form-control-lg rounded-3'
             }),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'sort_order': forms.NumberInput(attrs={
-                'min': '0',
-                'class': 'form-control'
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['description'].required = False
+        self.fields['website'].required = False
+
+
+# Category Forms
+class CategoryForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ['name', 'slug']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'placeholder': 'Tên danh mục',
+                'class': 'form-control form-control-lg rounded-3'
+            }),
+            'slug': forms.TextInput(attrs={
+                'placeholder': 'Slug (tự động tạo từ tên)',
+                'class': 'form-control form-control-lg rounded-3'
             }),
         }
     
     def __init__(self, *args, **kwargs):
-        self.product = kwargs.pop('product', None)
         super().__init__(*args, **kwargs)
-        
-        # Convert JSONField to string for form display
-        if self.instance and self.instance.pk and self.instance.attributes:
-            import json
-            self.fields['attributes'].initial = json.dumps(self.instance.attributes, ensure_ascii=False, indent=2)
-        
-        # Make sku_code optional
-        self.fields['sku_code'].required = False
-        self.fields['image'].required = False
-        self.fields['attributes'].required = False
-        self.fields['variant_description'].required = False
+        self.fields['slug'].required = False
+        self.fields['slug'].help_text = 'Slug sẽ được tự động tạo từ tên danh mục nếu để trống'
     
-    def clean_sku_code(self):
-        """Validate SKU code uniqueness"""
-        sku_code = self.cleaned_data.get('sku_code')
-        if sku_code:
-            # Check if SKU already exists for another variant
-            existing = ProductVariant.objects.filter(sku_code=sku_code)
-            if self.instance and self.instance.pk:
-                existing = existing.exclude(variant_id=self.instance.variant_id)
-            if existing.exists():
-                raise forms.ValidationError('Mã SKU này đã tồn tại.')
-        return sku_code
-    
-    def clean_attributes(self):
-        """Validate and parse JSON attributes"""
-        data = self.cleaned_data.get('attributes')
-        if data:
-            try:
-                import json
-                parsed = json.loads(data)
-                if not isinstance(parsed, dict):
-                    raise forms.ValidationError('Thuộc tính phải là một object JSON.')
-                return parsed
-            except json.JSONDecodeError:
-                raise forms.ValidationError('JSON không hợp lệ. Vui lòng kiểm tra lại định dạng.')
-        return None
+    def clean_slug(self):
+        slug = self.cleaned_data.get('slug')
+        if not slug:
+            # Auto-generate slug from name
+            from django.utils.text import slugify
+            name = self.cleaned_data.get('name', '')
+            slug = slugify(name)
+        
+        # Check uniqueness
+        existing = Category.objects.filter(slug=slug)
+        if self.instance and self.instance.pk:
+            existing = existing.exclude(category_id=self.instance.category_id)
+        if existing.exists():
+            raise forms.ValidationError('Slug này đã tồn tại. Vui lòng chọn slug khác.')
+        
+        return slug

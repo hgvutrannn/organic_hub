@@ -1,0 +1,116 @@
+{% extends 'core/admin/admin_base.html' %}
+
+{% block admin_title %}{% if action == 'create' %}Add Certification Organization{% else %}Edit Certification Organization{% endif %}{% endblock %}
+{% block admin_page_title %}{% if action == 'create' %}Add New Certification Organization{% else %}Edit Certification Organization{% endif %}{% endblock %}
+{% block admin_page_subtitle %}{% if action == 'create' %}Create new certification organization{% else %}Update certification organization information{% endif %}{% endblock %}
+
+{% block admin_content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger rounded-3">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Organization Name -->
+                    <div class="mb-4">
+                        <label for="{{ form.name.id_for_label }}" class="form-label fw-bold">
+                            Organization Name <span class="text-danger">*</span>
+                        </label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.name.errors }}
+                        </div>
+                        {% endif %}
+                        {% if form.name.help_text %}
+                        <div class="form-text">{{ form.name.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Abbreviation -->
+                    <div class="mb-4">
+                        <label for="{{ form.abbreviation.id_for_label }}" class="form-label fw-bold">
+                            Abbreviation <span class="text-danger">*</span>
+                        </label>
+                        {{ form.abbreviation }}
+                        {% if form.abbreviation.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.abbreviation.errors }}
+                        </div>
+                        {% endif %}
+                        {% if form.abbreviation.help_text %}
+                        <div class="form-text">{{ form.abbreviation.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="mb-4">
+                        <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">
+                            Description
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.description.errors }}
+                        </div>
+                        {% endif %}
+                        {% if form.description.help_text %}
+                        <div class="form-text">{{ form.description.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Website -->
+                    <div class="mb-4">
+                        <label for="{{ form.website.id_for_label }}" class="form-label fw-bold">
+                            Website
+                        </label>
+                        {{ form.website }}
+                        {% if form.website.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.website.errors }}
+                        </div>
+                        {% endif %}
+                        {% if form.website.help_text %}
+                        <div class="form-text">{{ form.website.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Is Active -->
+                    <div class="mb-4">
+                        <div class="form-check">
+                            {{ form.is_active }}
+                            <label class="form-check-label fw-bold" for="{{ form.is_active.id_for_label }}">
+                                Active
+                            </label>
+                        </div>
+                        {% if form.is_active.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ form.is_active.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-between align-items-center mt-4 pt-4 border-top">
+                        <a href="{% url 'admin_certification_organization_list' %}" class="btn btn-outline-secondary rounded-pill">
+                            <i class="fas fa-arrow-left me-2"></i>Back
+                        </a>
+                        <button type="submit" class="btn btn-danger rounded-pill">
+                            <i class="fas fa-save me-2"></i>
+                            {% if action == 'create' %}Create Organization{% else %}Save Changes{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

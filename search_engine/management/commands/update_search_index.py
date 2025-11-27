@@ -5,8 +5,10 @@ Usage:
   python manage.py update_search_index --all              # Update all products
 """
 from django.core.management.base import BaseCommand
+from elasticsearch import Elasticsearch
 from core.models import Product
 from search_engine.documents import ProductDocument
+from search_engine.config import ELASTICSEARCH_URL
 
 
 class Command(BaseCommand):
@@ -45,10 +47,22 @@ class Command(BaseCommand):
                         self.style.SUCCESS(f'Successfully updated product {product_id} in index.')
                     )
                 else:
-                    ProductDocument().delete(product)
-                    self.stdout.write(
-                        self.style.SUCCESS(f'Successfully removed product {product_id} from index.')
-                    )
+                    # Delete product from index using Elasticsearch client
+                    try:
+                        es = Elasticsearch([ELASTICSEARCH_URL], timeout=5)
+                        index_name = ProductDocument._index._name
+                        es.delete(
+                            index=index_name,
+                            id=str(product_id),
+                            ignore=[404]
+                        )
+                        self.stdout.write(
+                            self.style.SUCCESS(f'Successfully removed product {product_id} from index.')
+                        )
+                    except Exception as e:
+                        self.stdout.write(
+                            self.style.ERROR(f'Error removing product {product_id} from index: {str(e)}')
+                        )
             except Product.DoesNotExist:
                 self.stdout.write(
                     self.style.ERROR(f'Product {product_id} not found.')

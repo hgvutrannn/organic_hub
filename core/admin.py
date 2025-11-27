@@ -3,20 +3,21 @@ from django.contrib.auth.admin import UserAdmin
 from .models import (
     CustomUser, Category, Address, Store, Product, CartItem, 
     Order, OrderItem, Review, ProductComment, ReviewMedia, StoreReviewStats, ProductVariant,
-    FlashSale, FlashSaleProduct, DiscountCode, DiscountCodeProduct
+    FlashSale, FlashSaleProduct, DiscountCode, DiscountCodeProduct, CertificationOrganization,
+    StoreCertification, StoreVerificationRequest
 )
 
 
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
-    list_display = ('phone_number', 'full_name', 'email', 'is_active', 'is_staff', 'created_at')
+    list_display = ('email', 'full_name', 'is_active', 'is_staff', 'created_at')
     list_filter = ('is_active', 'is_staff', 'is_superuser', 'status', 'created_at')
-    search_fields = ('phone_number', 'full_name', 'email')
+    search_fields = ('email', 'full_name')
     ordering = ('-created_at',)
     
     fieldsets = (
-        (None, {'fields': ('phone_number', 'password')}),
-        ('Thông tin cá nhân', {'fields': ('full_name', 'email')}),
+        (None, {'fields': ('email', 'password')}),
+        ('Thông tin cá nhân', {'fields': ('full_name',)}),
         ('Quyền hạn', {'fields': ('is_active', 'is_staff', 'is_superuser', 'status')}),
         ('Thời gian', {'fields': ('last_login', 'created_at')}),
     )
@@ -48,7 +49,7 @@ class StoreAdmin(admin.ModelAdmin):
 class ProductVariantInline(admin.TabularInline):
     model = ProductVariant
     extra = 0
-    fields = ('variant_name', 'sku_code', 'price', 'stock', 'is_active', 'sort_order')
+    fields = ('variant_name', 'sku_code', 'price', 'stock', 'is_active')
     readonly_fields = ('created_at',)
 
 
@@ -98,13 +99,13 @@ class ProductAdmin(admin.ModelAdmin):
 class CartItemAdmin(admin.ModelAdmin):
     list_display = ('user', 'product', 'variant', 'quantity', 'total_price', 'created_at')
     list_filter = ('created_at',)
-    search_fields = ('user__phone_number', 'product__name', 'variant__variant_name')
+    search_fields = ('user__email', 'user__full_name', 'product__name', 'variant__variant_name')
     list_select_related = ('user', 'product', 'variant')
 
 
 @admin.register(ProductVariant)
 class ProductVariantAdmin(admin.ModelAdmin):
-    list_display = ('variant_name', 'product', 'sku_code', 'price', 'stock', 'is_active', 'sort_order', 'created_at')
+    list_display = ('variant_name', 'product', 'sku_code', 'price', 'stock', 'is_active', 'created_at')
     list_filter = ('is_active', 'created_at')
     search_fields = ('variant_name', 'sku_code', 'product__name')
     list_select_related = ('product',)
@@ -122,7 +123,7 @@ class OrderItemInline(admin.TabularInline):
 class OrderAdmin(admin.ModelAdmin):
     list_display = ('order_id', 'user', 'status', 'payment_status', 'total_amount', 'created_at')
     list_filter = ('status', 'payment_status', 'payment_method', 'created_at')
-    search_fields = ('order_id', 'user__phone_number', 'user__full_name')
+    search_fields = ('order_id', 'user__email', 'user__full_name')
     list_select_related = ('user', 'shipping_address')
     readonly_fields = ('order_id', 'created_at', 'updated_at')
     inlines = [OrderItemInline]
@@ -138,7 +139,7 @@ class ReviewMediaInline(admin.TabularInline):
 class ReviewAdmin(admin.ModelAdmin):
     list_display = ('user', 'product', 'rating', 'content_preview', 'has_seller_reply', 'is_approved', 'created_at')
     list_filter = ('rating', 'is_approved', 'is_verified_purchase', 'created_at')
-    search_fields = ('user__phone_number', 'product__name', 'content')
+    search_fields = ('user__email', 'user__full_name', 'product__name', 'content')
     list_select_related = ('user', 'product', 'order_item')
     inlines = [ReviewMediaInline]
     
@@ -152,7 +153,7 @@ class ReviewAdmin(admin.ModelAdmin):
 class ProductCommentAdmin(admin.ModelAdmin):
     list_display = ('user', 'product', 'content_preview', 'has_seller_reply', 'is_approved', 'created_at')
     list_filter = ('is_approved', 'created_at')
-    search_fields = ('user__phone_number', 'product__name', 'content')
+    search_fields = ('user__email', 'user__full_name', 'product__name', 'content')
     list_select_related = ('user', 'product')
     
     def content_preview(self, obj):
@@ -207,5 +208,49 @@ class DiscountCodeProductAdmin(admin.ModelAdmin):
     list_display = ('discount_code', 'product', 'created_at')
     list_filter = ('discount_code', 'created_at')
     search_fields = ('product__name', 'discount_code__code')
+
+
+@admin.register(CertificationOrganization)
+class CertificationOrganizationAdmin(admin.ModelAdmin):
+    list_display = ('name', 'abbreviation', 'website', 'is_active', 'created_at')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('name', 'abbreviation', 'description')
+    readonly_fields = ('created_at', 'updated_at')
+    fieldsets = (
+        ('Thông tin cơ bản', {
+            'fields': ('name', 'abbreviation', 'description')
+        }),
+        ('Thông tin liên hệ', {
+            'fields': ('website',)
+        }),
+        ('Trạng thái', {
+            'fields': ('is_active',)
+        }),
+        ('Thời gian', {
+            'fields': ('created_at', 'updated_at')
+        }),
+    )
+
+
+@admin.register(StoreCertification)
+class StoreCertificationAdmin(admin.ModelAdmin):
+    list_display = ('certification_id', 'verification_request', 'certification_type', 'certification_organization', 'certification_name', 'uploaded_at')
+    list_filter = ('certification_type', 'certification_organization', 'uploaded_at')
+    search_fields = ('certification_name', 'verification_request__store__store_name')
+    readonly_fields = ('uploaded_at',)
+    list_select_related = ('verification_request__store', 'certification_organization')
+
+
+@admin.register(StoreVerificationRequest)
+class StoreVerificationRequestAdmin(admin.ModelAdmin):
+    list_display = ('request_id', 'store', 'status', 'submitted_at', 'reviewed_at', 'reviewed_by', 'certifications_count')
+    list_filter = ('status', 'submitted_at', 'reviewed_at')
+    search_fields = ('store__store_name', 'store__user__email', 'store__user__full_name')
+    readonly_fields = ('submitted_at',)
+    list_select_related = ('store', 'reviewed_by')
+    
+    def certifications_count(self, obj):
+        return obj.certifications.count()
+    certifications_count.short_description = 'Số chứng nhận'
 
 

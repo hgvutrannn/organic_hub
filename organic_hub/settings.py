@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'otp_service',
     'notifications',
     'search_engine',
+    'recommendations',
 ]
 
 MIDDLEWARE = [
@@ -180,7 +181,7 @@ OTP_EXPIRY_MINUTES = 5
 OTP_RESEND_COOLDOWN_MINUTES = 1  # 1 minute cooldown between resends
 
 # Elasticsearch Configuration
-USE_ELASTICSEARCH = os.getenv('USE_ELASTICSEARCH', 'True').lower() == 'true'
+USE_ELASTICSEARCH = os.getenv('USE_ELASTICSEARCH', 'False').lower() == 'true'
 ELASTICSEARCH_HOST = os.getenv('ELASTICSEARCH_HOST', 'localhost')
 ELASTICSEARCH_PORT = int(os.getenv('ELASTICSEARCH_PORT', '9200'))
 ELASTICSEARCH_USE_SSL = os.getenv('ELASTICSEARCH_USE_SSL', 'False').lower() == 'true'
@@ -244,6 +245,11 @@ LOGGING = {
         'search_engine': {
             'handlers': ['console'],
             'level': 'DEBUG',
+            'propagate': False,
+        },
+        'recommendations': {
+            'handlers': ['console'],
+            'level': 'INFO',
             'propagate': False,
         },
     },

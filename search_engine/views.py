@@ -18,19 +18,24 @@ def search_api(request):
     """
     query = request.GET.get('q', '')
     category_id = request.GET.get('category_id')
+    certificate_id = request.GET.get('certificate_id')
     min_price = request.GET.get('min_price')
     max_price = request.GET.get('max_price')
+    size = int(request.GET.get('size', 20))  # Allow custom size for benchmark
     
     filters = {}
     if category_id:
         filters['category_id'] = int(category_id)
+    if certificate_id:
+        filters['certificate_id'] = int(certificate_id)
     if min_price:
         filters['min_price'] = float(min_price)
     if max_price:
         filters['max_price'] = float(max_price)
+    filters['is_active'] = True
     
     try:
-        products = ProductSearchService.search_with_fallback(query, filters)
+        products = ProductSearchService.search_with_fallback(query, filters, size=size)
         results = [
             {
                 'product_id': p.product_id,
@@ -38,7 +43,7 @@ def search_api(request):
                 'price': float(p.price),
                 'image_url': p.get_primary_image.url if p.get_primary_image else None,
             }
-            for p in products[:20]  # Limit to 20 results for API
+            for p in products[:size]
         ]
         return JsonResponse({'results': results, 'count': len(results)})
     except Exception as e:

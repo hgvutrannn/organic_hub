@@ -1,0 +1,51 @@
+/* ============================================
+   Product List Page Styles
+   ============================================ */
+
+/* Product Card Hover Effects */
+.product-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 0.75rem 1.5rem rgba(40, 167, 69, 0.2) !important;
+}
+
+.product-card:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+.product-card .card-img-top {
+    transition: transform 0.3s ease;
+}
+
+.product-card .position-relative {
+    overflow: hidden;
+    border-radius: 1rem 1rem 0 0;
+}
+
+.product-card:hover .card-title a {
+    color: var(--organic-primary) !important;
+}
+
+/* Category Badge - Ensure text is visible */
+.product-card .badge.bg-primary.bg-opacity-10 {
+    background-color: rgba(40, 167, 69, 0.15) !important;
+    color: var(--organic-primary-dark) !important;
+    font-weight: 500;
+    padding: 0.4em 0.8em;
+    border: 1px solid rgba(40, 167, 69, 0.2);
+}
+
+.product-card:hover .badge.bg-primary.bg-opacity-10 {
+    background-color: rgba(40, 167, 69, 0.25) !important;
+    border-color: rgba(40, 167, 69, 0.4);
+}
+
+/* Price hover effect */
+.product-card:hover .text-success {
+    color: var(--organic-primary-dark) !important;
+}
+

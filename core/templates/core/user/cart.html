@@ -1,7 +1,7 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
 
-{% block title %}Giỏ hàng - Organic Hub{% endblock %}
+{% block title %}Cart - Organic Hub{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -20,7 +20,7 @@
     
     /* Sticky Header cho Desktop */
     .sticky-header {
-        position: sticky; top: 0; z-index: 1020;
+        position: sticky; top: 0; z-index: 980;
     }
 
     .sticky-footer {
@@ -42,13 +42,13 @@
                     <div class="col-6">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="selectAll" onchange="toggleSelectAll()">
-                            <label class="form-check-label ms-2" for="selectAll">Sản phẩm</label>
+                            <label class="form-check-label ms-2" for="selectAll">Product</label>
                         </div>
                     </div>
-                    <div class="col-2 text-center">Đơn giá</div>
-                    <div class="col-2 text-center">Số lượng</div>
-                    <div class="col-1 text-center">Thành tiền</div>
-                    <div class="col-1 text-end">Thao tác</div>
+                    <div class="col-2 text-center">Unit Price</div>
+                    <div class="col-2 text-center">Quantity</div>
+                    <div class="col-1 text-center">Total</div>
+                    <div class="col-1 text-end">Action</div>
                 </div>
             </div>
         </div>
@@ -88,7 +88,7 @@
                                         {{ item.product.name|truncatechars:60 }}
                                     </a>
                                     <small class="text-muted d-block">
-                                        {% if item.variant %}Phân loại: {{ item.variant.variant_name }}{% endif %}
+                                        {% if item.variant %}Variant: {{ item.variant.variant_name }}{% endif %}
                                     </small>
                                 </div>
                             </div>
@@ -96,7 +96,7 @@
 
                         <!-- Unit Price -->
                         <div class="col-4 col-md-2 text-center text-md-center">
-                            <span class="d-md-none text-muted small">Đơn giá: </span>
+                            <span class="d-md-none text-muted small">Unit Price: </span>
                             {{ item.unit_price|floatformat:0|intcomma }}₫
                         </div>
 
@@ -112,15 +112,23 @@
                         </div>
 
                         <!-- Total Amount & Delete (Combined on Mobile) -->
-                        <div class="col-4 col-md-1 text-center text-danger fw-bold amount-display">
-                            {{ item.total_price|floatformat:0|intcomma }}₫
+                        <div class="col-4 col-md-1 text-center text-danger fw-bold amount-display" data-item-id="{{ item.cart_item_id }}" data-store-id="{{ store_id }}">
+                            <!-- Original Price (shown by default) -->
+                            <div class="original-item-price">
+                                {{ item.total_price|floatformat:0|intcomma }}₫
+                            </div>
+                            <!-- Discounted Price (hidden by default) -->
+                            <div class="discounted-item-price" style="display: none;">
+                                <div class="text-muted text-decoration-line-through small original-price-display mb-1"></div>
+                                <div class="text-danger fw-bold final-price-display"></div>
+                            </div>
                             <!-- Hidden raw value for JS calculation -->
                             <span class="d-none amount-raw">{{ item.total_price }}</span>
                         </div>
 
                         <div class="col-12 col-md-1 text-end mt-2 mt-md-0">
                             <button class="btn btn-link text-danger p-0 text-decoration-none small" 
-                                    onclick="removeItem({{ item.cart_item_id }})">Xóa</button>
+                                    onclick="removeItem({{ item.cart_item_id }})">Delete</button>
                         </div>
                     </div>
                 </div>
@@ -129,9 +137,15 @@
             
             <!-- Shop Voucher -->
             <div class="card-footer bg-light py-2">
-                <div class="d-flex align-items-center text-primary small cursor-pointer">
-                    <i class="fas fa-ticket-alt me-2"></i>
-                    <span onclick="showShopVouchers({{ store_id }})">Thêm mã giảm giá của Shop</span>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center text-primary small cursor-pointer" onclick="showShopVouchers({{ store_id }})">
+                        <i class="fas fa-ticket-alt me-2"></i>
+                        <span>Add Shop Discount Code</span>
+                    </div>
+                    <div id="applied-discount-{{ store_id }}" class="text-success small" style="display: none;">
+                        <i class="fas fa-check-circle me-1"></i>
+                        <span id="applied-discount-text-{{ store_id }}"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -145,19 +159,23 @@
                     <div class="col-12 col-md-6 mb-2 mb-md-0 d-flex align-items-center justify-content-between justify-content-md-start">
                         <div class="form-check me-4">
                             <input class="form-check-input" type="checkbox" id="selectAllFooter" onchange="toggleSelectAll()">
-                            <label class="form-check-label" for="selectAllFooter">Chọn tất cả (<span id="selectedCount">0</span>)</label>
+                            <label class="form-check-label" for="selectAllFooter">Select All (<span id="selectedCount">0</span>)</label>
                         </div>
-                        <button class="btn btn-link text-danger text-decoration-none p-0" onclick="deleteSelected()">Xóa đã chọn</button>
+                        <button class="btn btn-link text-danger text-decoration-none p-0" onclick="deleteSelected()">Delete Selected</button>
                     </div>
 
                     <!-- Right: Total & Buy Button -->
                     <div class="col-12 col-md-6 d-flex align-items-center justify-content-between justify-content-md-end gap-3">
                         <div class="text-end">
-                            <div class="text-muted small">Tổng thanh toán (<span id="totalItems">0</span> sản phẩm):</div>
+                            <div class="text-muted small">Total Payment (<span id="totalItems">0</span> items):</div>
+                            <div class="text-muted small text-decoration-line-through" id="originalTotalAmount" style="display: none;">0₫</div>
+                            <div id="discountInfo" class="text-success small mb-1" style="display: none;">
+                                <i class="fas fa-tag me-1"></i>Discount: -<span id="discountAmount">0</span>₫
+                            </div>
                             <div class="text-danger fs-4 fw-bold" id="totalAmount">0₫</div>
                         </div>
                         <button class="btn btn-danger px-4 py-2 fw-bold" id="buyButton" onclick="checkout()" disabled>
-                            Mua Hàng
+                            Checkout
                         </button>
                     </div>
                 </div>
@@ -170,12 +188,96 @@
             <div class="mb-4">
                 <i class="fas fa-shopping-cart fa-4x text-muted opacity-25"></i>
             </div>
-            <h4 class="text-muted mb-3">Giỏ hàng của bạn còn trống</h4>
+            <h4 class="text-muted mb-3">Your cart is empty</h4>
             <a href="{% url 'product_list' %}" class="btn btn-primary">
-                <i class="fas fa-arrow-left me-2"></i>Tiếp tục mua sắm
+                <i class="fas fa-arrow-left me-2"></i>Continue Shopping
             </a>
         </div>
     {% endif %}
+
+    <!-- Recommendations Section -->
+    {% if recommendations %}
+    <div class="row mt-5 mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <h3 class="fw-bold mb-0">You May Also Like</h3>
+                <a href="{% url 'product_list' %}" class="btn btn-outline-primary rounded-pill">
+                    View All <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+            <div class="row g-4">
+                {% for product in recommendations %}
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 product-card-home">
+                        <div class="position-relative">
+                            {% if product.get_primary_image %}
+                                <img src="{{ product.get_primary_image.url }}" 
+                                     alt="{{ product.name }}" 
+                                     class="card-img-top square-image" 
+                                     style="width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: center;">
+                            {% else %}
+                                <img src="/static/images/no-image.jpg" 
+                                     alt="{{ product.name }}" 
+                                     class="card-img-top square-image" 
+                                     style="width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: center;">
+                            {% endif %}
+                            <div class="position-absolute top-0 start-0 m-2">
+                                <span class="badge bg-dark bg-opacity-75 rounded-pill">
+                                    <i class="fas fa-eye me-1"></i>{{ product.view_count }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            {% if product.category %}
+                            <div class="mb-2">
+                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill">
+                                    {{ product.category.name }}
+                                </span>
+                            </div>
+                            {% endif %}
+                            <h5 class="card-title fw-bold mb-2">
+                                <a href="{% url 'product_detail' product.product_id %}" 
+                                   class="text-decoration-none text-dark stretched-link">
+                                    {{ product.name|truncatechars:50 }}
+                                </a>
+                            </h5>
+                            <div class="mb-3">
+                                <span class="h5 fw-bold text-success mb-0">
+                                    {{ product.min_price|floatformat:0 }} VNĐ
+                                </span>
+                            </div>
+                            {% if product.description %}
+                                <p class="card-text text-muted small flex-grow-1">
+                                    {{ product.description|truncatewords:15 }}
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Discount Code Modal -->
+<div class="modal fade" id="discountCodeModal" tabindex="-1" aria-labelledby="discountCodeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="discountCodeModalLabel">
+                    <i class="fas fa-ticket-alt me-2 text-primary"></i>Available Discount Codes
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="discountCodeList" class="list-group">
+                    <!-- Discount codes will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 {% csrf_token %}
@@ -224,30 +326,157 @@
             document.getElementById('selectAllFooter').checked = selectAllState;
     }
 
+    // --- Update Individual Item Prices ---
+    function updateItemPrices() {
+        const appliedDiscounts = JSON.parse(sessionStorage.getItem('appliedDiscounts') || '{}');
+        
+        // Calculate store totals first (only for checked items)
+        const storeTotals = {};
+        document.querySelectorAll('.store-section').forEach(storeSection => {
+            const storeId = storeSection.dataset.storeId;
+            let storeTotal = 0;
+            
+            storeSection.querySelectorAll('.item-checkbox:checked').forEach(cb => {
+                const itemRow = cb.closest('.product-item');
+                const rawPrice = parseFloat(itemRow.querySelector('.amount-raw').innerText);
+                if (!isNaN(rawPrice)) {
+                    storeTotal += rawPrice;
+                }
+            });
+            
+            storeTotals[storeId] = storeTotal;
+        });
+        
+        // Update each item's price display
+        document.querySelectorAll('.product-item').forEach(itemRow => {
+            const storeSection = itemRow.closest('.store-section');
+            const storeId = storeSection.dataset.storeId;
+            const discount = appliedDiscounts[storeId];
+            const amountDisplay = itemRow.querySelector('.amount-display');
+            const originalPriceDiv = amountDisplay.querySelector('.original-item-price');
+            const discountedPriceDiv = amountDisplay.querySelector('.discounted-item-price');
+            const originalPriceDisplay = discountedPriceDiv.querySelector('.original-price-display');
+            const finalPriceDisplay = discountedPriceDiv.querySelector('.final-price-display');
+            
+            const rawPrice = parseFloat(itemRow.querySelector('.amount-raw').innerText);
+            const isChecked = itemRow.querySelector('.item-checkbox').checked;
+            
+            if (discount && isChecked && storeTotals[storeId] > 0) {
+                // Calculate discount for this item proportionally
+                let itemDiscount = 0;
+                if (discount.discount_type === 'percentage') {
+                    // Distribute discount proportionally
+                    const itemRatio = rawPrice / storeTotals[storeId];
+                    let storeDiscount = (storeTotals[storeId] * discount.discount_value) / 100;
+                    if (discount.max_discount && storeDiscount > discount.max_discount) {
+                        storeDiscount = discount.max_discount;
+                    }
+                    itemDiscount = storeDiscount * itemRatio;
+                } else if (discount.discount_type === 'fixed') {
+                    // Distribute fixed discount proportionally
+                    const itemRatio = rawPrice / storeTotals[storeId];
+                    itemDiscount = discount.discount_value * itemRatio;
+                }
+                
+                const finalPrice = Math.max(0, rawPrice - itemDiscount);
+                const formatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+                
+                // Show discounted price
+                originalPriceDiv.style.display = 'none';
+                originalPriceDisplay.textContent = formatter.format(rawPrice).replace('₫', '') + '₫';
+                finalPriceDisplay.textContent = formatter.format(finalPrice).replace('₫', '') + '₫';
+                discountedPriceDiv.style.display = 'block';
+            } else {
+                // No discount, show original price
+                originalPriceDiv.style.display = 'block';
+                discountedPriceDiv.style.display = 'none';
+            }
+        });
+    }
+
     // --- Calculation Logic ---
     function updateTotal() {
         let total = 0;
         let count = 0;
+        let totalDiscount = 0;
         
-        document.querySelectorAll('.item-checkbox:checked').forEach(cb => {
-            count++;
-            const itemRow = cb.closest('.product-item');
-            // Lấy giá trị raw từ span ẩn để tính toán chính xác
-            const rawPrice = parseFloat(itemRow.querySelector('.amount-raw').innerText);
-            if (!isNaN(rawPrice)) total += rawPrice;
+        // Calculate total for each store separately (for store-specific discounts)
+        const storeTotals = {};
+        const appliedDiscounts = JSON.parse(sessionStorage.getItem('appliedDiscounts') || '{}');
+        
+        // Calculate original totals (before discount) for each store
+        const storeOriginalTotals = {};
+        document.querySelectorAll('.store-section').forEach(storeSection => {
+            const storeId = storeSection.dataset.storeId;
+            let storeOriginalTotal = 0;
+            
+            storeSection.querySelectorAll('.item-checkbox:checked').forEach(cb => {
+                count++;
+                const itemRow = cb.closest('.product-item');
+                // Always use original price (rawPrice) for discount calculation
+                const rawPrice = parseFloat(itemRow.querySelector('.amount-raw').innerText);
+                
+                if (!isNaN(rawPrice)) {
+                    storeOriginalTotal += rawPrice;
+                    total += rawPrice;
+                }
+            });
+            
+            storeOriginalTotals[storeId] = storeOriginalTotal;
+        });
+
+        // Calculate discount for each store (based on original total)
+        Object.keys(storeOriginalTotals).forEach(storeId => {
+            const discount = appliedDiscounts[storeId];
+            if (discount && storeOriginalTotals[storeId] > 0) {
+                let discountAmount = 0;
+                if (discount.discount_type === 'percentage') {
+                    discountAmount = (storeOriginalTotals[storeId] * discount.discount_value) / 100;
+                    // Apply max discount if specified (only for percentage type)
+                    if (discount.max_discount && discountAmount > discount.max_discount) {
+                        discountAmount = discount.max_discount;
+                    }
+                } else if (discount.discount_type === 'fixed') {
+                    // For fixed type, use discount_value directly (no max_discount limit)
+                    discountAmount = discount.discount_value;
+                }
+                
+                totalDiscount += discountAmount;
+            }
         });
 
         // Format Currency VN
         const formatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
         
+        const finalTotal = Math.max(0, total - totalDiscount);
+        
         document.getElementById('selectedCount').innerText = count;
         document.getElementById('totalItems').innerText = count;
-        document.getElementById('totalAmount').innerText = formatter.format(total).replace('₫', '') + '₫';
+        
+        // Show/hide original total and discount info
+        const originalTotalEl = document.getElementById('originalTotalAmount');
+        const discountInfoEl = document.getElementById('discountInfo');
+        const discountAmountEl = document.getElementById('discountAmount');
+        
+        if (totalDiscount > 0) {
+            originalTotalEl.textContent = formatter.format(total).replace('₫', '') + '₫';
+            originalTotalEl.style.display = 'block';
+            discountAmountEl.textContent = formatter.format(totalDiscount).replace('₫', '').replace(/\s/g, '');
+            discountInfoEl.style.display = 'block';
+            document.getElementById('totalAmount').textContent = formatter.format(finalTotal).replace('₫', '') + '₫';
+        } else {
+            originalTotalEl.style.display = 'none';
+            discountInfoEl.style.display = 'none';
+            document.getElementById('totalAmount').textContent = formatter.format(total).replace('₫', '') + '₫';
+        }
         
         const buyBtn = document.getElementById('buyButton');
         if(buyBtn) buyBtn.disabled = count === 0;
 
         updateStoreAndMasterCheckboxes();
+        
+        // Update individual item prices
+        updateItemPrices();
     }
 
     // --- Quantity & Actions ---
@@ -295,7 +524,7 @@
         const selected = document.querySelectorAll('.item-checkbox:checked');
         if(selected.length === 0) return alert('Vui lòng chọn sản phẩm để xóa');
         
-        if(confirm(`Xóa ${selected.length} sản phẩm đã chọn?`)) {
+        if(confirm(`Delete ${selected.length} selected items?`)) {
             // Logic xóa nhiều item: Ở đây gọi loop xóa từng cái (đơn giản hóa)
             // Tốt nhất backend nên có endpoint delete-bulk
             selected.forEach(cb => {
@@ -316,7 +545,170 @@
         if(selectedIds.length === 0) return alert('Chưa chọn sản phẩm');
         
         sessionStorage.setItem('selectedCartItems', JSON.stringify(selectedIds));
+        
+        // Get applied discounts from sessionStorage
+        const appliedDiscounts = JSON.parse(sessionStorage.getItem('appliedDiscounts') || '{}');
+        if (Object.keys(appliedDiscounts).length > 0) {
+            // Store in sessionStorage for checkout page to read
+            sessionStorage.setItem('checkout_discounts', JSON.stringify(appliedDiscounts));
+        }
+        
         window.location.href = "{% url 'checkout' %}";
     }
+
+    // --- Discount Code Logic ---
+    // Cache for discount codes by store
+    const discountCodesCache = {};
+    
+    async function loadDiscountCodes(storeId) {
+        // Check cache first
+        if (discountCodesCache[storeId]) {
+            return discountCodesCache[storeId];
+        }
+        
+        try {
+            const response = await fetch(`/api/store/${storeId}/discount-codes/`);
+            const data = await response.json();
+            
+            if (data.success) {
+                discountCodesCache[storeId] = data.discount_codes;
+                return data.discount_codes;
+            } else {
+                console.error('Error loading discount codes:', data.error);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error fetching discount codes:', error);
+            return [];
+        }
+    }
+
+    async function showShopVouchers(storeId) {
+        const modal = new bootstrap.Modal(document.getElementById('discountCodeModal'));
+        const listContainer = document.getElementById('discountCodeList');
+        
+        // Show loading
+        listContainer.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Đang tải mã giảm giá...</p>
+            </div>
+        `;
+        modal.show();
+        
+        // Load discount codes from API
+        const discountCodes = await loadDiscountCodes(storeId);
+        
+        // Clear and update content
+        listContainer.innerHTML = '';
+        
+        if (discountCodes.length === 0) {
+            listContainer.innerHTML = `
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-ticket-alt fa-3x mb-3 opacity-25"></i>
+                    <p>Không có mã giảm giá nào khả dụng</p>
+                </div>
+            `;
+        } else {
+            discountCodes.forEach((discount, index) => {
+                const discountItem = document.createElement('div');
+                discountItem.className = 'list-group-item';
+                discountItem.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-primary me-2">${discount.code}</span>
+                                ${discount.discount_type === 'percentage' 
+                                    ? `<span class="badge bg-success">-${discount.discount_value}%</span>` 
+                                    : `<span class="badge bg-success">-${discount.discount_value.toLocaleString('vi-VN')}₫</span>`
+                                }
+                            </div>
+                            <p class="mb-1 small text-muted">${discount.description || discount.name}</p>
+                        </div>
+                        <button class="btn btn-primary btn-sm ms-3" onclick="applyDiscountCode(${storeId}, ${index})">
+                            <i class="fas fa-check me-1"></i>Apply
+                        </button>
+                    </div>
+                `;
+                discountItem.dataset.storeId = storeId;
+                discountItem.dataset.discountIndex = index;
+                listContainer.appendChild(discountItem);
+            });
+        }
+        
+        // Store current store ID and discount codes for apply function
+        listContainer.dataset.currentStoreId = storeId;
+        listContainer.dataset.discountCodes = JSON.stringify(discountCodes);
+    }
+
+    function applyDiscountCode(storeId, discountIndex) {
+        const listContainer = document.getElementById('discountCodeList');
+        const discountCodes = JSON.parse(listContainer.dataset.discountCodes || '[]');
+        const discount = discountCodes[discountIndex];
+        
+        if (!discount) {
+            alert('Mã giảm giá không hợp lệ');
+            return;
+        }
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('discountCodeModal'));
+        modal.hide();
+        
+        // Show applied discount in UI
+        const appliedDiv = document.getElementById(`applied-discount-${storeId}`);
+        const appliedText = document.getElementById(`applied-discount-text-${storeId}`);
+        
+        let discountText = discount.code;
+        if (discount.discount_type === 'percentage') {
+            discountText += ` - Giảm ${discount.discount_value}%`;
+        } else {
+            discountText += ` - Giảm ${discount.discount_value.toLocaleString('vi-VN')}₫`;
+        }
+        
+        appliedText.textContent = discountText;
+        appliedDiv.style.display = 'block';
+        
+        // Store applied discount in sessionStorage
+        if (!sessionStorage.getItem('appliedDiscounts')) {
+            sessionStorage.setItem('appliedDiscounts', JSON.stringify({}));
+        }
+        const appliedDiscounts = JSON.parse(sessionStorage.getItem('appliedDiscounts'));
+        appliedDiscounts[storeId] = discount;
+        sessionStorage.setItem('appliedDiscounts', JSON.stringify(appliedDiscounts));
+        
+        // Update total and item prices to reflect discount
+        updateTotal(); // This will also call updateItemPrices()
+        
+        // Show success message
+        alert(`Đã áp dụng mã giảm giá: ${discount.code}`);
+    }
+
+    // Load applied discounts on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const appliedDiscounts = JSON.parse(sessionStorage.getItem('appliedDiscounts') || '{}');
+        Object.keys(appliedDiscounts).forEach(storeId => {
+            const discount = appliedDiscounts[storeId];
+            const appliedDiv = document.getElementById(`applied-discount-${storeId}`);
+            const appliedText = document.getElementById(`applied-discount-text-${storeId}`);
+            
+            if (appliedDiv && appliedText && discount) {
+                let discountText = discount.code;
+                if (discount.discount_type === 'percentage') {
+                    discountText += ` - Giảm ${discount.discount_value}%`;
+                } else {
+                    discountText += ` - Giảm ${discount.discount_value.toLocaleString('vi-VN')}₫`;
+                }
+                
+                appliedText.textContent = discountText;
+                appliedDiv.style.display = 'block';
+            }
+        });
+        
+        // Update total after loading discounts
+        updateTotal();
+    });
 </script>
 {% endblock %}

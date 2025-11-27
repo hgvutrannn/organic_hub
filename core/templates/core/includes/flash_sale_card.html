@@ -1,0 +1,68 @@
+{% load static %}
+{% load humanize %}
+<div class="col-lg-4 col-md-6 col-sm-12">
+    {% with first_flash_product=flash_sale.products.first %}
+    {% if first_flash_product and first_flash_product.product %}
+    <a href="{% url 'product_detail' first_flash_product.product.product_id %}" 
+       class="text-decoration-none text-dark">
+    {% else %}
+    <div class="text-decoration-none text-dark">
+    {% endif %}
+        <div class="card border-0 shadow-sm rounded-4 h-100 flash-sale-card position-relative overflow-hidden">
+            <!-- Flash Sale Badge -->
+            <div class="position-absolute top-0 end-0 m-2">
+                <span class="badge bg-danger rounded-pill">
+                    <i class="fas fa-bolt me-1"></i>FLASH SALE
+                </span>
+            </div>
+            
+            <div class="card-body p-4">
+                <!-- Store Name -->
+                <div class="mb-2">
+                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill">
+                        <i class="fas fa-store me-1"></i>{{ flash_sale.store.store_name }}
+                    </span>
+                </div>
+                
+                <!-- Flash Sale Name -->
+                <h5 class="card-title fw-bold mb-3">
+                    {{ flash_sale.name|truncatechars:50 }}
+                </h5>
+                
+                <!-- Description -->
+                {% if flash_sale.description %}
+                <p class="card-text text-muted small mb-3">
+                    {{ flash_sale.description|truncatewords:20 }}
+                </p>
+                {% endif %}
+                
+                <!-- Time Remaining -->
+                <div class="mb-3">
+                    <div class="d-flex align-items-center text-danger">
+                        <i class="fas fa-clock me-2"></i>
+                        <small class="fw-semibold">Kết thúc: {{ flash_sale.end_date|date:"d/m H:i" }}</small>
+                    </div>
+                </div>
+                
+                <!-- Product Count -->
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="fas fa-box me-1 text-muted"></i>
+                        <small class="text-muted">
+                            {{ flash_sale.products.count }} sản phẩm
+                        </small>
+                    </div>
+                    <div>
+                        <i class="fas fa-arrow-right text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% if first_flash_product and first_flash_product.product %}
+    </a>
+    {% else %}
+    </div>
+    {% endif %}
+    {% endwith %}
+</div>
+

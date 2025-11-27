@@ -1,6 +1,6 @@
 {% extends 'core/base.html' %}
 
-{% block title %}Tạo cửa hàng - Organic Hub{% endblock %}
+{% block title %}Create Store - Organic Hub{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
@@ -12,8 +12,8 @@
                     <i class="fas fa-store text-primary fs-1"></i>
                 </div>
                 <div>
-                    <h1 class="display-6 fw-bold mb-1">Tạo cửa hàng</h1>
-                    <p class="text-muted mb-0">Bắt đầu kinh doanh với Organic Hub</p>
+                    <h1 class="display-6 fw-bold mb-1">Create Store</h1>
+                    <p class="text-muted mb-0">Start your business with Organic Hub</p>
                 </div>
             </div>
         </div>
@@ -26,10 +26,10 @@
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
                         <a href="{% url 'profile' %}" class="text-decoration-none">
-                            <i class="fas fa-user me-1"></i>Trang cá nhân
+                            <i class="fas fa-user me-1"></i>Profile
                         </a>
                     </li>
-                    <li class="breadcrumb-item active">Tạo cửa hàng</li>
+                    <li class="breadcrumb-item active">Create Store</li>
                 </ol>
             </nav>
         </div>
@@ -41,7 +41,7 @@
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-header bg-gradient bg-opacity-10 border-0">
                     <h3 class="mb-0 fw-bold">
-                        <i class="fas fa-info-circle me-2"></i>Thông tin cửa hàng
+                        <i class="fas fa-info-circle me-2"></i>Store Information
                     </h3>
                 </div>
                 <div class="card-body p-4">
@@ -50,58 +50,63 @@
                         
                         <div class="mb-4">
                             <label for="store_name" class="form-label fw-bold">
-                                <i class="fas fa-store me-1"></i>Tên cửa hàng <span class="text-danger">*</span>
+                                <i class="fas fa-store me-1"></i>Store Name <span class="text-danger">*</span>
                             </label>
                             <input type="text" 
                                    class="form-control form-control-lg rounded-3" 
                                    id="store_name" 
                                    name="store_name" 
                                    required 
-                                   placeholder="Nhập tên cửa hàng">
+                                   placeholder="Enter store name">
                         </div>
                         
                         <div class="mb-4">
                             <label for="store_description" class="form-label fw-bold">
-                                <i class="fas fa-align-left me-1"></i>Mô tả cửa hàng
+                                <i class="fas fa-align-left me-1"></i>Store Description
                             </label>
                             <textarea class="form-control rounded-3" 
                                       id="store_description" 
                                       name="store_description" 
                                       rows="4" 
-                                      placeholder="Mô tả về cửa hàng của bạn..."></textarea>
+                                      placeholder="Describe your store..."></textarea>
                         </div>
                         
                         <!-- Certifications Section -->
                         <div class="mb-4">
                             <label class="form-label fw-bold">
-                                <i class="fas fa-certificate me-1"></i>Chứng nhận cửa hàng
+                                <i class="fas fa-certificate me-1"></i>Store Certifications
                             </label>
                             <div class="alert alert-info">
                                 <i class="fas fa-info-circle me-2"></i>
-                                <strong>Quan trọng:</strong> Vui lòng tải lên các giấy tờ chứng nhận như VietGAP, chứng nhận hữu cơ, v.v. để cửa hàng được phê duyệt.
+                                <strong>Important:</strong> Please upload certification documents such as VietGAP, organic certification, etc. for store approval.
                             </div>
                             
                             <div id="certifications-container">
                                 <div class="certification-item border rounded-3 p-3 mb-3">
                                     <div class="row">
-                                        <div class="col-md-4">
-                                            <label class="form-label small">Loại chứng nhận</label>
-                                            <select class="form-select" name="certification_types" required>
-                                                <option value="">Chọn loại chứng nhận</option>
-                                                <option value="vietgap">VietGAP</option>
-                                                <option value="organic">Chứng nhận hữu cơ</option>
-                                                <option value="fairtrade">Fair Trade</option>
-                                                <option value="halal">Halal</option>
-                                                <option value="kosher">Kosher</option>
-                                                <option value="other">Chứng nhận khác</option>
+                                        <div class="col-md-3">
+                                            <label class="form-label small">Certification Organization</label>
+                                            <select class="form-select" name="certification_organizations">
+                                                <option value="">Select organization (optional)</option>
+                                                {% for org in certification_organizations %}
+                                                <option value="{{ org.organization_id }}">{{ org.name }} ({{ org.abbreviation }})</option>
+                                                {% endfor %}
                                             </select>
                                         </div>
-                                        <div class="col-md-4">
-                                            <label class="form-label small">Tên chứng nhận (tùy chọn)</label>
-                                            <input type="text" class="form-control" name="certification_names" placeholder="VD: VietGAP 2024">
+                                        <div class="col-md-3">
+                                            <label class="form-label small">Certificate Number</label>
+                                            <input type="text" class="form-control" name="certificate_numbers" placeholder="Enter certificate number">
                                         </div>
-                                        <div class="col-md-4">
-                                            <label class="form-label small">Tệp chứng nhận</label>
+                                        <div class="col-md-2">
+                                            <label class="form-label small">Issue Date</label>
+                                            <input type="date" class="form-control" name="issue_dates">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small">Expiry Date</label>
+                                            <input type="date" class="form-control" name="expiry_dates">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small">Certification File</label>
                                             <input type="file" class="form-control" name="certification_files" accept="image/*,.pdf" required>
                                         </div>
                                     </div>
@@ -109,13 +114,13 @@
                             </div>
                             
                             <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addCertification()">
-                                <i class="fas fa-plus me-1"></i>Thêm chứng nhận khác
+                                <i class="fas fa-plus me-1"></i>Add Another Certification
                             </button>
                         </div>
                         
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary btn-lg rounded-pill">
-                                <i class="fas fa-plus me-2"></i>Tạo cửa hàng
+                                <i class="fas fa-plus me-2"></i>Create Store
                             </button>
                         </div>
                     </form>
@@ -128,7 +133,7 @@
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-header bg-gradient bg-opacity-10 border-0">
                     <h4 class="mb-0 fw-bold">
-                        <i class="fas fa-info-circle me-2"></i>Thông tin quan trọng
+                        <i class="fas fa-info-circle me-2"></i>Important Information
                     </h4>
                 </div>
                 <div class="card-body p-4">
@@ -137,8 +142,8 @@
                             <i class="fas fa-clock text-warning"></i>
                         </div>
                         <div>
-                            <h6 class="fw-bold mb-1">Trạng thái xác minh</h6>
-                            <p class="text-muted small mb-0">Cửa hàng sẽ được tạo với trạng thái "Đang chờ xác minh"</p>
+                            <h6 class="fw-bold mb-1">Verification Status</h6>
+                            <p class="text-muted small mb-0">Store will be created with "Pending Verification" status</p>
                         </div>
                     </div>
                     
@@ -147,8 +152,8 @@
                             <i class="fas fa-box text-success"></i>
                         </div>
                         <div>
-                            <h6 class="fw-bold mb-1">Quản lý sản phẩm</h6>
-                            <p class="text-muted small mb-0">Bạn sẽ có thể quản lý sản phẩm sau khi tạo cửa hàng</p>
+                            <h6 class="fw-bold mb-1">Product Management</h6>
+                            <p class="text-muted small mb-0">You will be able to manage products after creating the store</p>
                         </div>
                     </div>
                     
@@ -157,8 +162,8 @@
                             <i class="fas fa-map-marker-alt text-info"></i>
                         </div>
                         <div>
-                            <h6 class="fw-bold mb-1">Địa chỉ cửa hàng</h6>
-                            <p class="text-muted small mb-0">Địa chỉ cửa hàng có thể được cập nhật sau</p>
+                            <h6 class="fw-bold mb-1">Store Address</h6>
+                            <p class="text-muted small mb-0">Store address can be updated later</p>
                         </div>
                     </div>
                 </div>
@@ -172,26 +177,35 @@ function addCertification() {
     const container = document.getElementById('certifications-container');
     const newCertification = document.createElement('div');
     newCertification.className = 'certification-item border rounded-3 p-3 mb-3';
+    
+    // Build organization options HTML
+    let orgOptionsHtml = '<option value="">Select organization (optional)</option>';
+    {% for org in certification_organizations %}
+    orgOptionsHtml += '<option value="{{ org.organization_id }}">{{ org.name }} ({{ org.abbreviation }})</option>';
+    {% endfor %}
+    
     newCertification.innerHTML = `
         <div class="row">
-            <div class="col-md-4">
-                <label class="form-label small">Loại chứng nhận</label>
-                <select class="form-select" name="certification_types">
-                    <option value="">Chọn loại chứng nhận</option>
-                    <option value="vietgap">VietGAP</option>
-                    <option value="organic">Chứng nhận hữu cơ</option>
-                    <option value="fairtrade">Fair Trade</option>
-                    <option value="halal">Halal</option>
-                    <option value="kosher">Kosher</option>
-                    <option value="other">Chứng nhận khác</option>
+            <div class="col-md-3">
+                <label class="form-label small">Certification Organization</label>
+                <select class="form-select" name="certification_organizations">
+                    ${orgOptionsHtml}
                 </select>
             </div>
-            <div class="col-md-4">
-                <label class="form-label small">Tên chứng nhận (tùy chọn)</label>
-                <input type="text" class="form-control" name="certification_names" placeholder="VD: VietGAP 2024">
-            </div>
             <div class="col-md-3">
-                <label class="form-label small">Tệp chứng nhận</label>
+                <label class="form-label small">Certificate Number</label>
+                <input type="text" class="form-control" name="certificate_numbers" placeholder="Enter certificate number">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Issue Date</label>
+                <input type="date" class="form-control" name="issue_dates">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Expiry Date</label>
+                <input type="date" class="form-control" name="expiry_dates">
+            </div>
+            <div class="col-md-1">
+                <label class="form-label small">Certification File</label>
                 <input type="file" class="form-control" name="certification_files" accept="image/*,.pdf">
             </div>
             <div class="col-md-1">

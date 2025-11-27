@@ -1,0 +1,95 @@
+/* ============================================
+   Store Base Template Styles
+   ============================================ */
+
+.store-sidebar {
+    min-height: calc(100vh - 56px);
+    background-color: #f8f9fa;
+    border-right: 1px solid #dee2e6;
+    padding: 0;
+}
+
+.store-sidebar .sidebar-header {
+    padding: 1.5rem;
+    background-color: #fff;
+    border-bottom: 2px solid #28a745;
+}
+
+.store-sidebar .sidebar-header h5 {
+    color: #28a745;
+}
+
+.store-sidebar .sidebar-header i {
+    color: #28a745;
+}
+
+.store-sidebar .nav-link {
+    color: #495057;
+    padding: 0.75rem 1.5rem;
+    border-left: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+.store-sidebar .nav-link:hover {
+    background-color: #e8f5e9;
+    border-left-color: #28a745;
+    color: #28a745;
+}
+
+.store-sidebar .nav-link.active {
+    background-color: #c8e6c9;
+    border-left-color: #28a745;
+    color: #1e7e34;
+    font-weight: 600;
+}
+
+.store-sidebar .nav-link i {
+    width: 20px;
+    margin-right: 0.5rem;
+}
+
+.store-sidebar .nav-item.has-submenu .nav-link {
+    position: relative;
+}
+
+.store-sidebar .nav-item.has-submenu .nav-link::after {
+    content: '\f107';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    right: 1.5rem;
+    transition: transform 0.3s;
+}
+
+.store-sidebar .nav-item.has-submenu.expanded .nav-link::after {
+    transform: rotate(180deg);
+}
+
+.store-sidebar .submenu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    background-color: #f8f9fa;
+}
+
+.store-sidebar .nav-item.expanded .submenu {
+    max-height: 500px;
+}
+
+.store-sidebar .submenu .nav-link {
+    padding-left: 3rem;
+    font-size: 0.9rem;
+}
+
+.store-content {
+    padding: 1.5rem;
+    background-color: #fff;
+    min-height: calc(100vh - 56px);
+}
+
+.store-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #dee2e6;
+}
+

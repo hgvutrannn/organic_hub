@@ -1,6 +1,6 @@
 {% extends 'core/base.html' %}
 
-{% block title %}Đơn hàng của tôi - Organic Hub{% endblock %}
+{% block title %}My Orders - Organic Hub{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
@@ -12,8 +12,8 @@
                     <i class="fas fa-box text-primary fs-1"></i>
                 </div>
                 <div>
-                    <h1 class="display-6 fw-bold mb-1">Đơn hàng của tôi</h1>
-                    <p class="text-muted mb-0">Theo dõi và quản lý đơn hàng</p>
+                    <h1 class="display-6 fw-bold mb-1">My Orders</h1>
+                    <p class="text-muted mb-0">Track and manage your orders</p>
                 </div>
             </div>
         </div>
@@ -26,7 +26,7 @@
                 <div class="card border-0 shadow-sm rounded-4">
                     <div class="card-header bg-white border-0">
                         <h3 class="mb-0 fw-bold">
-                            <i class="fas fa-list me-2"></i>Danh sách đơn hàng
+                            <i class="fas fa-list me-2"></i>Order List
                         </h3>
                     </div>
                     <div class="card-body p-0">
@@ -73,7 +73,7 @@
                                     
                                     <!-- Payment Method -->
                                     <div class="col-md-2">
-                                        <small class="text-muted d-block">Thanh toán</small>
+                                        <small class="text-muted d-block">Payment</small>
                                         <span class="fw-semibold">{{ order.get_payment_method_display }}</span>
                                     </div>
                                     
@@ -88,7 +88,7 @@
                                     <div class="col-md-2 text-end">
                                         <a href="{% url 'order_detail' order.order_id %}" 
                                            class="btn btn-outline-primary btn-sm rounded-pill">
-                                            <i class="fas fa-eye me-1"></i>Chi tiết
+                                            <i class="fas fa-eye me-1"></i>Details
                                         </a>
                                     </div>
                                 </div>
@@ -103,7 +103,7 @@
                 <div class="card border-0 shadow-sm rounded-4">
                     <div class="card-header bg-gradient bg-opacity-10 border-0">
                         <h4 class="mb-0 fw-bold">
-                            <i class="fas fa-chart-bar me-2"></i>Tổng kết
+                            <i class="fas fa-chart-bar me-2"></i>Summary
                         </h4>
                     </div>
                     <div class="card-body">
@@ -115,7 +115,7 @@
                                             <i class="fas fa-box text-primary"></i>
                                         </div>
                                         <div>
-                                            <small class="text-muted d-block">Tổng đơn hàng</small>
+                                            <small class="text-muted d-block">Total Orders</small>
                                             <span class="h5 fw-bold">{{ orders.count }}</span>
                                         </div>
                                     </div>
@@ -129,7 +129,7 @@
                                             <i class="fas fa-money-bill-wave text-success"></i>
                                         </div>
                                         <div>
-                                            <small class="text-muted d-block">Tổng giá trị</small>
+                                            <small class="text-muted d-block">Total Value</small>
                                             <span class="h5 fw-bold text-success">
                                                 {% with total_value=0 %}
                                                     {% for order in orders %}
@@ -147,7 +147,7 @@
                         
                         <div class="mt-4">
                             <a href="{% url 'product_list' %}" class="btn btn-primary w-100 rounded-pill">
-                                <i class="fas fa-shopping-bag me-2"></i>Tiếp tục mua sắm
+                                <i class="fas fa-shopping-bag me-2"></i>Continue Shopping
                             </a>
                         </div>
                     </div>
@@ -163,10 +163,10 @@
                          style="width: 120px; height: 120px;">
                         <i class="fas fa-box text-muted" style="font-size: 4rem;"></i>
                     </div>
-                    <h4 class="fw-bold text-muted mb-3">Chưa có đơn hàng</h4>
-                    <p class="text-muted mb-4">Bạn chưa có đơn hàng nào. Hãy bắt đầu mua sắm!</p>
+                    <h4 class="fw-bold text-muted mb-3">No Orders</h4>
+                    <p class="text-muted mb-4">You don't have any orders yet. Start shopping!</p>
                     <a href="{% url 'product_list' %}" class="btn btn-primary rounded-pill px-4">
-                        <i class="fas fa-shopping-bag me-2"></i>Bắt đầu mua sắm
+                        <i class="fas fa-shopping-bag me-2"></i>Start Shopping
                     </a>
                 </div>
             </div>

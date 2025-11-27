@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Performance Benchmark Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+        }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .summary-card {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+        }
+        .summary-card h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        .summary-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: 600;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .chart-container {
+            margin: 30px 0;
+            height: 400px;
+            position: relative;
+        }
+        .faster {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .slower {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 12px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Search Performance Benchmark Report</h1>
+        <p><strong>Generated:</strong> 2025-11-21 19:28:18</p>
+        
+        <h2>Summary</h2>
+        <div class="summary">
+            <div class="summary-card">
+                <h3>Total Test Cases</h3>
+                <div class="value">12</div>
+            </div>
+            <div class="summary-card">
+                <h3>Iterations per Test</h3>
+                <div class="value">10</div>
+            </div>
+        </div>
+        
+        <h2>Execution Time (ms)</h2>
+        <div class="chart-container">
+            <canvas id="timeChart"></canvas>
+        </div>
+        
+        <h2>Memory Usage (MB)</h2>
+        <div class="chart-container">
+            <canvas id="memoryChart"></canvas>
+        </div>
+        
+        <h2>CPU Usage (%)</h2>
+        <div class="chart-container">
+            <canvas id="cpuChart"></canvas>
+        </div>
+        
+        <h2>Detailed Results</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Test Case</th>
+                    <th>Method</th>
+                    <th>Avg Time (ms)</th>
+                    <th>Min Time (ms)</th>
+                    <th>Max Time (ms)</th>
+                    <th>Memory (MB)</th>
+                    <th>CPU (%)</th>
+                    <th>Results</th>
+                </tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                    <td><strong>Text Search - Short (rice)</strong><br><small>Query: rice<br>Filters: None</small></td>
+                    <td><span style="color: #2196F3;">API Endpoint</span></td>
+                    <td>60.86</td>
+                    <td>55.60</td>
+                    <td>71.67</td>
+                    <td>0.00</td>
+                    <td>0.00</td>
+                    <td>150</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Text Search - Short (vegetables)</strong><br><small>Query: vegetables<br>Filters: None</small></td>
+                    <td><span style="color: #2196F3;">API Endpoint</span></td>
+                    <td>51.77</td>
+                    <td>43.03</td>
+                    <td>68.52</td>
+                    <td>0.00</td>
+                    <td>0.00</td>
+                    <td>100</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Text Search - Long (organic rice)</strong><br><small>Query: organic rice<br>Filters: None</small></td>
+                    <td><span style="color: #2196F3;">API Endpoint</span></td>
+                    <td>139.64</td>
+                    <td>125.24</td>
+                    <td>181.29</td>
+                    <td>0.00</td>
+                    <td>0.00</td>
+                    <td>400</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Text Search - Long (fresh vegetables)</strong><br><small>Query: fresh vegetables<br>Filters: None</small></td>
+                    <td><span style="color: #2196F3;">API Endpoint</span></td>
+                    <td>154.94</td>
+                    <td>147.44</td>
+                    <td>205.16</td>
+                    <td>0.00</td>
+                    <td>0.00</td>
+                    <td>450</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Text Search - No Results</strong><br><small>Query: xyzabc123nonexistent<br>Filters: None</small></td>
+                    <td><span style="color: #2196F3;">API Endpoint</span></td>
+                    <td>15.80</td>
+                    <td>13.96</td>
+                    <td>18.04</td>
+                    <td>0.00</td>
+                    <td>0.00</td>
+                    <td>0</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Filter - Category Only</strong><br><small>Query: N/A<br>Filters: {"category_id": 28, "is_active": true}</small></td>
+                    <td><span style="color: #2196F3;">API Endpoint</span></td>
+                    <td>71.20</td>
+                    <td>68.36</td>
+                    <td>76.20</td>
+                    <td>0.00</td>
+                    <td>0.00</td>
+                    <td>200</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Filter - Certificate Only</strong><br><small>Query: N/A<br>Filters: {"certificate_id": 18, "is_active": true}</small></td>
+                    <td><span style="color: #2196F3;">API Endpoint</span></td>
+                    <td>44.98</td>
+                    <td>39.91</td>
+                    <td>48.28</td>
+                    <td>0.00</td>
+                    <td>0.00</td>
+                    <td>100</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Filter - Price Range Only</strong><br><small>Query: N/A<br>Filters: {"min_price": 50000, "max_price": 100000, "is_active": true}</small></td>
+                    <td><span style="color: #2196F3;">API Endpoint</span></td>
+                    <td>118.02</td>
+                    <td>99.01</td>
+                    <td>262.14</td>
+                    <td>0.00</td>
+                    <td>0.00</td>
+                    <td>300</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Filter - Category + Certificate + Price</strong><br><small>Query: N/A<br>Filters: {"category_id": 28, "certificate_id": 18, "min_price": 50000, "max_price": 200000, "is_active": true}</small></td>
+                    <td><span style="color: #2196F3;">API Endpoint</span></td>
+                    <td>20.10</td>
+                    <td>18.85</td>
+                    <td>22.84</td>
+                    <td>0.00</td>
+                    <td>0.00</td>
+                    <td>20</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Combined - Text + Category</strong><br><small>Query: rice<br>Filters: {"category_id": 28, "is_active": true}</small></td>
+                    <td><span style="color: #2196F3;">API Endpoint</span></td>
+                    <td>29.30</td>
+                    <td>27.58</td>
+                    <td>31.04</td>
+                    <td>0.00</td>
+                    <td>0.00</td>
+                    <td>50</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Combined - Text + Certificate</strong><br><small>Query: organic<br>Filters: {"certificate_id": 18, "is_active": true}</small></td>
+                    <td><span style="color: #2196F3;">API Endpoint</span></td>
+                    <td>29.22</td>
+                    <td>26.29</td>
+                    <td>33.50</td>
+                    <td>0.00</td>
+                    <td>0.00</td>
+                    <td>40</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Combined - Text + Category + Certificate + Price</strong><br><small>Query: vegetables<br>Filters: {"category_id": 28, "certificate_id": 18, "min_price": 30000, "max_price": 150000, "is_active": true}</small></td>
+                    <td><span style="color: #2196F3;">API Endpoint</span></td>
+                    <td>14.15</td>
+                    <td>12.18</td>
+                    <td>17.93</td>
+                    <td>0.00</td>
+                    <td>0.00</td>
+                    <td>0</td>
+                </tr>
+
+            </tbody>
+        </table>
+        
+        <div class="footer">
+            <p>Generated by Search Performance Benchmark Script</p>
+        </div>
+    </div>
+    
+    <script>
+        // Chart.js configuration
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            }
+        };
+        
+        // Execution Time Chart
+        const timeCtx = document.getElementById('timeChart').getContext('2d');
+        new Chart(timeCtx, {
+            type: 'bar',
+            data: {
+                labels: ["Text Search - Short (rice)", "Text Search - Short (vegetables)", "Text Search - Long (organic rice)", "Text Search - Long (fresh vegetables)", "Text Search - No Results", "Filter - Category Only", "Filter - Certificate Only", "Filter - Price Range Only", "Filter - Category + Certificate + Price", "Combined - Text + Category", "Combined - Text + Certificate", "Combined - Text + Category + Certificate + Price"],
+                datasets: [{
+                    label: 'API Endpoint',
+                    data: [60.85991270374507, 51.76815830054693, 139.63914179767016, 154.93637510371627, 15.803195898479318, 71.1989792980603, 44.98030810063938, 118.01622939965455, 20.10454569972353, 29.297316799056716, 29.222191601002123, 14.147675003914628],
+                    backgroundColor: 'rgba(33, 150, 243, 0.7)',
+                    borderColor: 'rgba(33, 150, 243, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: chartOptions
+        });
+        
+        // Memory Usage Chart
+        const memoryCtx = document.getElementById('memoryChart').getContext('2d');
+        new Chart(memoryCtx, {
+            type: 'bar',
+            data: {
+                labels: ["Text Search - Short (rice)", "Text Search - Short (vegetables)", "Text Search - Long (organic rice)", "Text Search - Long (fresh vegetables)", "Text Search - No Results", "Filter - Category Only", "Filter - Certificate Only", "Filter - Price Range Only", "Filter - Category + Certificate + Price", "Combined - Text + Category", "Combined - Text + Certificate", "Combined - Text + Category + Certificate + Price"],
+                datasets: [{
+                    label: 'API Endpoint',
+                    data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    backgroundColor: 'rgba(33, 150, 243, 0.7)',
+                    borderColor: 'rgba(33, 150, 243, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: chartOptions
+        });
+        
+        // CPU Usage Chart
+        const cpuCtx = document.getElementById('cpuChart').getContext('2d');
+        new Chart(cpuCtx, {
+            type: 'bar',
+            data: {
+                labels: ["Text Search - Short (rice)", "Text Search - Short (vegetables)", "Text Search - Long (organic rice)", "Text Search - Long (fresh vegetables)", "Text Search - No Results", "Filter - Category Only", "Filter - Certificate Only", "Filter - Price Range Only", "Filter - Category + Certificate + Price", "Combined - Text + Category", "Combined - Text + Certificate", "Combined - Text + Category + Certificate + Price"],
+                datasets: [{
+                    label: 'API Endpoint',
+                    data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    backgroundColor: 'rgba(33, 150, 243, 0.7)',
+                    borderColor: 'rgba(33, 150, 243, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: chartOptions
+        });
+    </script>
+</body>
+</html>

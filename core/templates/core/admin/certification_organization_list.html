@@ -1,0 +1,205 @@
+{% extends 'core/admin/admin_base.html' %}
+
+{% block admin_title %}Quản lý tổ chức cấp phép{% endblock %}
+{% block admin_page_title %}Quản lý tổ chức cấp phép{% endblock %}
+{% block admin_page_subtitle %}Quản lý các tổ chức cấp phép chứng nhận hữu cơ{% endblock %}
+
+{% block admin_content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="mb-0">Certification Organization List</h4>
+                <small class="text-muted">Total: {{ total_organizations }} organizations</small>
+            </div>
+            <a href="{% url 'admin_certification_organization_create' %}" class="btn btn-danger rounded-pill">
+                <i class="fas fa-plus me-2"></i>Add New Organization
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="row mb-4">
+    <div class="col-12">
+        <form method="get" action="{% url 'admin_certification_organization_list' %}">
+            <div class="input-group">
+                <input type="text" name="search" class="form-control form-control-lg rounded-3" 
+                       placeholder="Search organizations..." value="{{ search_query }}">
+                <button class="btn btn-danger rounded-3" type="submit">
+                    <i class="fas fa-search me-2"></i>Search
+                </button>
+                {% if search_query %}
+                <a href="{% url 'admin_certification_organization_list' %}" class="btn btn-outline-secondary rounded-3">
+                    <i class="fas fa-times me-2"></i>Clear Filter
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Organizations Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-0">
+                {% if organizations %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px;">ID</th>
+                                <th>Organization Name</th>
+                                <th>Abbreviation</th>
+                                <th>Website</th>
+                                <th style="width: 100px;">Status</th>
+                                <th style="width: 200px;" class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for org in organizations %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-secondary">#{{ org.organization_id }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-danger bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="fas fa-certificate text-danger"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-bold mb-0">{{ org.name }}</h6>
+                                            {% if org.description %}
+                                                <small class="text-muted">{{ org.description|truncatechars:50 }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ org.abbreviation }}</span>
+                                </td>
+                                <td>
+                                    {% if org.website %}
+                                        <a href="{{ org.website }}" target="_blank" class="text-decoration-none">
+                                            <i class="fas fa-external-link-alt me-1"></i>Website
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if org.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'admin_certification_organization_edit' org.organization_id %}" 
+                                           class="btn btn-sm btn-outline-primary rounded-pill">
+                                            <i class="fas fa-edit me-1"></i>Edit
+                                        </a>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-danger rounded-pill"
+                                                onclick="confirmDelete({{ org.organization_id }}, '{{ org.name }}')">
+                                            <i class="fas fa-trash me-1"></i>Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if organizations.has_other_pages %}
+                <div class="d-flex justify-content-center py-3">
+                    <nav aria-label="Organization pagination">
+                        <ul class="pagination">
+                            {% if organizations.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ organizations.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Previous</a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in organizations.paginator.page_range %}
+                                {% if organizations.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > organizations.number|add:'-3' and num < organizations.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if organizations.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ organizations.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Next</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="bg-danger bg-opacity-10 rounded-circle p-4 mx-auto mb-3" style="width: 80px; height: 80px;">
+                        <i class="fas fa-certificate text-danger fs-2"></i>
+                    </div>
+                    <h5 class="fw-bold">No Organizations Found</h5>
+                    <p class="text-muted">
+                        {% if search_query %}
+                            No organizations match the keyword "{{ search_query }}"
+                        {% else %}
+                            No certification organizations in the system yet.
+                        {% endif %}
+                    </p>
+                    {% if not search_query %}
+                    <a href="{% url 'admin_certification_organization_create' %}" class="btn btn-danger rounded-pill mt-3">
+                        <i class="fas fa-plus me-2"></i>Add First Organization
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete Organization</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete organization <strong id="organizationName"></strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger rounded-pill">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(organizationId, organizationName) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    document.getElementById('organizationName').textContent = organizationName;
+    document.getElementById('deleteForm').action = `/admin-dashboard/certification-organizations/${organizationId}/delete/`;
+    modal.show();
+}
+</script>
+{% endblock %}
+

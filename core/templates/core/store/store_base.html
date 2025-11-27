@@ -1,102 +1,10 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
-{% block title %}{% block store_title %}Quản lý cửa hàng{% endblock %} - {{ store.store_name }}{% endblock %}
+{% block title %}{% block store_title %}Store Management{% endblock %} - {{ store.store_name }}{% endblock %}
 
 {% block extra_css %}
-<style>
-    .store-sidebar {
-        min-height: calc(100vh - 56px);
-        background-color: #f8f9fa;
-        border-right: 1px solid #dee2e6;
-        padding: 0;
-    }
-    
-    .store-sidebar .sidebar-header {
-        padding: 1.5rem;
-        background-color: #fff;
-        border-bottom: 2px solid #28a745;
-    }
-    
-    .store-sidebar .sidebar-header h5 {
-        color: #28a745;
-    }
-    
-    .store-sidebar .sidebar-header i {
-        color: #28a745;
-    }
-    
-    .store-sidebar .nav-link {
-        color: #495057;
-        padding: 0.75rem 1.5rem;
-        border-left: 3px solid transparent;
-        transition: all 0.2s;
-    }
-    
-    .store-sidebar .nav-link:hover {
-        background-color: #e8f5e9;
-        border-left-color: #28a745;
-        color: #28a745;
-    }
-    
-    .store-sidebar .nav-link.active {
-        background-color: #c8e6c9;
-        border-left-color: #28a745;
-        color: #1e7e34;
-        font-weight: 600;
-    }
-    
-    .store-sidebar .nav-link i {
-        width: 20px;
-        margin-right: 0.5rem;
-    }
-    
-    .store-sidebar .nav-item.has-submenu .nav-link {
-        position: relative;
-    }
-    
-    .store-sidebar .nav-item.has-submenu .nav-link::after {
-        content: '\f107';
-        font-family: 'Font Awesome 6 Free';
-        font-weight: 900;
-        position: absolute;
-        right: 1.5rem;
-        transition: transform 0.3s;
-    }
-    
-    .store-sidebar .nav-item.has-submenu.expanded .nav-link::after {
-        transform: rotate(180deg);
-    }
-    
-    .store-sidebar .submenu {
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.3s ease-out;
-        background-color: #f8f9fa;
-    }
-    
-    .store-sidebar .nav-item.expanded .submenu {
-        max-height: 500px;
-    }
-    
-    .store-sidebar .submenu .nav-link {
-        padding-left: 3rem;
-        font-size: 0.9rem;
-    }
-    
-    .store-content {
-        padding: 1.5rem;
-        background-color: #fff;
-        min-height: calc(100vh - 56px);
-    }
-    
-    .store-header {
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid #dee2e6;
-    }
-
-    
-</style>
+<link rel="stylesheet" href="{% static 'core/css/store_base.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -109,7 +17,7 @@
                     <i class="fas fa-store me-2 text-primary"></i>
                     {{ store.store_name }}
                 </h5>
-                <small class="text-muted">Kênh Người Bán</small>
+                <small class="text-muted">Seller Channel</small>
             </div>
             
             <nav class="nav flex-column">
@@ -117,7 +25,7 @@
                 <a class="nav-link {% if request.resolver_match.url_name == 'store_dashboard' %}active{% endif %}" 
                    href="{% url 'store_dashboard' store.store_id %}">
                     <i class="fas fa-tachometer-alt"></i>
-                    Tổng quan
+                    Overview
                 </a>
                 
                 <!-- Order Management -->
@@ -125,31 +33,31 @@
                     <a class="nav-link {% if 'store_orders' in request.resolver_match.url_name or 'store_order_detail' in request.resolver_match.url_name %}active{% endif %}" 
                        href="#" onclick="toggleSubmenu(this); return false;">
                         <i class="fas fa-shopping-cart"></i>
-                        Quản Lý Đơn Hàng
+                        Order Management
                     </a>
                     <div class="submenu">
                         <a class="nav-link {% if request.resolver_match.url_name == 'store_orders' %}active{% endif %}" 
                            href="{% url 'store_orders' store.store_id %}">
-                            Tất cả đơn hàng
+                            All Orders
                         </a>
                     </div>
                 </div>
                 
                 <!-- Product Management -->
-                <div class="nav-item has-submenu {% if 'store_products' in request.resolver_match.url_name or 'add_product' in request.resolver_match.url_name or 'edit_product' in request.resolver_match.url_name or 'add_variant' in request.resolver_match.url_name or 'edit_variant' in request.resolver_match.url_name %}expanded{% endif %}">
-                    <a class="nav-link {% if 'store_products' in request.resolver_match.url_name or 'add_product' in request.resolver_match.url_name or 'edit_product' in request.resolver_match.url_name or 'add_variant' in request.resolver_match.url_name or 'edit_variant' in request.resolver_match.url_name %}active{% endif %}" 
+                <div class="nav-item has-submenu {% if 'store_products' in request.resolver_match.url_name or 'add_product' in request.resolver_match.url_name or 'edit_product' in request.resolver_match.url_name %}expanded{% endif %}">
+                    <a class="nav-link {% if 'store_products' in request.resolver_match.url_name or 'add_product' in request.resolver_match.url_name or 'edit_product' in request.resolver_match.url_name %}active{% endif %}" 
                        href="#" onclick="toggleSubmenu(this); return false;">
                         <i class="fas fa-box"></i>
-                        Quản Lý Sản Phẩm
+                        Product Management
                     </a>
                     <div class="submenu">
                         <a class="nav-link {% if request.resolver_match.url_name == 'store_products' %}active{% endif %}" 
                            href="{% url 'store_products' store.store_id %}">
-                            Tất Cả Sản Phẩm
+                            All Products
                         </a>
                         <a class="nav-link {% if request.resolver_match.url_name == 'add_product' %}active{% endif %}" 
                            href="{% url 'add_product' store.store_id %}">
-                            Thêm Sản Phẩm
+                            Add Product
                         </a>
                     </div>
                 </div>
@@ -159,16 +67,16 @@
                     <a class="nav-link {% if 'store_review' in request.resolver_match.url_name %}active{% endif %}" 
                        href="#" onclick="toggleSubmenu(this); return false;">
                         <i class="fas fa-star"></i>
-                        Quản Lý Đánh Giá
+                        Review Management
                     </a>
                     <div class="submenu">
                         <a class="nav-link {% if request.resolver_match.url_name == 'store_review_dashboard' %}active{% endif %}" 
                            href="{% url 'store_review_dashboard' store.store_id %}">
-                            Dashboard Đánh Giá
+                            Review Dashboard
                         </a>
                         <a class="nav-link {% if request.resolver_match.url_name == 'store_review_list' %}active{% endif %}" 
                            href="{% url 'store_review_list' store.store_id %}">
-                            Danh Sách Đánh Giá
+                            Review List
                         </a>
                     </div>
                 </div>
@@ -178,16 +86,16 @@
                     <a class="nav-link {% if 'flash_sale' in request.resolver_match.url_name or 'discount_code' in request.resolver_match.url_name %}active{% endif %}" 
                        href="#" onclick="toggleSubmenu(this); return false;">
                         <i class="fas fa-bullhorn"></i>
-                        Kênh Marketing
+                        Marketing Channel
                     </a>
                     <div class="submenu">
                         <a class="nav-link {% if 'flash_sale' in request.resolver_match.url_name %}active{% endif %}" 
                            href="{% url 'store_flash_sale_list' store.store_id %}">
-                            Flash Sale Của Shop
+                            Shop Flash Sales
                         </a>
                         <a class="nav-link {% if 'discount_code' in request.resolver_match.url_name %}active{% endif %}" 
                            href="{% url 'store_discount_code_list' store.store_id %}">
-                            Mã Giảm Giá Của Shop
+                            Shop Discount Codes
                         </a>
                     </div>
                 </div>
@@ -197,16 +105,16 @@
                     <a class="nav-link {% if 'verification' in request.resolver_match.url_name %}active{% endif %}" 
                        href="#" onclick="toggleSubmenu(this); return false;">
                         <i class="fas fa-certificate"></i>
-                        Xác Minh Cửa Hàng
+                        Store Verification
                     </a>
                     <div class="submenu">
                         <a class="nav-link {% if request.resolver_match.url_name == 'verification_status' %}active{% endif %}" 
                            href="{% url 'verification_status' store.store_id %}">
-                            Trạng Thái Xác Minh
+                            Verification Status
                         </a>
                         <a class="nav-link {% if request.resolver_match.url_name == 'verification_management' %}active{% endif %}" 
                            href="{% url 'verification_management' store.store_id %}">
-                            Quản Lý Xác Minh
+                            Verification Management
                         </a>
                     </div>
                 </div>
@@ -216,7 +124,7 @@
         <!-- Main Content -->
         <div class="col-md-9 col-lg-10 store-content">
             <div class="store-header">
-                <h2 class="mb-0 fw-bold">{% block store_page_title %}Quản lý cửa hàng{% endblock %}</h2>
+                <h2 class="mb-0 fw-bold">{% block store_page_title %}Store Management{% endblock %}</h2>
                 <p class="text-muted mb-0">{% block store_page_subtitle %}{{ store.store_name }}{% endblock %}</p>
             </div>
             
@@ -225,39 +133,8 @@
         </div>
     </div>
 </div>
-
-<script>
-function toggleSubmenu(element) {
-    const navItem = element.closest('.nav-item');
-    const isExpanded = navItem.classList.contains('expanded');
-    
-    // Close all other submenus
-    document.querySelectorAll('.nav-item.has-submenu').forEach(item => {
-        if (item !== navItem) {
-            item.classList.remove('expanded');
-        }
-    });
-    
-    // Toggle current submenu
-    if (isExpanded) {
-        navItem.classList.remove('expanded');
-    } else {
-        navItem.classList.add('expanded');
-    }
-}
-
-// Auto-expand submenu if current page is in that section
-document.addEventListener('DOMContentLoaded', function() {
-    const currentUrl = window.location.pathname;
-    document.querySelectorAll('.nav-item.has-submenu').forEach(item => {
-        const submenuLinks = item.querySelectorAll('.submenu .nav-link');
-        submenuLinks.forEach(link => {
-            if (currentUrl.includes(link.getAttribute('href'))) {
-                item.classList.add('expanded');
-            }
-        });
-    });
-});
-</script>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'core/js/store_base.js' %}"></script>
 {% endblock %}
 
