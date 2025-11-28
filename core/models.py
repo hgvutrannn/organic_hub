@@ -331,6 +331,15 @@ class Product(TimeStampedModel):
         return self.price
     
     @property
+    def display_price(self):
+        """Get display price: minimum variant price if has variants, otherwise product price"""
+        if self.has_variants and self.variants.exists():
+            active_variants = self.variants.filter(is_active=True)
+            if active_variants.exists():
+                return min(v.price for v in active_variants)
+        return self.price
+    
+    @property
     def default_variant(self):
         """Lấy variant mặc định (variant đầu tiên hoặc variant có giá thấp nhất)"""
         if self.has_variants and self.variants.exists():

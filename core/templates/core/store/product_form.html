@@ -79,6 +79,25 @@
             {% endfor %}
         {% endif %}
 
+        {% if form.errors %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <strong>Please correct the following errors:</strong>
+                <ul class="mb-0 mt-2">
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <li>
+                                {% if field != '__all__' %}
+                                    <strong>{{ field|title }}:</strong>
+                                {% endif %}
+                                {{ error }}
+                            </li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endif %}
+
         <div class="row">
             <!-- LEFT COLUMN: Main Info -->
             <div class="col-lg-8">
@@ -105,9 +124,17 @@
                         <h5 class="card-title fw-bold mb-3">Price & Inventory</h5>
                         <div class="row g-3">
                             <div class="col-md-3">
-                                <label for="price" class="form-label">Price (GBP) <span class="text-danger">*</span></label>
-                                <input lang="en" type="number" class="form-control" id="price" name="price" step="0.01"
-                                       value="{{ product.price|default:'' }}" placeholder="0.00" required>
+                                <label for="price" class="form-label">Price (GBP) <span class="text-danger" id="price-required-indicator">*</span></label>
+                                <input lang="en" type="number" class="form-control {% if form.price.errors %}is-invalid{% endif %}" id="price" name="price" step="0.01"
+                                       value="{{ product.price|default:'' }}" placeholder="0.00" 
+                                       {% if not product or not product.has_variants %}required{% endif %}>
+                                {% if form.price.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.price.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
                             <div class="col-md-3">
                                 <label for="base_unit" class="form-label">Unit</label>
@@ -305,6 +332,7 @@
         const variantsFormContainer = document.getElementById('variants-form-container');
         const existingVariantsTable = document.getElementById('existing-variants-table');
         const stockInput = document.getElementById('stock');
+        const priceRequiredIndicator = document.getElementById('price-required-indicator');
         
         if (hasVariantsCheckbox.checked) {
             pricingCard.style.opacity = '0.5';
@@ -312,6 +340,8 @@
             variantWarning.style.display = 'block';
             priceInput.required = false;
             if (stockInput) stockInput.required = false;
+            // Hide required indicator
+            if (priceRequiredIndicator) priceRequiredIndicator.style.display = 'none';
             
             // Show variants form container (always show when has_variants is checked)
             if (variantsFormContainer) {
@@ -329,6 +359,8 @@
             variantWarning.style.display = 'none';
             priceInput.required = true;
             if (stockInput) stockInput.required = true;
+            // Show required indicator
+            if (priceRequiredIndicator) priceRequiredIndicator.style.display = 'inline';
             if (variantsFormContainer) {
                 variantsFormContainer.style.display = 'none';
             }

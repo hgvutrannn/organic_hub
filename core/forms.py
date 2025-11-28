@@ -77,6 +77,40 @@ class ProductForm(forms.ModelForm):
             if self.instance.variants.exists():
                 self.fields['has_variants'].widget.attrs['disabled'] = True
                 self.fields['has_variants'].help_text = 'Không thể tắt chế độ phân loại khi còn phân loại. Vui lòng xóa hết phân loại trước.'
+                # If product has variants, price is optional
+                self.fields['price'].required = False
+        else:
+            # For new products, check POST data if available
+            # args[0] could be QueryDict (from request.POST) or regular dict
+            if args and len(args) > 0:
+                data = args[0]
+                # Handle both QueryDict and regular dict
+                if hasattr(data, 'get'):
+                    has_variants = data.get('has_variants', False)
+                    # QueryDict returns list, so check if it's truthy
+                    if isinstance(has_variants, list):
+                        has_variants = has_variants[0] if has_variants else False
+                    if has_variants and str(has_variants).lower() in ('true', '1', 'on'):
+                        self.fields['price'].required = False
+    
+    def clean(self):
+        """Custom validation for price when has_variants is True"""
+        cleaned_data = super().clean()
+        has_variants = cleaned_data.get('has_variants', False)
+        price = cleaned_data.get('price')
+        
+        # If has_variants is True, price can be empty (will be set to 0 or min variant price)
+        if has_variants and (price is None or price == ''):
+            # Set a default price of 0 when has variants
+            cleaned_data['price'] = 0
+        
+        # If no variants, price is required
+        if not has_variants and (price is None or price == ''):
+            raise forms.ValidationError({
+                'price': 'Price is required when product does not have variants.'
+            })
+        
+        return cleaned_data
     
     def clean_has_variants(self):
         """Prevent disabling has_variants if variants exist"""

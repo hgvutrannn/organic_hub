@@ -28,8 +28,7 @@ class RecommendationService:
             if cached:
                 product_ids = cached
                 products = Product.objects.filter(
-                    product_id__in=product_ids,
-                    is_active=True
+                    product_id__in=product_ids
                 )
                 # Preserve order
                 product_dict = {p.product_id: p for p in products}
@@ -44,16 +43,13 @@ class RecommendationService:
             
             # Get products
             products = Product.objects.filter(
-                product_id__in=product_ids,
-                is_active=True
+                product_id__in=product_ids
             )
             
             # If we don't have enough products, fill with most viewed
             if products.count() < limit:
                 remaining = limit - products.count()
-                viewed_products = Product.objects.filter(
-                    is_active=True
-                ).exclude(
+                viewed_products = Product.objects.filter().exclude(
                     product_id__in=product_ids
                 ).order_by('-view_count')[:remaining]
                 products = list(products) + list(viewed_products)
@@ -64,9 +60,9 @@ class RecommendationService:
             return list(products)
         except Exception as e:
             logger.error(f"Error in get_best_selling_products: {e}", exc_info=True)
-            # Ultimate fallback: just return active products ordered by view count
+            # Ultimate fallback: just return products ordered by view count
             try:
-                return list(Product.objects.filter(is_active=True).order_by('-view_count')[:limit])
+                return list(Product.objects.all().order_by('-view_count')[:limit])
             except Exception as e2:
                 logger.error(f"Ultimate fallback also failed: {e2}", exc_info=True)
                 return []
@@ -86,8 +82,7 @@ class RecommendationService:
             if cached:
                 product_ids = cached
                 products = Product.objects.filter(
-                    product_id__in=product_ids,
-                    is_active=True
+                    product_id__in=product_ids
                 )
                 product_dict = {p.product_id: p for p in products}
                 return [product_dict[pid] for pid in product_ids if pid in product_dict]
@@ -166,8 +161,7 @@ class RecommendationService:
             if cached:
                 product_ids = cached
                 products = Product.objects.filter(
-                    product_id__in=product_ids,
-                    is_active=True
+                    product_id__in=product_ids
                 )
                 product_dict = {p.product_id: p for p in products}
                 return [product_dict[pid] for pid in product_ids if pid in product_dict]
@@ -190,7 +184,6 @@ class RecommendationService:
             
             # Recommend products from same categories
             recommended = Product.objects.filter(
-                is_active=True,
                 category_id__in=viewed_categories
             ).exclude(
                 product_id__in=[v.product.product_id for v in viewed_products]
@@ -238,8 +231,7 @@ class RecommendationService:
             if cached:
                 product_ids = cached
                 products = Product.objects.filter(
-                    product_id__in=product_ids,
-                    is_active=True
+                    product_id__in=product_ids
                 ).exclude(product_id=product.product_id)
                 product_dict = {p.product_id: p for p in products}
                 return [product_dict[pid] for pid in product_ids if pid in product_dict]
@@ -249,15 +241,13 @@ class RecommendationService:
             # Same category products
             if product.category:
                 category_products = Product.objects.filter(
-                    category=product.category,
-                    is_active=True
+                    category=product.category
                 ).exclude(product_id=product.product_id).order_by('-view_count')[:limit]
                 similar.extend(category_products)
             
             # Same store products
             store_products = Product.objects.filter(
-                store=product.store,
-                is_active=True
+                store=product.store
             ).exclude(product_id=product.product_id).order_by('-view_count')[:limit]
             similar.extend(store_products)
             
@@ -308,8 +298,7 @@ class RecommendationService:
             if cached:
                 product_ids = cached
                 products = Product.objects.filter(
-                    product_id__in=product_ids,
-                    is_active=True
+                    product_id__in=product_ids
                 ).exclude(product_id=product.product_id)
                 product_dict = {p.product_id: p for p in products}
                 return [product_dict[pid] for pid in product_ids if pid in product_dict]
@@ -337,8 +326,7 @@ class RecommendationService:
                 return RecommendationService.get_best_selling_products(limit)
             
             products = Product.objects.filter(
-                product_id__in=product_ids,
-                is_active=True
+                product_id__in=product_ids
             )
             
             # Preserve order by count
@@ -421,8 +409,7 @@ class RecommendationService:
                 return RecommendationService.get_best_selling_products(limit)
             
             products = Product.objects.filter(
-                product_id__in=product_ids,
-                is_active=True
+                product_id__in=product_ids
             )
             
             product_dict = {p.product_id: p for p in products}
@@ -494,7 +481,7 @@ class RecommendationService:
     def _get_content_based_for_user(user, preferences, limit: int):
         """Get content-based recommendations for user"""
         try:
-            products = Product.objects.filter(is_active=True)
+            products = Product.objects.all()
             
             # Filter by preferred categories
             if preferences['categories']:

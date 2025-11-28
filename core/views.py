@@ -1281,6 +1281,13 @@ def add_product(request, store_id):
             has_variants = form.cleaned_data.get('has_variants', False)
             product.has_variants = has_variants
             
+            # Handle price: if has_variants and price is 0 or empty, set to 0
+            if has_variants:
+                # Price can be 0 when has variants (price managed by variants)
+                if not product.price or product.price == 0:
+                    product.price = 0
+            # If no variants, price should already be set from form
+            
             # If no variants, stock is required
             if not has_variants:
                 stock = request.POST.get('stock', 0)

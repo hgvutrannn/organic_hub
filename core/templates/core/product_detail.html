@@ -110,7 +110,7 @@
                                                 data-variant-stock="{{ variant.stock }}">
                                             <div class="d-flex justify-content-between align-items-center w-100">
                                                 <span>{{ variant.variant_name }}</span>
-                                                <span class="badge bg-success">{{ variant.price|floatformat:0 }} VNĐ</span>
+                                                <span class="badge bg-success">£{{ variant.price|floatformat:2 }}</span>
                                             </div>
                                             {% if variant.stock <= 0 %}
                                                 <small class="text-danger d-block mt-1">Out of Stock</small>
@@ -133,15 +133,14 @@
                     <!-- Price -->
                     <div class="mb-3">
                         <h3 class="text-success fw-bold" id="product-price">
-                            {% if product.has_variants and default_variant %}
-                                {{ default_variant.price|floatformat:0 }}
+                            £{% if product.has_variants and default_variant %}
+                                {{ default_variant.price|floatformat:2 }}
                             {% else %}
-                                {{ product.price|floatformat:0 }}
+                                {{ product.display_price|floatformat:2 }}
                             {% endif %}
-                            VNĐ
                         </h3>
                         {% if product.has_variants %}
-                            <small class="text-muted">Price from {{ product.min_price|floatformat:0 }} - {{ product.max_price|floatformat:0 }} VNĐ</small>
+                            <small class="text-muted">Price from £{{ product.min_price|floatformat:2 }} - £{{ product.max_price|floatformat:2 }}</small>
                         {% else %}
                             <small class="text-muted">Unit: {{ product.base_unit }}</small>
                         {% endif %}
@@ -375,7 +374,7 @@
                             </h5>
                             <div class="mb-3">
                                 <span class="h5 fw-bold text-success mb-0">
-                                    {{ product.min_price|floatformat:0 }} VNĐ
+                                    £{{ product.display_price|floatformat:2 }}
                                 </span>
                             </div>
                             {% if product.description %}
@@ -437,7 +436,7 @@
                             </h5>
                             <div class="mb-3">
                                 <span class="h5 fw-bold text-success mb-0">
-                                    {{ product.min_price|floatformat:0 }} VNĐ
+                                    £{{ product.display_price|floatformat:2 }}
                                 </span>
                             </div>
                             {% if product.description %}

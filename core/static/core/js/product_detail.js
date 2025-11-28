@@ -128,7 +128,7 @@ function handleVariantSelection(variantBtn) {
     // Update price
     const priceElement = document.getElementById('product-price');
     if (priceElement) {
-        priceElement.textContent = parseFloat(variantPrice).toLocaleString('vi-VN') + ' VNĐ';
+        priceElement.textContent = '£' + parseFloat(variantPrice).toFixed(2);
     }
     
     // Update main image if variant has its own image
