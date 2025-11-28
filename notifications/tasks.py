@@ -36,7 +36,7 @@ def create_order_status_notifications(order_id: int, new_status: str, triggered_
     if not recipient_ids:
         return
 
-    message_template = _('Đơn hàng #{order_id} đã chuyển sang trạng thái "{status}".')
+    message_template = _('Order #{order_id} has changed to status "{status}".')
     message = message_template.format(order_id=order.order_id, status=status_display)
 
     channel_layer = get_channel_layer()

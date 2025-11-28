@@ -47,18 +47,18 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
         user = self.scope['user']
-        username = user.full_name or user.email or 'Người dùng'
+        username = user.full_name or user.email or 'User'
         sender_id = user.user_id
 
-        # Lưu tin nhắn vào database
+        # Save message to database
         await self.save_message_to_db(message, sender_id)
 
-        # ✅ GỬI TIN NHẮN CHỈ ĐẾN USER KHÁC
-        # Lấy danh sách user trong room
+        # ✅ SEND MESSAGE ONLY TO OTHER USER
+        # Get list of users in room
         _, id1_str, id2_str = self.room_name.split('_')
         id1, id2 = int(id1_str), int(id2_str)
         
-        # Tìm user khác (không phải người gửi)
+        # Find other user (not the sender)
         other_user_id = id1 if sender_id == id2 else id2
 
         await self.channel_layer.group_send(
@@ -86,20 +86,20 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
 
     @sync_to_async
     def save_message_to_db(self, content, sender_id):
-        """Lưu tin nhắn vào database"""
+        """Save message to database"""
         try:
-            # Lấy thông tin sender và recipient
+            # Get sender and recipient information
             sender = CustomUser.objects.get(user_id=sender_id)
             
-            # Lấy danh sách user trong room để tìm recipient
+            # Get list of users in room to find recipient
             _, id1_str, id2_str = self.room_name.split('_')
             id1, id2 = int(id1_str), int(id2_str)
             
-            # Tìm recipient (user khác trong room)
+            # Find recipient (other user in room)
             recipient_id = id1 if sender_id == id2 else id2
             recipient = CustomUser.objects.get(user_id=recipient_id)
             
-            # Tạo tin nhắn mới
+            # Create new message
             Message.objects.create(
                 sender=sender,
                 recipient=recipient,
@@ -107,6 +107,6 @@ class PrivateChatConsumer(AsyncWebsocketConsumer):
                 room_name=self.room_name
             )
         except Exception as e:
-            print(f"Lỗi khi lưu tin nhắn: {e}")
+            print(f"Error saving message: {e}")
 
 

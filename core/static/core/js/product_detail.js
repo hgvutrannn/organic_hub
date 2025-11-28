@@ -5,7 +5,7 @@
 
 // Send product message to chat
 function sendProductMessage(productName, storeOwnerId) {
-    // Lưu thông tin sản phẩm vào localStorage để sử dụng trong chat
+    // Save product information to localStorage for use in chat
     console.log('Saving to localStorage:', productName, storeOwnerId);
     localStorage.setItem('productName', productName);
     localStorage.setItem('storeOwnerId', storeOwnerId);
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show error toast
             toastIcon.className = 'fas fa-exclamation-triangle me-2 text-danger';
             toastHeader.className = 'toast-header bg-danger text-white';
-            toastMessage.textContent = 'Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng.';
+            toastMessage.textContent = 'An error occurred while adding product to cart.';
             
             const toast = new bootstrap.Toast(cartToast);
             toast.show();
@@ -92,19 +92,19 @@ function changeMainImage(imageUrl, imageNumber, variantId = null) {
     if (event && event.target) {
         event.target.classList.add('active');
     } else {
-        // Fallback: tìm thumbnail theo imageNumber
+        // Fallback: find thumbnail by imageNumber
         const thumbnail = document.querySelector(`.thumbnail-img[data-image-index="${imageNumber}"]`);
         if (thumbnail) {
             thumbnail.classList.add('active');
         }
     }
     
-    // Nếu click vào hình variant, tự động chọn variant đó
+    // If clicking on variant image, automatically select that variant
     if (variantId) {
         const variantBtn = document.querySelector(`.variant-btn[data-variant-id="${variantId}"]`);
         if (variantBtn) {
             handleVariantSelection(variantBtn);
-            // Scroll đến variant selector nếu cần
+            // Scroll to variant selector if needed
             setTimeout(() => {
                 variantBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 100);
@@ -136,7 +136,7 @@ function handleVariantSelection(variantBtn) {
         const mainImage = document.getElementById('main-image');
         if (mainImage) {
             mainImage.src = variantImage;
-            // Tìm và highlight thumbnail tương ứng
+            // Find and highlight corresponding thumbnail
             const variantThumbnail = document.querySelector(`.thumbnail-img[data-variant-id="${variantId}"]`);
             if (variantThumbnail) {
                 // Update image counter
@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
     variantButtons.forEach(btn => {
         btn.addEventListener('click', function() {
             handleVariantSelection(this);
-            // Khi chọn variant, cập nhật hình ảnh chính nếu variant có hình riêng
+            // When selecting variant, update main image if variant has its own image
             const variantImage = this.getAttribute('data-variant-image');
             const variantId = this.getAttribute('data-variant-id');
             if (variantImage && variantId) {

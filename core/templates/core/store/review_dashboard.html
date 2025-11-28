@@ -1,9 +1,9 @@
 {% extends 'core/store/store_base.html' %}
 
-{% block store_title %}Quản lý đánh giá{% endblock %}
+{% block store_title %}Review Management{% endblock %}
 
-{% block store_page_title %}Dashboard Đánh Giá{% endblock %}
-{% block store_page_subtitle %}Thống kê và quản lý đánh giá sản phẩm{% endblock %}
+{% block store_page_title %}Review Dashboard{% endblock %}
+{% block store_page_subtitle %}Statistics and management of product reviews{% endblock %}
 
 {% block store_content %}
 
@@ -104,12 +104,12 @@
                                     {% endfor %}
                                 </div>
                                 <p class="mb-1 mt-2">{{ review.content }}</p>
-                                <small class="text-muted">{{ review.product.name }} - Đơn hàng #{{ review.order.order_id }}</small>
+                                <small class="text-muted">{{ review.product.name }} - Order #{{ review.order.order_id }}</small>
                             </div>
                             <div>
                                 <small class="text-muted">{{ review.created_at|date:"d/m/Y H:i" }}</small>
                                 <a href="{% url 'store_review_list' store.store_id %}?status=needs_reply&rating={{ review.rating }}" class="btn btn-sm btn-outline-danger mt-2">
-                                    Phản hồi
+                                    Reply
                                 </a>
                             </div>
                         </div>
@@ -126,7 +126,7 @@
         <div class="col-12">
             <div class="d-grid">
                 <a href="{% url 'store_review_list' store.store_id %}" class="btn btn-primary btn-lg">
-                    <i class="fas fa-list"></i> Xem tất cả đánh giá
+                    <i class="fas fa-list"></i> View All Reviews
                 </a>
             </div>
         </div>

@@ -1,9 +1,9 @@
 {% extends 'core/store/store_base.html' %}
 
-{% block store_title %}Quản lý đơn hàng{% endblock %}
+{% block store_title %}Order Management{% endblock %}
 
-{% block store_page_title %}Quản Lý Đơn Hàng{% endblock %}
-{% block store_page_subtitle %}Xem và quản lý tất cả đơn hàng{% endblock %}
+{% block store_page_title %}Order Management{% endblock %}
+{% block store_page_subtitle %}View and manage all orders{% endblock %}
 
 {% block store_content %}
 
@@ -97,12 +97,12 @@
                             {% if orders.has_previous %}
                                 <li class="page-item">
                                     <a class="page-link rounded-pill me-2" href="?page=1">
-                                        <i class="fas fa-angle-double-left me-1"></i>Đầu
+                                        <i class="fas fa-angle-double-left me-1"></i>First
                                     </a>
                                 </li>
                                 <li class="page-item">
                                     <a class="page-link rounded-pill me-2" href="?page={{ orders.previous_page_number }}">
-                                        <i class="fas fa-angle-left me-1"></i>Trước
+                                        <i class="fas fa-angle-left me-1"></i>Previous
                                     </a>
                                 </li>
                             {% endif %}
@@ -116,12 +116,12 @@
                             {% if orders.has_next %}
                                 <li class="page-item">
                                     <a class="page-link rounded-pill me-2" href="?page={{ orders.next_page_number }}">
-                                        Tiếp<i class="fas fa-angle-right ms-1"></i>
+                                        Next<i class="fas fa-angle-right ms-1"></i>
                                     </a>
                                 </li>
                                 <li class="page-item">
                                     <a class="page-link rounded-pill" href="?page={{ orders.paginator.num_pages }}">
-                                        Cuối<i class="fas fa-angle-double-right ms-1"></i>
+                                        Last<i class="fas fa-angle-double-right ms-1"></i>
                                     </a>
                                 </li>
                             {% endif %}

@@ -7,7 +7,7 @@ from .models import CustomUser, Product, Order, Review, Address, ProductImage, S
 class CustomUserRegistrationForm(UserCreationForm):
     full_name = forms.CharField(
         max_length=100,
-        widget=forms.TextInput(attrs={'placeholder': 'Họ và tên'})
+        widget=forms.TextInput(attrs={'placeholder': 'Full Name'})
     )
     email = forms.EmailField(
         required=True,
@@ -20,8 +20,8 @@ class CustomUserRegistrationForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['password1'].widget.attrs.update({'placeholder': 'Mật khẩu'})
-        self.fields['password2'].widget.attrs.update({'placeholder': 'Xác nhận mật khẩu'})
+        self.fields['password1'].widget.attrs.update({'placeholder': 'Password'})
+        self.fields['password2'].widget.attrs.update({'placeholder': 'Confirm Password'})
 
 
 class LoginForm(forms.Form):
@@ -29,7 +29,7 @@ class LoginForm(forms.Form):
         widget=forms.EmailInput(attrs={'placeholder': 'Email'})
     )
     password = forms.CharField(
-        widget=forms.PasswordInput(attrs={'placeholder': 'Mật khẩu'})
+        widget=forms.PasswordInput(attrs={'placeholder': 'Password'})
     )
 
 
@@ -38,7 +38,7 @@ class ProfileUpdateForm(forms.ModelForm):
         model = CustomUser
         fields = ['full_name', 'email', 'avatar']
         widgets = {
-            'full_name': forms.TextInput(attrs={'placeholder': 'Họ và tên'}),
+            'full_name': forms.TextInput(attrs={'placeholder': 'Full Name'}),
             'email': forms.EmailInput(attrs={'placeholder': 'Email'}),
             'avatar': forms.FileInput(attrs={'accept': 'image/*'}),
         }
@@ -48,20 +48,20 @@ class ProductForm(forms.ModelForm):
     has_variants = forms.BooleanField(
         required=False,
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'has_variants'}),
-        label='Có phân loại sản phẩm',
-        help_text='Bật tính năng này nếu sản phẩm có nhiều phân loại với giá và hình ảnh khác nhau'
+        label='Product has variants',
+        help_text='Enable this if the product has multiple variants with different prices and images'
     )
     
     class Meta:
         model = Product
         fields = ['name', 'description', 'price', 'base_unit', 'stock', 'SKU', 'category', 'has_variants']
         widgets = {
-            'name': forms.TextInput(attrs={'placeholder': 'Tên sản phẩm', 'class': 'form-control form-control-lg rounded-3'}),
-            'description': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Mô tả sản phẩm', 'class': 'form-control rounded-3'}),
-            'price': forms.NumberInput(attrs={'placeholder': 'Giá sản phẩm', 'step': '0.01', 'class': 'form-control form-control-lg rounded-3'}),
-            'base_unit': forms.TextInput(attrs={'placeholder': 'Đơn vị (kg, gói, chiếc...)', 'class': 'form-control form-control-lg rounded-3'}),
-            'stock': forms.NumberInput(attrs={'placeholder': 'Số lượng tồn kho', 'min': '0', 'class': 'form-control form-control-lg rounded-3'}),
-            'SKU': forms.TextInput(attrs={'placeholder': 'Mã SKU (tự động nếu để trống)', 'class': 'form-control form-control-lg rounded-3'}),
+            'name': forms.TextInput(attrs={'placeholder': 'Product Name', 'class': 'form-control form-control-lg rounded-3'}),
+            'description': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Product Description', 'class': 'form-control rounded-3'}),
+            'price': forms.NumberInput(attrs={'placeholder': 'Product Price', 'step': '0.01', 'class': 'form-control form-control-lg rounded-3'}),
+            'base_unit': forms.TextInput(attrs={'placeholder': 'Unit (kg, box, piece...)', 'class': 'form-control form-control-lg rounded-3'}),
+            'stock': forms.NumberInput(attrs={'placeholder': 'Stock Quantity', 'min': '0', 'class': 'form-control form-control-lg rounded-3'}),
+            'SKU': forms.TextInput(attrs={'placeholder': 'SKU Code (auto-generated if empty)', 'class': 'form-control form-control-lg rounded-3'}),
             'category': forms.Select(attrs={'class': 'form-select form-select-lg rounded-3'}),
         }
     
@@ -76,7 +76,7 @@ class ProductForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             if self.instance.variants.exists():
                 self.fields['has_variants'].widget.attrs['disabled'] = True
-                self.fields['has_variants'].help_text = 'Không thể tắt chế độ phân loại khi còn phân loại. Vui lòng xóa hết phân loại trước.'
+                self.fields['has_variants'].help_text = 'Cannot disable variant mode when variants exist. Please delete all variants first.'
                 # If product has variants, price is optional
                 self.fields['price'].required = False
         else:
@@ -117,7 +117,7 @@ class ProductForm(forms.ModelForm):
         has_variants = self.cleaned_data.get('has_variants')
         if self.instance and self.instance.pk:
             if not has_variants and self.instance.variants.exists():
-                raise forms.ValidationError('Không thể tắt chế độ phân loại khi còn phân loại. Vui lòng xóa hết phân loại trước.')
+                raise forms.ValidationError('Cannot disable variant mode when variants exist. Please delete all variants first.')
         return has_variants
 
 
@@ -127,9 +127,9 @@ class ProductImageForm(forms.ModelForm):
         fields = ['image', 'alt_text', 'order']
         widgets = {
             'image': forms.FileInput(attrs={'accept': 'image/*', 'class': 'form-control form-control-lg rounded-3'}),
-            'alt_text': forms.TextInput(attrs={'placeholder': 'Mô tả hình ảnh', 'class': 'form-control rounded-3'}),
+            'alt_text': forms.TextInput(attrs={'placeholder': 'Image Description', 'class': 'form-control rounded-3'}),
             'order': forms.NumberInput(attrs={
-                'placeholder': 'Thứ tự hiển thị (0 = ảnh chính)', 
+                'placeholder': 'Display Order (0 = primary image)', 
                 'class': 'form-control rounded-3',
                 'min': '0'
             }),
@@ -139,7 +139,7 @@ class ProductImageForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['alt_text'].required = False
         self.fields['order'].required = False
-        self.fields['order'].help_text = 'Đặt order=0 để làm ảnh chính'
+        self.fields['order'].help_text = 'Set order=0 to make it the primary image'
 
 
 class AddressForm(forms.ModelForm):
@@ -147,11 +147,11 @@ class AddressForm(forms.ModelForm):
         model = Address
         fields = ['contact_person', 'contact_phone', 'street', 'ward', 'province', 'is_default']
         widgets = {
-            'contact_person': forms.TextInput(attrs={'placeholder': 'Tên người nhận'}),
-            'contact_phone': forms.TextInput(attrs={'placeholder': 'Số điện thoại người nhận'}),
-            'street': forms.TextInput(attrs={'placeholder': 'Số nhà, tên đường'}),
-            'ward': forms.TextInput(attrs={'placeholder': 'Phường/Xã'}),
-            'province': forms.TextInput(attrs={'placeholder': 'Tỉnh/Thành phố'}),
+            'contact_person': forms.TextInput(attrs={'placeholder': 'Recipient Name'}),
+            'contact_phone': forms.TextInput(attrs={'placeholder': 'Recipient Phone'}),
+            'street': forms.TextInput(attrs={'placeholder': 'Street Address'}),
+            'ward': forms.TextInput(attrs={'placeholder': 'Ward/Commune'}),
+            'province': forms.TextInput(attrs={'placeholder': 'Province/City'}),
         }
 
 
@@ -161,7 +161,7 @@ class ReviewForm(forms.ModelForm):
         fields = ['rating', 'content']
         widgets = {
             'rating': forms.Select(attrs={'class': 'form-select'}),
-            'content': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Nội dung đánh giá', 'class': 'form-control'}),
+            'content': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Review Content', 'class': 'form-control'}),
         }
     
     # Note: Multiple file uploads (images/videos) will be handled in views using request.FILES.getlist()
@@ -173,25 +173,25 @@ class SearchForm(forms.Form):
     query = forms.CharField(
         max_length=255,
         required=False,
-        widget=forms.TextInput(attrs={'placeholder': 'Tìm kiếm sản phẩm...'})
+        widget=forms.TextInput(attrs={'placeholder': 'Search products...'})
     )
     category = forms.ModelChoiceField(
         queryset=None,
         required=False,
-        empty_label="Tất cả danh mục"
+        empty_label="All Categories"
     )
     certificate = forms.ModelChoiceField(
         queryset=None,
         required=False,
-        empty_label="Tất cả chứng nhận"
+        empty_label="All Certifications"
     )
     min_price = forms.DecimalField(
         required=False,
-        widget=forms.NumberInput(attrs={'placeholder': 'Giá tối thiểu', 'step': '0.01'})
+        widget=forms.NumberInput(attrs={'placeholder': 'Minimum Price', 'step': '0.01'})
     )
     max_price = forms.DecimalField(
         required=False,
-        widget=forms.NumberInput(attrs={'placeholder': 'Giá tối đa', 'step': '0.01'})
+        widget=forms.NumberInput(attrs={'placeholder': 'Maximum Price', 'step': '0.01'})
     )
 
     def __init__(self, *args, **kwargs):
@@ -218,26 +218,26 @@ class StoreCertificationForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['certification_organization'].required = False
         self.fields['certification_organization'].queryset = CertificationOrganization.objects.filter(is_active=True).order_by('name')
-        self.fields['certification_organization'].empty_label = 'Chọn tổ chức cấp phép (tùy chọn)'
+        self.fields['certification_organization'].empty_label = 'Select Certification Organization (optional)'
 
 
 class AdminStoreReviewForm(forms.Form):
     """Form for admin to review and approve/reject stores"""
     action = forms.ChoiceField(
         choices=[
-            ('approve', 'Phê duyệt'),
-            ('reject', 'Từ chối'),
+            ('approve', 'Approve'),
+            ('reject', 'Reject'),
         ],
         widget=forms.RadioSelect(attrs={'class': 'form-check-input'})
     )
     admin_notes = forms.CharField(
         widget=forms.Textarea(attrs={
             'rows': 4,
-            'placeholder': 'Ghi chú của admin (bắt buộc khi từ chối)',
+            'placeholder': 'Admin Notes (required when rejecting)',
             'class': 'form-control rounded-3'
         }),
         required=False,
-        help_text="Ghi chú này sẽ được hiển thị cho chủ cửa hàng."
+        help_text="This note will be displayed to the store owner."
     )
     
     def clean(self):
@@ -246,7 +246,7 @@ class AdminStoreReviewForm(forms.Form):
         admin_notes = cleaned_data.get('admin_notes')
         
         if action == 'reject' and not admin_notes:
-            raise forms.ValidationError('Vui lòng nhập lý do từ chối.')
+            raise forms.ValidationError('Please enter the reason for rejection.')
         
         return cleaned_data
 
@@ -256,24 +256,24 @@ class PasswordChangeForm(forms.Form):
     """Form for changing password from profile page"""
     old_password = forms.CharField(
         widget=forms.PasswordInput(attrs={
-            'placeholder': 'Nhập mật khẩu hiện tại',
+            'placeholder': 'Enter current password',
             'class': 'form-control form-control-lg'
         }),
-        label='Mật khẩu hiện tại'
+        label='Current Password'
     )
     new_password1 = forms.CharField(
         widget=forms.PasswordInput(attrs={
-            'placeholder': 'Nhập mật khẩu mới',
+            'placeholder': 'Enter new password',
             'class': 'form-control form-control-lg'
         }),
-        label='Mật khẩu mới'
+        label='New Password'
     )
     new_password2 = forms.CharField(
         widget=forms.PasswordInput(attrs={
-            'placeholder': 'Xác nhận mật khẩu mới',
+            'placeholder': 'Confirm new password',
             'class': 'form-control form-control-lg'
         }),
-        label='Xác nhận mật khẩu mới'
+        label='Confirm New Password'
     )
     
     def __init__(self, user=None, *args, **kwargs):
@@ -283,7 +283,7 @@ class PasswordChangeForm(forms.Form):
     def clean_old_password(self):
         old_password = self.cleaned_data.get('old_password')
         if old_password and not self.user.check_password(old_password):
-            raise forms.ValidationError('Mật khẩu hiện tại không đúng.')
+            raise forms.ValidationError('Current password is incorrect.')
         return old_password
     
     def clean(self):
@@ -293,9 +293,9 @@ class PasswordChangeForm(forms.Form):
         
         if new_password1 and new_password2:
             if new_password1 != new_password2:
-                raise forms.ValidationError('Mật khẩu mới không khớp.')
+                raise forms.ValidationError('New passwords do not match.')
             if len(new_password1) < 8:
-                raise forms.ValidationError('Mật khẩu mới phải có ít nhất 8 ký tự.')
+                raise forms.ValidationError('New password must be at least 8 characters long.')
         
         return cleaned_data
 
@@ -304,7 +304,7 @@ class ForgotPasswordForm(forms.Form):
     """Form for requesting password reset"""
     email = forms.EmailField(
         widget=forms.EmailInput(attrs={
-            'placeholder': 'Nhập email của bạn',
+            'placeholder': 'Enter your email',
             'class': 'form-control form-control-lg'
         }),
         label='Email'
@@ -317,9 +317,9 @@ class ForgotPasswordForm(forms.Form):
             try:
                 user = CustomUser.objects.get(email=email)
                 if not user.email_verified:
-                    raise forms.ValidationError('Email chưa được xác thực. Vui lòng xác thực email trước.')
+                    raise forms.ValidationError('Email is not verified. Please verify your email first.')
             except CustomUser.DoesNotExist:
-                raise forms.ValidationError('Email không tồn tại trong hệ thống.')
+                raise forms.ValidationError('Email does not exist in the system.')
         return email
 
 
@@ -327,17 +327,17 @@ class PasswordResetConfirmForm(forms.Form):
     """Form for setting new password after OTP verification"""
     new_password1 = forms.CharField(
         widget=forms.PasswordInput(attrs={
-            'placeholder': 'Nhập mật khẩu mới',
+            'placeholder': 'Enter new password',
             'class': 'form-control form-control-lg'
         }),
-        label='Mật khẩu mới'
+        label='New Password'
     )
     new_password2 = forms.CharField(
         widget=forms.PasswordInput(attrs={
-            'placeholder': 'Xác nhận mật khẩu mới',
+            'placeholder': 'Confirm new password',
             'class': 'form-control form-control-lg'
         }),
-        label='Xác nhận mật khẩu mới'
+        label='Confirm New Password'
     )
     
     def clean(self):
@@ -347,9 +347,9 @@ class PasswordResetConfirmForm(forms.Form):
         
         if new_password1 and new_password2:
             if new_password1 != new_password2:
-                raise forms.ValidationError('Mật khẩu mới không khớp.')
+                raise forms.ValidationError('New passwords do not match.')
             if len(new_password1) < 8:
-                raise forms.ValidationError('Mật khẩu mới phải có ít nhất 8 ký tự.')
+                raise forms.ValidationError('New password must be at least 8 characters long.')
         
         return cleaned_data
 
@@ -360,19 +360,19 @@ class OTPVerificationForm(forms.Form):
         max_length=6,
         min_length=6,
         widget=forms.TextInput(attrs={
-            'placeholder': 'Nhập mã OTP 6 số',
+            'placeholder': 'Enter 6-digit OTP code',
             'class': 'form-control form-control-lg text-center',
             'maxlength': '6',
             'pattern': '[0-9]{6}'
         }),
-        label='Mã OTP',
-        help_text='Nhập mã 6 số đã được gửi đến email của bạn'
+        label='OTP Code',
+        help_text='Enter the 6-digit code sent to your email'
     )
     
     def clean_otp_code(self):
         otp_code = self.cleaned_data.get('otp_code')
         if otp_code and not otp_code.isdigit():
-            raise forms.ValidationError('Mã OTP chỉ chứa số.')
+            raise forms.ValidationError('OTP code must contain only numbers.')
         return otp_code
 
 
@@ -381,19 +381,19 @@ class ReviewReplyForm(forms.Form):
     seller_reply = forms.CharField(
         widget=forms.Textarea(attrs={
             'rows': 3,
-            'placeholder': 'Viết phản hồi của cửa hàng...',
+            'placeholder': 'Write store reply...',
             'class': 'form-control'
         }),
-        label='Phản hồi'
+        label='Reply'
     )
 
 
 # Store Review Filter Form
 class StoreReviewFilterForm(forms.Form):
     STATUS_CHOICES = [
-        ('all', 'Tất cả'),
-        ('needs_reply', 'Cần phản hồi'),
-        ('replied', 'Đã trả lời'),
+        ('all', 'All'),
+        ('needs_reply', 'Needs Reply'),
+        ('replied', 'Replied'),
     ]
     
     status = forms.ChoiceField(
@@ -405,11 +405,11 @@ class StoreReviewFilterForm(forms.Form):
     
     rating = forms.MultipleChoiceField(
         choices=[
-            (1, '1 sao'),
-            (2, '2 sao'),
-            (3, '3 sao'),
-            (4, '4 sao'),
-            (5, '5 sao'),
+            (1, '1 star'),
+            (2, '2 stars'),
+            (3, '3 stars'),
+            (4, '4 stars'),
+            (5, '5 stars'),
         ],
         required=False,
         widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'})
@@ -418,7 +418,7 @@ class StoreReviewFilterForm(forms.Form):
     product_name = forms.CharField(
         required=False,
         widget=forms.TextInput(attrs={
-            'placeholder': 'Tên sản phẩm',
+            'placeholder': 'Product Name',
             'class': 'form-control'
         })
     )
@@ -426,7 +426,7 @@ class StoreReviewFilterForm(forms.Form):
     order_id = forms.IntegerField(
         required=False,
         widget=forms.NumberInput(attrs={
-            'placeholder': 'Mã đơn hàng',
+            'placeholder': 'Order ID',
             'class': 'form-control'
         })
     )
@@ -434,7 +434,7 @@ class StoreReviewFilterForm(forms.Form):
     buyer_username = forms.CharField(
         required=False,
         widget=forms.TextInput(attrs={
-            'placeholder': 'Tên đăng nhập người mua',
+            'placeholder': 'Buyer Username',
             'class': 'form-control'
         })
     )
@@ -447,16 +447,16 @@ class CertificationOrganizationForm(forms.ModelForm):
         fields = ['name', 'abbreviation', 'description', 'website', 'is_active']
         widgets = {
             'name': forms.TextInput(attrs={
-                'placeholder': 'Tên tổ chức',
+                'placeholder': 'Organization Name',
                 'class': 'form-control form-control-lg rounded-3'
             }),
             'abbreviation': forms.TextInput(attrs={
-                'placeholder': 'Viết tắt',
+                'placeholder': 'Abbreviation',
                 'class': 'form-control form-control-lg rounded-3'
             }),
             'description': forms.Textarea(attrs={
                 'rows': 4,
-                'placeholder': 'Mô tả về tổ chức',
+                'placeholder': 'Organization Description',
                 'class': 'form-control rounded-3'
             }),
             'website': forms.URLInput(attrs={
@@ -479,11 +479,11 @@ class CategoryForm(forms.ModelForm):
         fields = ['name', 'slug']
         widgets = {
             'name': forms.TextInput(attrs={
-                'placeholder': 'Tên danh mục',
+                'placeholder': 'Category Name',
                 'class': 'form-control form-control-lg rounded-3'
             }),
             'slug': forms.TextInput(attrs={
-                'placeholder': 'Slug (tự động tạo từ tên)',
+                'placeholder': 'Slug (auto-generated from name)',
                 'class': 'form-control form-control-lg rounded-3'
             }),
         }
@@ -491,7 +491,7 @@ class CategoryForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['slug'].required = False
-        self.fields['slug'].help_text = 'Slug sẽ được tự động tạo từ tên danh mục nếu để trống'
+        self.fields['slug'].help_text = 'Slug will be automatically generated from category name if left empty'
     
     def clean_slug(self):
         slug = self.cleaned_data.get('slug')
@@ -506,6 +506,6 @@ class CategoryForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             existing = existing.exclude(category_id=self.instance.category_id)
         if existing.exists():
-            raise forms.ValidationError('Slug này đã tồn tại. Vui lòng chọn slug khác.')
+            raise forms.ValidationError('This slug already exists. Please choose a different slug.')
         
         return slug

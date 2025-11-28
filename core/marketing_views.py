@@ -97,10 +97,10 @@ def store_flash_sale_create(request, store_id):
                     except (Product.DoesNotExist, ValueError):
                         continue
                 
-                messages.success(request, 'Tạo Flash Sale thành công!')
+                messages.success(request, 'Flash Sale created successfully!')
                 return redirect('store_flash_sale_list', store_id=store.store_id)
             except Exception as e:
-                messages.error(request, f'Có lỗi xảy ra: {str(e)}')
+                messages.error(request, f'An error occurred: {str(e)}')
     
     # Get store products
     products = Product.objects.filter(store=store).order_by('-created_at')
@@ -174,7 +174,7 @@ def store_flash_sale_edit(request, store_id, flash_sale_id):
             except (Product.DoesNotExist, ValueError):
                 continue
         
-        messages.success(request, 'Cập nhật Flash Sale thành công!')
+        messages.success(request, 'Flash Sale updated successfully!')
         return redirect('store_flash_sale_list', store_id=store.store_id)
     
     # Get store products and selected products
@@ -200,7 +200,7 @@ def store_flash_sale_delete(request, store_id, flash_sale_id):
     
     if request.method == 'POST':
         flash_sale.delete()
-        messages.success(request, 'Xóa Flash Sale thành công!')
+        messages.success(request, 'Flash Sale deleted successfully!')
         return redirect('store_flash_sale_list', store_id=store.store_id)
     
     return redirect('store_flash_sale_list', store_id=store.store_id)
@@ -266,7 +266,7 @@ def store_discount_code_create(request, store_id):
         if code and name and discount_type and discount_value and start_date and end_date:
             # Check if code already exists
             if DiscountCode.objects.filter(code=code).exists():
-                messages.error(request, 'Mã giảm giá đã tồn tại!')
+                messages.error(request, 'Discount code already exists!')
             else:
                 try:
                     from datetime import datetime
@@ -300,10 +300,10 @@ def store_discount_code_create(request, store_id):
                         status=status
                     )
                     
-                    messages.success(request, 'Tạo mã giảm giá thành công!')
+                    messages.success(request, 'Discount code created successfully!')
                     return redirect('store_discount_code_list', store_id=store.store_id)
                 except Exception as e:
-                    messages.error(request, f'Có lỗi xảy ra: {str(e)}')
+                    messages.error(request, f'An error occurred: {str(e)}')
     
     context = {
         'store': store,
@@ -350,7 +350,7 @@ def store_discount_code_edit(request, store_id, discount_code_id):
         
         discount_code.save()
         
-        messages.success(request, 'Cập nhật mã giảm giá thành công!')
+        messages.success(request, 'Discount code updated successfully!')
         return redirect('store_discount_code_list', store_id=store.store_id)
     
     context = {
@@ -368,7 +368,7 @@ def store_discount_code_delete(request, store_id, discount_code_id):
     
     if request.method == 'POST':
         discount_code.delete()
-        messages.success(request, 'Xóa mã giảm giá thành công!')
+        messages.success(request, 'Discount code deleted successfully!')
         return redirect('store_discount_code_list', store_id=store.store_id)
     
     return redirect('store_discount_code_list', store_id=store.store_id)

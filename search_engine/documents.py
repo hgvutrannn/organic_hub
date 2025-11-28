@@ -82,19 +82,19 @@ class ProductDocument(Document):
     def prepare_certification_organization_ids(self, instance):
         """
         Prepare certification_organization_ids field
-        Lấy tất cả certification_organization_id từ Store của Product
+        Get all certification_organization_id from Product's Store
         """
         certification_ids = []
         store = instance.store
         
-        # Lấy tất cả StoreVerificationRequest của Store
+        # Get all StoreVerificationRequest of Store
         verification_requests = store.verification_requests.all()
         
         for request in verification_requests:
-            # Lấy tất cả StoreCertification của request
+            # Get all StoreCertification of request
             certifications = request.certifications.all()
             for cert in certifications:
-                # Chỉ lấy certification_organization_id nếu có và chưa tồn tại trong list
+                # Only get certification_organization_id if exists and not already in list
                 if cert.certification_organization and cert.certification_organization.organization_id not in certification_ids:
                     certification_ids.append(cert.certification_organization.organization_id)
         

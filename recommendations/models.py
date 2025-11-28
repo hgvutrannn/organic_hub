@@ -13,7 +13,7 @@ class UserProductView(models.Model):
         null=True,
         blank=True,
         related_name='product_views',
-        verbose_name='Người dùng'
+        verbose_name='User'
     )
     session_key = models.CharField(
         max_length=40,
@@ -26,14 +26,14 @@ class UserProductView(models.Model):
         'core.Product',
         on_delete=models.CASCADE,
         related_name='views',
-        verbose_name='Sản phẩm'
+        verbose_name='Product'
     )
-    viewed_at = models.DateTimeField(default=timezone.now, db_index=True, verbose_name='Thời gian xem')
-    view_count = models.PositiveIntegerField(default=1, verbose_name='Số lần xem')
+    viewed_at = models.DateTimeField(default=timezone.now, db_index=True, verbose_name='Viewed At')
+    view_count = models.PositiveIntegerField(default=1, verbose_name='View Count')
 
     class Meta:
-        verbose_name = 'Lượt xem sản phẩm'
-        verbose_name_plural = 'Lượt xem sản phẩm'
+        verbose_name = 'Product View'
+        verbose_name_plural = 'Product Views'
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'product'],

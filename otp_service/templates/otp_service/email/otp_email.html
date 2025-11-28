@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mã xác thực OTP - Organic Hub</title>
+    <title>OTP Verification Code - Organic Hub</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -96,50 +96,50 @@
     <div class="container">
         <div class="header">
             <h1>🌱 Organic Hub</h1>
-            <p style="margin: 10px 0 0 0; font-size: 16px;">Mã xác thực OTP</p>
+            <p style="margin: 10px 0 0 0; font-size: 16px;">OTP Verification Code</p>
         </div>
         
         <div class="content">
-            <h2>Xin chào {{ user.full_name }}!</h2>
+            <h2>Hello {{ user.full_name }}!</h2>
             
-            <p>Chúng tôi đã nhận được yêu cầu xác thực email cho tài khoản của bạn tại Organic Hub.</p>
+            <p>We have received a request to verify the email for your account at Organic Hub.</p>
             
             <div class="otp-code">
-                <p style="margin: 0 0 10px 0; font-size: 16px; color: #666;">Mã xác thực của bạn:</p>
+                <p style="margin: 0 0 10px 0; font-size: 16px; color: #666;">Your verification code:</p>
                 <div class="code">{{ otp_code }}</div>
             </div>
             
             <div class="expiry-info">
-                <strong>⏰ Thời gian hiệu lực:</strong> Mã OTP này sẽ hết hạn sau {{ expiry_minutes }} phút.
+                <strong>⏰ Validity Period:</strong> This OTP code will expire in {{ expiry_minutes }} minutes.
             </div>
             
             <div class="warning">
                 <span class="warning-icon">⚠️</span>
-                <strong>Lưu ý quan trọng:</strong>
+                <strong>Important Notes:</strong>
                 <ul style="margin: 10px 0 0 20px;">
-                    <li>Mã OTP chỉ có hiệu lực trong {{ expiry_minutes }} phút</li>
-                    <li>Mã chỉ có thể sử dụng một lần duy nhất</li>
-                    <li>Không chia sẻ mã này với bất kỳ ai</li>
+                    <li>OTP code is valid for {{ expiry_minutes }} minutes only</li>
+                    <li>Code can only be used once</li>
+                    <li>Do not share this code with anyone</li>
                 </ul>
             </div>
             
             <div class="security-note">
-                <strong>🔒 Bảo mật:</strong> Nếu bạn không yêu cầu mã xác thực này, vui lòng bỏ qua email này. Tài khoản của bạn vẫn an toàn.
+                <strong>🔒 Security:</strong> If you did not request this verification code, please ignore this email. Your account remains secure.
             </div>
             
-            <p>Nếu bạn gặp khó khăn trong việc xác thực, vui lòng liên hệ với chúng tôi qua email hỗ trợ.</p>
+            <p>If you have difficulty verifying, please contact us via support email.</p>
             
-            <p>Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của Organic Hub!</p>
+            <p>Thank you for trusting and using Organic Hub services!</p>
             
             <p style="margin-top: 30px;">
-                <strong>Đội ngũ Organic Hub</strong><br>
-                <em>Kết nối nông sản sạch với người tiêu dùng</em>
+                <strong>The Organic Hub Team</strong><br>
+                <em>Connecting organic produce with consumers</em>
             </p>
         </div>
         
         <div class="footer">
-            <p>© 2024 Organic Hub. Tất cả quyền được bảo lưu.</p>
-            <p>Email này được gửi tự động, vui lòng không trả lời.</p>
+            <p>© 2024 Organic Hub. All rights reserved.</p>
+            <p>This is an automated email, please do not reply.</p>
         </div>
     </div>
 </body>

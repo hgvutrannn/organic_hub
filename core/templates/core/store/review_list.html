@@ -202,15 +202,15 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('Đã phản hồi thành công!');
+                    alert('Reply sent successfully!');
                     location.reload();
                 } else {
-                    alert(data.message || 'Có lỗi xảy ra.');
+                    alert(data.message || 'An error occurred.');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Có lỗi xảy ra khi gửi phản hồi.');
+                alert('An error occurred while sending reply.');
             });
         });
     });

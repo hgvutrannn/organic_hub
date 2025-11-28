@@ -26,15 +26,15 @@ def chat_list(request):
 
 @login_required
 def chat_rooms_api(request):
-    """API endpoint để lấy danh sách chat rooms cho floating widget"""
+    """API endpoint to get chat rooms list for floating widget"""
     user = request.user
     
-    # Lấy tất cả tin nhắn liên quan đến user
+    # Get all messages related to user
     messages = Message.objects.filter(
         models.Q(sender=user) | models.Q(recipient=user)
     ).order_by('-created_at')
     
-    # Đếm số tin nhắn chưa đọc
+    # Count unread messages
     unread_counts = {}
     unread_messages = Message.objects.filter(
         recipient=user,
@@ -46,13 +46,13 @@ def chat_rooms_api(request):
             unread_counts[room_name] = 0
         unread_counts[room_name] += 1
     
-    # Nhóm tin nhắn theo room_name
+    # Group messages by room_name
     chat_rooms = {}
     
     for message in messages:
         room_name = message.room_name
         if room_name not in chat_rooms:
-            # Xác định người chat với user
+            # Identify the user chatting with
             if message.sender == user:
                 other_user = message.recipient
             else:
@@ -77,7 +77,7 @@ def chat_rooms_api(request):
             
             chat_rooms[room_name] = room_data
     
-    # Sắp xếp theo thời gian
+    # Sort by time
     all_rooms = sorted(
         chat_rooms.values(),
         key=lambda x: x['last_message']['created_at'] if x['last_message']['created_at'] else '',
@@ -91,17 +91,17 @@ def chat_rooms_api(request):
 
 @login_required
 def chat_messages_api(request, user_id):
-    """API endpoint để lấy tin nhắn của một cuộc chat"""
+    """API endpoint to get messages of a chat"""
     other_user = get_object_or_404(CustomUser, user_id=user_id)
     
     if request.user.user_id == user_id:
         return JsonResponse({'error': 'Cannot chat with yourself'}, status=400)
     
-    # Xây dựng room name
+    # Build room name
     user_ids = sorted([request.user.user_id, other_user.user_id])
     room_name = f"chat_{user_ids[0]}_{user_ids[1]}"
     
-    # Lấy lịch sử chat
+    # Get chat history
     messages = Message.objects.filter(
         room_name=room_name
     ).order_by('created_at').select_related('sender', 'recipient')

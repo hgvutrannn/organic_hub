@@ -39,7 +39,7 @@
       updateList();
       updateBadge(data.unread_count || getUnreadCount());
     } catch (error) {
-      console.error('Không thể tải thông báo:', error);
+      console.error('Unable to load notifications:', error);
     }
   };
 
@@ -51,7 +51,7 @@
     listContainer.innerHTML = '';
 
     if (!notifications.length) {
-      listContainer.innerHTML = '<div class="text-center text-muted py-3">Không có thông báo</div>';
+      listContainer.innerHTML = '<div class="text-center text-muted py-3">No notifications</div>';
       return;
     }
 
@@ -116,7 +116,7 @@
       updateList();
       updateBadge(getUnreadCount());
     } catch (error) {
-      console.error('Không thể đánh dấu thông báo đã đọc:', error);
+      console.error('Unable to mark notification as read:', error);
     }
   };
 
@@ -139,7 +139,7 @@
       updateList();
       updateBadge(0);
     } catch (error) {
-      console.error('Không thể đánh dấu tất cả thông báo đã đọc:', error);
+      console.error('Unable to mark all notifications as read:', error);
     }
   };
 
@@ -161,7 +161,7 @@
         updateList();
         updateBadge(getUnreadCount());
       } catch (error) {
-        console.error('Không thể xử lý thông báo realtime:', error);
+        console.error('Unable to handle realtime notification:', error);
       }
     };
 

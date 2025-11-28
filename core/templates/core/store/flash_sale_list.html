@@ -1,9 +1,9 @@
 {% extends 'core/store/store_base.html' %}
 
-{% block store_title %}Flash Sale Của Shop{% endblock %}
+{% block store_title %}Store Flash Sale{% endblock %}
 
-{% block store_page_title %}Flash Sale Của Shop{% endblock %}
-{% block store_page_subtitle %}Chạy chương trình Flash Sale của riêng Shop để tăng doanh số!{% endblock %}
+{% block store_page_title %}Store Flash Sale{% endblock %}
+{% block store_page_subtitle %}Run your own Flash Sale program to increase sales!{% endblock %}
 
 {% block store_content %}
 <!-- Overview Section -->
@@ -209,8 +209,8 @@
             <div class="col-md-4 text-center">
                 <div class="mb-3">
                     <i class="fas fa-calendar-alt fa-3x text-primary mb-3"></i>
-                    <h5>Chọn khung giờ</h5>
-                    <p class="text-muted small">Chọn ngày và khung giờ thích hợp để chạy Flash Sale của Shop.</p>
+                    <h5>Select Time Frame</h5>
+                    <p class="text-muted small">Choose the appropriate date and time frame to run your Store Flash Sale.</p>
                 </div>
             </div>
             <div class="col-md-1 text-center">
@@ -219,8 +219,8 @@
             <div class="col-md-4 text-center">
                 <div class="mb-3">
                     <i class="fas fa-box fa-3x text-primary mb-3"></i>
-                    <h5>Thêm sản phẩm</h5>
-                    <p class="text-muted small">Chọn những sản phẩm sẽ tham gia Flash Sale.</p>
+                    <h5>Add Products</h5>
+                    <p class="text-muted small">Select products that will participate in the Flash Sale.</p>
                 </div>
             </div>
             <div class="col-md-1 text-center">
@@ -229,14 +229,14 @@
             <div class="col-md-2 text-center">
                 <div class="mb-3">
                     <i class="fas fa-mobile-alt fa-3x text-primary mb-3"></i>
-                    <h5>Hiển thị trên trang Shop</h5>
-                    <p class="text-muted small">Lưu và gửi để hiển thị Flash Sale trong Shop của bạn</p>
+                    <h5>Display on Store Page</h5>
+                    <p class="text-muted small">Save and submit to display Flash Sale in your Store</p>
                 </div>
             </div>
         </div>
         <div class="text-center mt-4">
             <a href="{% url 'store_flash_sale_create' store.store_id %}" class="btn btn-warning btn-lg rounded-pill">
-                Tạo chương trình Flash Sale của Shop ngay! <i class="fas fa-arrow-right ms-2"></i>
+                Create Store Flash Sale Now! <i class="fas fa-arrow-right ms-2"></i>
             </a>
         </div>
     </div>

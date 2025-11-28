@@ -32,13 +32,13 @@ def send_otp_email_task(self, user_id: int, otp_code: str, purpose: str = 'regis
         }
         
         # Render email template
-        subject = f"Mã xác thực OTP - {settings.DEFAULT_FROM_EMAIL}"
+        subject = f"OTP Verification Code - {settings.DEFAULT_FROM_EMAIL}"
         html_message = render_to_string('otp_service/email/otp_email.html', context)
         
         # Send email via AWS SES
         send_mail(
             subject=subject,
-            message=f"Mã OTP của bạn là: {otp_code}",
+            message=f"Your OTP code is: {otp_code}",
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
             html_message=html_message,

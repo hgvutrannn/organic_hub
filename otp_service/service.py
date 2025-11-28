@@ -46,14 +46,14 @@ class OTPService:
             logger.info(f"OTP generated and sent for user {user.user_id}")
             return {
                 'success': True,
-                'message': 'Mã OTP đã được gửi đến email của bạn.'
+                'message': 'OTP code has been sent to your email.'
             }
             
         except Exception as e:
             logger.error(f"Failed to generate and send OTP for user {user.user_id}: {str(e)}")
             return {
                 'success': False,
-                'message': 'Có lỗi khi gửi mã OTP. Vui lòng thử lại.'
+                'message': 'Error sending OTP code. Please try again.'
             }
     
     @staticmethod
@@ -74,24 +74,24 @@ class OTPService:
                 logger.info(f"OTP verified successfully for user {user_id} with purpose {purpose}")
                 return {
                     'success': True,
-                    'message': 'Mã OTP hợp lệ.'
+                    'message': 'OTP code is valid.'
                 }
             else:
                 return {
                     'success': False,
-                    'message': 'Mã OTP không đúng hoặc đã hết hạn.'
+                    'message': 'OTP code is incorrect or has expired.'
                 }
                 
         except User.DoesNotExist:
             return {
                 'success': False,
-                'message': 'Người dùng không tồn tại.'
+                'message': 'User does not exist.'
             }
         except Exception as e:
             logger.error(f"Failed to verify OTP for user {user_id}: {str(e)}")
             return {
                 'success': False,
-                'message': 'Có lỗi khi xác thực mã OTP. Vui lòng thử lại.'
+                'message': 'Error verifying OTP code. Please try again.'
             }
     
     @staticmethod
@@ -107,7 +107,7 @@ class OTPService:
             if not can_resend:
                 return {
                     'success': False,
-                    'message': f'Vui lòng đợi {remaining_seconds} giây trước khi gửi lại mã OTP.',
+                    'message': f'Please wait {remaining_seconds} seconds before resending OTP code.',
                     'remaining_seconds': remaining_seconds
                 }
             
@@ -123,7 +123,7 @@ class OTPService:
                 
                 return {
                     'success': True,
-                    'message': 'Mã OTP mới đã được gửi đến email của bạn.',
+                    'message': 'New OTP code has been sent to your email.',
                     'remaining_seconds': 60  # 1 minute cooldown
                 }
             else:
@@ -132,13 +132,13 @@ class OTPService:
         except User.DoesNotExist:
             return {
                 'success': False,
-                'message': 'Người dùng không tồn tại.'
+                'message': 'User does not exist.'
             }
         except Exception as e:
             logger.error(f"Failed to resend OTP for user {user_id}: {str(e)}")
             return {
                 'success': False,
-                'message': 'Có lỗi khi gửi lại mã OTP. Vui lòng thử lại.'
+                'message': 'Error resending OTP code. Please try again.'
             }
     
     @staticmethod

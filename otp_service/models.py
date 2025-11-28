@@ -10,41 +10,41 @@ class EmailOTP(models.Model):
     """Model to store OTP codes for email verification"""
     
     PURPOSE_CHOICES = [
-        ('registration', 'Đăng ký tài khoản'),
-        ('password_reset', 'Đặt lại mật khẩu'),
-        ('email_change', 'Thay đổi email'),
+        ('registration', 'Account Registration'),
+        ('password_reset', 'Password Reset'),
+        ('email_change', 'Email Change'),
     ]
     
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='email_otps',
-        verbose_name='Người dùng'
+        verbose_name='User'
     )
     otp_code = models.CharField(
         max_length=6,
-        verbose_name='Mã OTP'
+        verbose_name='OTP Code'
     )
     purpose = models.CharField(
         max_length=20,
         choices=PURPOSE_CHOICES,
         default='registration',
-        verbose_name='Mục đích'
+        verbose_name='Purpose'
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Thời gian tạo'
+        verbose_name='Created At'
     )
     expires_at = models.DateTimeField(
-        verbose_name='Thời gian hết hạn'
+        verbose_name='Expires At'
     )
     is_verified = models.BooleanField(
         default=False,
-        verbose_name='Đã xác thực'
+        verbose_name='Verified'
     )
     is_used = models.BooleanField(
         default=False,
-        verbose_name='Đã sử dụng'
+        verbose_name='Used'
     )
     
     class Meta:
@@ -53,8 +53,8 @@ class EmailOTP(models.Model):
             models.Index(fields=['user', 'created_at']),
             models.Index(fields=['expires_at']),
         ]
-        verbose_name = 'Mã OTP Email'
-        verbose_name_plural = 'Mã OTP Email'
+        verbose_name = 'Email OTP'
+        verbose_name_plural = 'Email OTPs'
     
     def __str__(self):
         return f"OTP for {self.user.full_name} - {self.purpose}"

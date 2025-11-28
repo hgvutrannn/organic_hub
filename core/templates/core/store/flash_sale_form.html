@@ -1,9 +1,9 @@
 {% extends 'core/store/store_base.html' %}
 
-{% block store_title %}{% if flash_sale %}Sửa{% else %}Tạo{% endif %} Flash Sale{% endblock %}
+{% block store_title %}{% if flash_sale %}Edit{% else %}Create{% endif %} Flash Sale{% endblock %}
 
-{% block store_page_title %}{% if flash_sale %}Sửa Flash Sale{% else %}Tạo Flash Sale{% endif %}{% endblock %}
-{% block store_page_subtitle %}{% if flash_sale %}Chỉnh sửa chương trình Flash Sale{% else %}Tạo chương trình Flash Sale mới{% endif %}{% endblock %}
+{% block store_page_title %}{% if flash_sale %}Edit Flash Sale{% else %}Create Flash Sale{% endif %}{% endblock %}
+{% block store_page_subtitle %}{% if flash_sale %}Edit Flash Sale program{% else %}Create new Flash Sale program{% endif %}{% endblock %}
 
 {% block store_content %}
 <form method="post" id="flashSaleForm">
@@ -273,17 +273,17 @@ function addProductToForm(product) {
                 </div>
                 <div class="col-md-4">
                     <strong>${product.name}</strong>
-                    <br><small class="text-muted">Giá gốc: ${product.price.toLocaleString('vi-VN')} VNĐ</small>
+                    <br><small class="text-muted">Original Price: £${product.price.toFixed(2)}</small>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label small">Giá Flash Sale</label>
+                    <label class="form-label small">Flash Sale Price</label>
                     <input type="number" class="form-control form-control-sm" 
                            name="flash_price_${product.product_id}"
                            value="${product.price}"
                            min="0" step="1000" required>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label small">Số lượng</label>
+                    <label class="form-label small">Quantity</label>
                     <input type="number" class="form-control form-control-sm" 
                            name="flash_stock_${product.product_id}"
                            value="0"
@@ -315,7 +315,7 @@ function removeProduct(productId) {
         selectedList.innerHTML = `
             <div class="text-center py-4 text-muted">
                 <i class="fas fa-box fa-2x mb-2"></i>
-                <p class="mb-0">Chưa có sản phẩm nào. Nhấn "Thêm sản phẩm" để chọn.</p>
+                <p class="mb-0">No products yet. Click "Add Product" to select.</p>
             </div>
         `;
     }

@@ -11,10 +11,10 @@ class UserProductViewAdmin(admin.ModelAdmin):
     date_hierarchy = 'viewed_at'
     
     fieldsets = (
-        ('Thông tin người dùng', {
+        ('User Information', {
             'fields': ('user', 'session_key')
         }),
-        ('Thông tin sản phẩm', {
+        ('Product Information', {
             'fields': ('product', 'view_count', 'viewed_at')
         }),
     )

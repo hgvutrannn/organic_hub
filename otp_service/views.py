@@ -17,7 +17,7 @@ def verify_otp(request, user_id):
     
     # Check if user is already verified
     if user.email_verified:
-        messages.info(request, 'Email của bạn đã được xác thực.')
+        messages.info(request, 'Your email has already been verified.')
         return redirect('home')
     
     if request.method == 'POST':
@@ -45,13 +45,13 @@ def verify_otp(request, user_id):
                 # Auto-login user
                 login(request, user)
                 
-                messages.success(request, 'Xác thực email thành công! Chào mừng bạn đến với Organic Hub.')
+                messages.success(request, 'Email verified successfully! Welcome to Organic Hub.')
                 return redirect('home')
             else:
                 messages.error(request, result['message'])
         else:
             print(f"   ❌ Form Errors: {form.errors}")
-            messages.error(request, 'Dữ liệu không hợp lệ.')
+            messages.error(request, 'Invalid data.')
     else:
         form = EmailOTPVerificationForm()
     
@@ -83,6 +83,6 @@ def resend_otp(request, user_id):
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'message': 'Có lỗi xảy ra. Vui lòng thử lại.',
+            'message': 'An error occurred. Please try again.',
             'remaining_seconds': 0
         })

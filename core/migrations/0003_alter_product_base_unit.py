@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='product',
             name='base_unit',
-            field=models.CharField(blank=True, max_length=50, null=True, verbose_name='Đơn vị'),
+            field=models.CharField(blank=True, max_length=50, null=True, verbose_name='Unit'),
         ),
     ]

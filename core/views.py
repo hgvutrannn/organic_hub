@@ -130,10 +130,10 @@ def get_negative_reviews_needing_reply(store):
 
 # Home Page
 def home(request):
-    """Trang chủ - hiển thị danh mục và sản phẩm gợi ý"""
+    """Home page - display categories and recommended products"""
     from recommendations.services import RecommendationService
     
-    categories = Category.objects.all()[:12]  # Hiển thị tối đa 12 danh mục
+    categories = Category.objects.all()[:12]  # Display maximum 12 categories
     
     # Get all products in ongoing flash sales, sorted by flash sale end_date (ending soonest first)
     now = timezone.now()
@@ -170,13 +170,13 @@ def home(request):
             
             # Format time remaining
             if days > 0:
-                time_remaining_display = f"{days} ngày {hours} giờ"
+                time_remaining_display = f"{days} days {hours} hours"
             elif hours > 0:
-                time_remaining_display = f"{hours} giờ {minutes} phút"
+                time_remaining_display = f"{hours} hours {minutes} minutes"
             else:
-                time_remaining_display = f"{minutes} phút"
+                time_remaining_display = f"{minutes} minutes"
         else:
-            time_remaining_display = "Đã kết thúc"
+            time_remaining_display = "Ended"
         
         flash_sale_products.append({
             'flash_product': flash_product,
@@ -216,7 +216,7 @@ def home(request):
 
 # Authentication Views
 def register(request):
-    """Đăng ký tài khoản"""
+    """User registration"""
     if request.method == 'POST':
         form = CustomUserRegistrationForm(request.POST)
         if form.is_valid():
@@ -230,10 +230,10 @@ def register(request):
             result = OTPService.generate_and_send_otp(user, purpose='registration')
             
             if result['success']:
-                messages.success(request, 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.')
+                messages.success(request, 'Registration successful! Please check your email to verify your account.')
                 return redirect('otp_service:verify', user_id=user.user_id)
             else:
-                messages.error(request, 'Có lỗi khi gửi OTP. Vui lòng thử lại.')
+                messages.error(request, 'Error sending OTP. Please try again.')
     else:
         form = CustomUserRegistrationForm()
     
@@ -241,7 +241,7 @@ def register(request):
 
 
 def user_login(request):
-    """Đăng nhập"""
+    """User login"""
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
@@ -252,16 +252,16 @@ def user_login(request):
             if user is not None:
                 # Check if email is verified
                 if not user.email_verified:
-                    messages.warning(request, 'Vui lòng xác thực email trước khi đăng nhập.')
+                    messages.warning(request, 'Please verify your email before logging in.')
                     return redirect('otp_service:verify', user_id=user.user_id)
                 
                 # Email verified, allow login
                 login(request, user)
                 user.save()
-                messages.success(request, f'Chào mừng {user.full_name}!')
+                messages.success(request, f'Welcome {user.full_name}!')
                 return redirect('home')
             else:
-                messages.error(request, 'Email hoặc mật khẩu không đúng.')
+                messages.error(request, 'Email or password is incorrect.')
     else:
         form = LoginForm()
     
@@ -269,15 +269,15 @@ def user_login(request):
 
 
 def user_logout(request):
-    """Đăng xuất"""
+    """User logout"""
     logout(request)
-    messages.info(request, 'Bạn đã đăng xuất.')
+    messages.info(request, 'You have been logged out.')
     return redirect('home')
 
 
 # Product Views
 def product_list(request):
-    """Danh sách sản phẩm"""
+    """Product list"""
     from django.conf import settings
     from search_engine.services import ProductSearchService
     import logging
@@ -363,34 +363,34 @@ def product_list(request):
             products = products.filter(category=category)
 
 
-        # SỬA DÒNG NÀY - Filter đúng qua relationship
+        # FIX THIS LINE - Filter correctly through relationship
         if certificate:
-            # Lặp qua từng product
+            # Iterate through each product
             products_to_exclude = []
         
             for product in products:
-                # Product thuộc store nào?
+                # Which store does this product belong to?
                 store_id = product.store_id
                 
                 flag = 0
                 
-                # Store đó có cert trùng với certificate không?
-                # Lấy các request đã được approved của store
+                # Does that store have a cert matching the certificate?
+                # Get approved requests for the store
                 verification_requests = StoreVerificationRequest.objects.filter(
                     store_id=store_id,
-                    status='approved'  # status là CharField, dùng 'approved' không phải True
+                    status='approved'  # status is CharField, use 'approved' not True
                 )
                 
                 for verification_request in verification_requests:
-                    # Lấy các chứng nhận trong request đã approved
+                    # Get certifications in the approved request
                     certs = StoreCertification.objects.filter(
                         verification_request=verification_request,
-                        certification_organization=certificate  # So sánh với CertificationOrganization object
+                        certification_organization=certificate  # Compare with CertificationOrganization object
                     )
                     
-                    # Kiểm tra xem có chứng nhận nào còn hiệu lực không (chưa hết hạn)
+                    # Check if any certification is still valid (not expired)
                     for cert in certs:
-                        # Kiểm tra chứng nhận còn hiệu lực
+                        # Check if certification is still valid
                         if cert.expiry_date is None or cert.expiry_date >= timezone.now().date():
                             flag = 1
                             break
@@ -398,11 +398,11 @@ def product_list(request):
                     if flag == 1:
                         break
                 
-                # Nếu không tìm thấy chứng nhận phù hợp, đánh dấu để loại bỏ
+                # If no matching certification found, mark for removal
                 if flag == 0:
                     products_to_exclude.append(product.product_id)
         
-            # Loại bỏ các products không có chứng nhận
+            # Remove products without certification
             products = products.exclude(product_id__in=products_to_exclude)
 
         if min_price:
@@ -444,13 +444,13 @@ def product_list(request):
 
 
 def product_detail(request, product_id):
-    """Chi tiết sản phẩm"""
+    """Product detail"""
     from recommendations.services import RecommendationService
     from recommendations.signals import track_product_view
     
     product = get_object_or_404(Product, pk=product_id)
     
-    # Tăng view count
+    # Increment view count
     product.view_count += 1
     product.save()
     
@@ -469,7 +469,7 @@ def product_detail(request, product_id):
         logger = logging.getLogger(__name__)
         logger.error(f"Error tracking product view: {e}", exc_info=True)
     
-    # Lấy variants nếu có
+    # Get variants if available
     variants = []
     default_variant = None
     
@@ -477,13 +477,13 @@ def product_detail(request, product_id):
         variants_queryset = ProductVariant.objects.filter(product=product, is_active=True).order_by('created_at')
         if variants_queryset.exists():
             variants = list(variants_queryset)
-            default_variant = variants[0]  # Lấy variant đầu tiên làm mặc định
+            default_variant = variants[0]  # Get first variant as default
     
-    # Tạo danh sách hình ảnh bao gồm cả hình variants
+    # Create image list including variant images
     gallery_images = []
     image_index = 1
     
-    # Thêm các hình trong gallery của sản phẩm (order=0 là ảnh chính)
+    # Add product gallery images (order=0 is primary image)
     for img in product.get_images(primary_only=False):
         gallery_images.append({
             'type': 'product',
@@ -493,8 +493,8 @@ def product_detail(request, product_id):
         })
         image_index += 1
     
-    # Thêm hình của các variants (chỉ variant có hình riêng)
-    variant_images_map = {}  # Map để tìm variant từ image index
+    # Add variant images (only variants with their own images)
+    variant_images_map = {}  # Map to find variant from image index
     for variant in variants:
         if variant.image:
             gallery_images.append({
@@ -508,7 +508,7 @@ def product_detail(request, product_id):
             variant_images_map[image_index] = variant.variant_id
             image_index += 1
     
-    # Lấy đánh giá
+    # Get reviews
     reviews = Review.objects.filter(product=product, is_approved=True).select_related('user').prefetch_related('media_files').order_by('-created_at')
     
     # Get recommendations
@@ -668,7 +668,7 @@ def cart(request):
 @login_required
 @require_POST
 def add_to_cart(request, product_id):
-    """Thêm sản phẩm vào giỏ hàng"""
+    """Add product to cart"""
     product = get_object_or_404(Product, pk=product_id)
     quantity = int(request.POST.get('quantity', 1))
     variant_id = request.POST.get('variant_id')
@@ -678,7 +678,7 @@ def add_to_cart(request, product_id):
         variant = get_object_or_404(ProductVariant, pk=variant_id, product=product, is_active=True)
         # Check stock
         if variant.stock < quantity:
-            messages.error(request, f'Chỉ còn {variant.stock} sản phẩm trong kho.')
+            messages.error(request, f'Only {variant.stock} items left in stock.')
             return redirect('product_detail', product_id=product_id)
     
     cart_item, created = CartItem.objects.get_or_create(
@@ -692,24 +692,24 @@ def add_to_cart(request, product_id):
         cart_item.quantity += quantity
         cart_item.save()
     
-    messages.success(request, f'Đã thêm {product.name} vào giỏ hàng.')
+    messages.success(request, f'Added {product.name} to cart.')
     return redirect('product_detail', product_id=product_id)
 
 
 @login_required
 @require_POST
 def remove_from_cart(request, cart_item_id):
-    """Xóa sản phẩm khỏi giỏ hàng"""
+    """Remove product from cart"""
     cart_item = get_object_or_404(CartItem, pk=cart_item_id, user=request.user)
     cart_item.delete()
-    messages.success(request, 'Đã xóa sản phẩm khỏi giỏ hàng.')
+    messages.success(request, 'Product removed from cart.')
     return redirect('cart')
 
 
 @login_required
 @require_POST
 def update_cart_quantity(request, cart_item_id):
-    """Cập nhật số lượng trong giỏ hàng"""
+    """Update cart quantity"""
     cart_item = get_object_or_404(CartItem, pk=cart_item_id, user=request.user)
     quantity = int(request.POST.get('quantity', 1))
     
@@ -727,11 +727,11 @@ def update_cart_quantity(request, cart_item_id):
 # Order Views
 @login_required
 def checkout(request):
-    """Thanh toán"""
+    """Checkout"""
     cart_items = CartItem.objects.filter(user=request.user).select_related('product', 'product__store', 'variant')
     
     if not cart_items.exists():
-        messages.warning(request, 'Giỏ hàng trống.')
+        messages.warning(request, 'Cart is empty.')
         return redirect('cart')
     
     addresses = Address.objects.filter(user=request.user)
@@ -797,7 +797,7 @@ def checkout(request):
             applied_discounts = {}
         
         if not shipping_address_id:
-            messages.error(request, 'Vui lòng chọn địa chỉ giao hàng.')
+            messages.error(request, 'Please select a shipping address.')
             # Recalculate discounts for display
             from decimal import Decimal
             total_discount = Decimal('0')
@@ -877,19 +877,19 @@ def checkout(request):
                 store_discounts[store_id] = float(discount_amount)  # Store as float for template
                 total_discount += discount_amount
         
-        # Tạo đơn hàng cho mỗi store (mỗi store một order riêng)
+        # Create order for each store (each store has a separate order)
         # Flat shipping fee in GBP per order
         shipping_cost = Decimal('3.00')
         notes = request.POST.get('notes', '')
         created_orders = []
         
         for store_id, store_data in stores_dict.items():
-            # Tính subtotal và discount cho store này
+            # Calculate subtotal and discount for this store
             store_subtotal = store_subtotals[store_id]
             store_discount = Decimal(str(store_discounts.get(store_id, 0)))
             store_total = store_subtotal - store_discount + shipping_cost
             
-            # Tạo order cho store này
+            # Create order for this store
             order = Order.objects.create(
                 user=request.user,
                 shipping_address=shipping_address,
@@ -901,7 +901,7 @@ def checkout(request):
                 notes=notes
             )
             
-            # Tạo order items cho store này
+            # Create order items for this store
             for cart_item in store_data['items']:
                 OrderItem.objects.create(
                     order=order,
@@ -914,24 +914,24 @@ def checkout(request):
             
             created_orders.append(order)
         
-        # Xóa giỏ hàng
+        # Clear cart
         cart_items.delete()
         
-        # Lưu thông tin checkout vào session để giữ lại cho lần sau
+        # Save checkout info to session for next time
         request.session['last_checkout_info'] = {
             'shipping_address_id': shipping_address_id,
             'payment_method': payment_method,
             'notes': notes,
         }
         
-        # Hiển thị thông báo với tất cả order IDs
+        # Display message with all order IDs
         order_ids = ', '.join([f'#{order.order_id}' for order in created_orders])
         if len(created_orders) == 1:
-            messages.success(request, f'Đặt hàng thành công! Mã đơn hàng: {order_ids}')
+            messages.success(request, f'Order placed successfully! Order ID: {order_ids}')
             return redirect('order_detail', order_id=created_orders[0].order_id)
         else:
-            messages.success(request, f'Đặt hàng thành công! Đã tạo {len(created_orders)} đơn hàng: {order_ids}')
-            # Redirect đến order list
+            messages.success(request, f'Order placed successfully! Created {len(created_orders)} orders: {order_ids}')
+            # Redirect to order list
             return redirect('orders')
     
     # Get frequently bought together recommendations
@@ -993,7 +993,7 @@ def checkout(request):
     shipping_cost = Decimal('3.00')
     final_total = subtotal - total_discount + shipping_cost
     
-    # Load last checkout info from session để pre-fill form
+    # Load last checkout info from session to pre-fill form
     last_checkout_info = request.session.get('last_checkout_info', {})
     default_address_id = last_checkout_info.get('shipping_address_id')
     default_payment_method = last_checkout_info.get('payment_method', 'cod')
@@ -1018,7 +1018,7 @@ def checkout(request):
 
 @login_required
 def order_list(request):
-    """Danh sách đơn hàng"""
+    """Order list"""
     orders = Order.objects.filter(user=request.user).order_by('-created_at')
     
     context = {
@@ -1029,7 +1029,7 @@ def order_list(request):
 
 @login_required
 def order_detail(request, order_id):
-    """Chi tiết đơn hàng"""
+    """Order detail"""
     order = get_object_or_404(Order, pk=order_id, user=request.user)
     
     # Group order items by store
@@ -1077,7 +1077,7 @@ def order_detail(request, order_id):
 # Profile Views
 @login_required
 def profile(request):
-    """Trang cá nhân"""
+    """User profile"""
     user = request.user
     recent_orders = Order.objects.filter(user=user).order_by('-created_at')[:5]
     
@@ -1089,7 +1089,7 @@ def profile(request):
         form = ProfileUpdateForm(request.POST, request.FILES, instance=user)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Cập nhật thông tin thành công!')
+            messages.success(request, 'Profile updated successfully!')
             return redirect('profile')
     else:
         form = ProfileUpdateForm(instance=user)
@@ -1106,7 +1106,7 @@ def profile(request):
 
 @login_required
 def address_management(request):
-    """Quản lý địa chỉ"""
+    """Address management"""
     addresses = Address.objects.filter(user=request.user)
     
     if request.method == 'POST':
@@ -1115,7 +1115,7 @@ def address_management(request):
             address = form.save(commit=False)
             address.user = request.user
             address.save()
-            messages.success(request, 'Thêm địa chỉ thành công.')
+            messages.success(request, 'Address added successfully.')
             return redirect('address_management')
     else:
         form = AddressForm()
@@ -1130,7 +1130,7 @@ def address_management(request):
 # Store Views
 @login_required
 def create_store(request):
-    """Tạo cửa hàng với chứng nhận"""
+    """Create store with certification"""
     if request.method == 'POST':
         store_name = request.POST.get('store_name')
         store_description = request.POST.get('store_description', '')
@@ -1202,10 +1202,10 @@ def create_store(request):
                         except Exception as e:
                             print(f"Error creating certification: {e}")
             
-            messages.success(request, f'Đã tạo cửa hàng "{store_name}" thành công! Yêu cầu xác minh đã được gửi.')
+            messages.success(request, f'Store "{store_name}" created successfully! Verification request has been sent.')
             return redirect('store_dashboard', store_id=store.store_id)
         else:
-            messages.error(request, 'Vui lòng nhập tên cửa hàng.')
+            messages.error(request, 'Please enter store name.')
     
     # Get active certification organizations for dropdown
     certification_organizations = CertificationOrganization.objects.filter(is_active=True).order_by('name')
@@ -1218,7 +1218,7 @@ def create_store(request):
 
 @login_required
 def store_dashboard(request, store_id):
-    """Dashboard cửa hàng"""
+    """Store dashboard"""
     store = get_object_or_404(Store, store_id=store_id, user=request.user)
     products = Product.objects.filter(store=store)
     orders = Order.objects.filter(order_items__product__store=store).distinct().order_by('-created_at')[:10]
@@ -1227,14 +1227,14 @@ def store_dashboard(request, store_id):
     verification_requests = store.verification_requests.all()
     latest_request = verification_requests.first()
     
-    # Thống kê cơ bản
+    # Basic statistics
     total_products = products.count()
     total_orders = orders.count()
     total_revenue = sum(order.total_amount for order in orders if order.payment_status == 'paid')
     
     context = {
         'store': store,
-        'products': products[:5],  # 5 sản phẩm gần nhất
+        'products': products[:5],  # 5 most recent products
         'orders': orders,
         'total_products': total_products,
         'total_orders': total_orders,
@@ -1247,7 +1247,7 @@ def store_dashboard(request, store_id):
 
 @login_required
 def store_products(request, store_id):
-    """Quản lý sản phẩm của cửa hàng"""
+    """Store product management"""
     store = get_object_or_404(Store, store_id=store_id, user=request.user)
     products = Product.objects.filter(store=store).order_by('-created_at')
     
@@ -1265,12 +1265,12 @@ def store_products(request, store_id):
 
 @login_required
 def add_product(request, store_id):
-    """Thêm sản phẩm mới"""
+    """Add new product"""
     store = get_object_or_404(Store, store_id=store_id, user=request.user)
     
     # Check if store is verified
     if store.is_verified_status != 'verified':
-        messages.error(request, 'Cửa hàng cần được xác minh trước khi có thể thêm sản phẩm.')
+        messages.error(request, 'Store must be verified before adding products.')
         return redirect('store_dashboard', store_id=store.store_id)
     
     if request.method == 'POST':
@@ -1323,7 +1323,7 @@ def add_product(request, store_id):
                 ProductImage.objects.create(
                     product=product,
                     image=image,
-                    alt_text=f"{product.name} - Hình {i+1}",
+                    alt_text=f"{product.name} - Image {i+1}",
                     order=i  # First image is order=0 (primary), then 1, 2, 3...
                 )
             
@@ -1386,15 +1386,15 @@ def add_product(request, store_id):
                         continue
                 
                 if created_variants > 0:
-                    messages.success(request, f'Đã thêm sản phẩm "{product.name}" với {created_variants} biến thể thành công!')
+                    messages.success(request, f'Product "{product.name}" added successfully with {created_variants} variants!')
                 else:
-                    messages.warning(request, f'Đã thêm sản phẩm "{product.name}" nhưng chưa có biến thể nào. Vui lòng chỉnh sửa sản phẩm để thêm biến thể.')
+                    messages.warning(request, f'Product "{product.name}" added but no variants yet. Please edit the product to add variants.')
             else:
-                messages.success(request, f'Đã thêm sản phẩm "{product.name}" thành công!')
+                messages.success(request, f'Product "{product.name}" added successfully!')
             
             return redirect('store_products', store_id=store.store_id)
         else:
-            messages.error(request, 'Vui lòng kiểm tra lại thông tin.')
+            messages.error(request, 'Please check the information again.')
     else:
         form = ProductForm()
     
@@ -1410,19 +1410,19 @@ def add_product(request, store_id):
 
 @login_required
 def edit_product(request, store_id, product_id):
-    """Sửa sản phẩm"""
+    """Edit product"""
     store = get_object_or_404(Store, store_id=store_id, user=request.user)
     product = get_object_or_404(Product, pk=product_id, store=store)
     # Check if store is verified
     if store.is_verified_status != 'verified':
-        messages.error(request, 'Cửa hàng cần được xác minh trước khi có thể chỉnh sửa sản phẩm.')
+        messages.error(request, 'Store must be verified before editing products.')
         return redirect('store_dashboard', store_id=store.store_id)
     
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'delete':
             product.delete()
-            messages.success(request, f'Đã xóa sản phẩm "{product.name}" thành công!')
+            messages.success(request, f'Product "{product.name}" deleted successfully!')
             return redirect('store_products', store_id=store.store_id)
         elif action == 'update':
             form = ProductForm(request.POST, request.FILES, instance=product)
@@ -1548,7 +1548,7 @@ def edit_product(request, store_id, product_id):
                             continue
                     
                     if created_variants > 0 or updated_variants > 0:
-                        messages.success(request, f'Đã cập nhật {updated_variants} biến thể và tạo {created_variants} biến thể mới.')
+                        messages.success(request, f'Updated {updated_variants} variants and created {created_variants} new variants.')
             
                 # Handle additional gallery images
                 gallery_images = request.FILES.getlist('gallery_images')
@@ -1566,14 +1566,14 @@ def edit_product(request, store_id, product_id):
                         ProductImage.objects.create(
                             product=product,
                             image=image,
-                            alt_text=f"{product.name} - Hình {start_order + i + 1}",
+                            alt_text=f"{product.name} - Image {start_order + i + 1}",
                             order=start_order + i
                         )
                 
-                messages.success(request, f'Đã cập nhật sản phẩm "{product.name}" thành công!')
+                messages.success(request, f'Product "{product.name}" updated successfully!')
                 return redirect('edit_product', store_id=store.store_id, product_id=product.product_id)
             else:
-                messages.error(request, 'Vui lòng kiểm tra lại thông tin.')
+                messages.error(request, 'Please check the information again.')
     else:
         form = ProductForm(instance=product)
     
@@ -1592,7 +1592,7 @@ def edit_product(request, store_id, product_id):
 # Variant Management Views
 @login_required
 def get_variant_info(request, variant_id):
-    """AJAX endpoint để lấy thông tin variant"""
+    """AJAX endpoint to get variant information"""
     variant = get_object_or_404(ProductVariant, pk=variant_id, is_active=True)
     
     return JsonResponse({
@@ -1608,11 +1608,11 @@ def get_variant_info(request, variant_id):
 
 @login_required
 def get_product_variants(request, product_id):
-    """AJAX endpoint để lấy danh sách variants của sản phẩm"""
+    """AJAX endpoint to get product variants list"""
     product = get_object_or_404(Product, pk=product_id)
     
     if not product.has_variants:
-        return JsonResponse({'success': False, 'message': 'Sản phẩm không có phân loại'})
+        return JsonResponse({'success': False, 'message': 'Product does not have variants'})
     
     variants = ProductVariant.objects.filter(product=product, is_active=True).order_by('created_at')
     variants_data = []
@@ -1637,7 +1637,7 @@ def get_product_variants(request, product_id):
 
 @login_required
 def store_orders(request, store_id):
-    """Xem đơn hàng của cửa hàng"""
+    """View store orders"""
     store = get_object_or_404(Store, store_id=store_id, user=request.user)
     orders = Order.objects.filter(order_items__product__store=store).distinct().order_by('-created_at')
     
@@ -1655,18 +1655,18 @@ def store_orders(request, store_id):
 
 @login_required
 def store_order_detail(request, store_id, order_id):
-    """Chi tiết đơn hàng của cửa hàng"""
+    """Store order detail"""
     store = get_object_or_404(Store, store_id=store_id, user=request.user)
     order = get_object_or_404(Order, pk=order_id)
     
-    # Lấy các sản phẩm của cửa hàng trong đơn hàng
+    # Get store products in the order
     store_order_items = order.order_items.filter(product__store=store)
     
     if not store_order_items.exists():
-        messages.error(request, 'Đơn hàng này không chứa sản phẩm của cửa hàng bạn.')
+        messages.error(request, 'This order does not contain products from your store.')
         return redirect('store_orders', store_id=store.store_id)
     
-    # Tính tổng tiền của cửa hàng trong đơn hàng
+    # Calculate store total in the order
     store_subtotal = sum(item.total_price for item in store_order_items)
     
     if request.method == 'POST':
@@ -1681,9 +1681,9 @@ def store_order_detail(request, store_id, order_id):
                     new_status=new_status,
                     triggered_by_id=request.user.user_id,
                 )
-                messages.success(request, f'Đã cập nhật trạng thái đơn hàng thành "{order.get_status_display()}"')
+                messages.success(request, f'Order status updated to "{order.get_status_display()}"')
             else:
-                messages.info(request, 'Trạng thái đơn hàng không thay đổi.')
+                messages.info(request, 'Order status unchanged.')
             return redirect('store_order_detail', store_id=store.store_id, order_id=order.order_id)
     
     context = {
@@ -1697,7 +1697,7 @@ def store_order_detail(request, store_id, order_id):
 
 @login_required
 def verification_status(request, store_id):
-    """Trang trạng thái xác minh cửa hàng"""
+    """Store verification status page"""
     store = get_object_or_404(Store, store_id=store_id, user=request.user)
     verification_requests = store.verification_requests.all()
     
@@ -1710,7 +1710,7 @@ def verification_status(request, store_id):
 
 @login_required
 def verification_management(request, store_id):
-    """Trang quản lý xác minh cửa hàng"""
+    """Store verification management page"""
     store = get_object_or_404(Store, store_id=store_id, user=request.user)
     verification_requests = store.verification_requests.all()
     latest_request = verification_requests.first()
@@ -1756,12 +1756,12 @@ def verification_management(request, store_id):
                         except Exception as e:
                             print(f"Error creating certification: {e}")
                 
-                messages.success(request, f'Đã gửi yêu cầu xác minh mới #{verification_request.request_id} thành công!')
+                messages.success(request, f'New verification request #{verification_request.request_id} sent successfully!')
                 return redirect('verification_management', store_id=store.store_id)
             else:
-                messages.error(request, 'Vui lòng tải lên ít nhất một chứng nhận.')
+                messages.error(request, 'Please upload at least one certification.')
         else:
-            messages.error(request, 'Bạn không thể gửi yêu cầu mới khi đang có yêu cầu đang chờ xem xét.')
+            messages.error(request, 'You cannot send a new request while there is a pending request.')
     
     # Get active certification organizations for dropdown
     certification_organizations = CertificationOrganization.objects.filter(is_active=True).order_by('name')
@@ -1851,7 +1851,7 @@ def admin_request_detail(request, request_id):
                 store.is_verified_status = 'verified'
                 store.save()
                 
-                messages.success(request, f'Đã phê duyệt yêu cầu xác minh cho cửa hàng "{store.store_name}"')
+                messages.success(request, f'Verification request approved for store "{store.store_name}"')
             else:  # reject
                 verification_request.status = 'rejected'
                 verification_request.reviewed_at = timezone.now()
@@ -1859,7 +1859,7 @@ def admin_request_detail(request, request_id):
                 verification_request.admin_notes = admin_notes
                 verification_request.save()
                 
-                messages.success(request, f'Đã từ chối yêu cầu xác minh cho cửa hàng "{verification_request.store.store_name}"')
+                messages.success(request, f'Verification request rejected for store "{verification_request.store.store_name}"')
             
             return redirect('admin_request_detail', request_id=verification_request.request_id)
     else:
@@ -1885,7 +1885,7 @@ def admin_approve_store(request, store_id):
     # Mark all certifications as verified
     store.certifications.update(is_verified=True)
     
-    messages.success(request, f'Đã phê duyệt cửa hàng "{store.store_name}"')
+    messages.success(request, f'Store "{store.store_name}" approved')
     return redirect('admin_store_detail', store_id=store.store_id)
 
 
@@ -1898,13 +1898,13 @@ def admin_reject_store(request, store_id):
     admin_notes = request.POST.get('admin_notes', '')
     
     if not admin_notes:
-        messages.error(request, 'Vui lòng nhập lý do từ chối.')
+        messages.error(request, 'Please enter the reason for rejection.')
         return redirect('admin_store_detail', store_id=store.store_id)
     
     store.is_verified_status = 'rejected'
     store.save()
     
-    messages.success(request, f'Đã từ chối cửa hàng "{store.store_name}"')
+    messages.success(request, f'Store "{store.store_name}" rejected')
     return redirect('admin_store_detail', store_id=store.store_id)
 
 
@@ -1943,7 +1943,7 @@ def admin_category_create(request):
         form = CategoryForm(request.POST)
         if form.is_valid():
             category = form.save()
-            messages.success(request, f'Đã tạo danh mục "{category.name}" thành công!')
+            messages.success(request, f'Category "{category.name}" created successfully!')
             return redirect('admin_category_list')
     else:
         form = CategoryForm()
@@ -1965,7 +1965,7 @@ def admin_category_edit(request, category_id):
         form = CategoryForm(request.POST, instance=category)
         if form.is_valid():
             category = form.save()
-            messages.success(request, f'Đã cập nhật danh mục "{category.name}" thành công!')
+            messages.success(request, f'Category "{category.name}" updated successfully!')
             return redirect('admin_category_list')
     else:
         form = CategoryForm(instance=category)
@@ -1989,11 +1989,11 @@ def admin_category_delete(request, category_id):
     # Check if category has products
     product_count = category.products.count()
     if product_count > 0:
-        messages.error(request, f'Không thể xóa danh mục "{category_name}" vì có {product_count} sản phẩm đang sử dụng danh mục này.')
+        messages.error(request, f'Cannot delete category "{category_name}" because {product_count} products are using this category.')
         return redirect('admin_category_list')
     
     category.delete()
-    messages.success(request, f'Đã xóa danh mục "{category_name}" thành công!')
+    messages.success(request, f'Category "{category_name}" deleted successfully!')
     return redirect('admin_category_list')
 
 
@@ -2032,7 +2032,7 @@ def admin_certification_organization_create(request):
         form = CertificationOrganizationForm(request.POST)
         if form.is_valid():
             organization = form.save()
-            messages.success(request, f'Đã tạo tổ chức "{organization.name}" thành công!')
+            messages.success(request, f'Organization "{organization.name}" created successfully!')
             return redirect('admin_certification_organization_list')
     else:
         form = CertificationOrganizationForm()
@@ -2054,7 +2054,7 @@ def admin_certification_organization_edit(request, organization_id):
         form = CertificationOrganizationForm(request.POST, instance=organization)
         if form.is_valid():
             organization = form.save()
-            messages.success(request, f'Đã cập nhật tổ chức "{organization.name}" thành công!')
+            messages.success(request, f'Organization "{organization.name}" updated successfully!')
             return redirect('admin_certification_organization_list')
     else:
         form = CertificationOrganizationForm(instance=organization)
@@ -2076,7 +2076,7 @@ def admin_certification_organization_delete(request, organization_id):
     organization_name = organization.name
     
     organization.delete()
-    messages.success(request, f'Đã xóa tổ chức "{organization_name}" thành công!')
+    messages.success(request, f'Organization "{organization_name}" deleted successfully!')
     return redirect('admin_certification_organization_list')
 
 
@@ -2089,7 +2089,7 @@ def create_review(request, order_id, order_item_id):
     order_item = get_object_or_404(OrderItem, pk=order_item_id, order=order)
     
     if not can_create_review(request.user, order_item):
-        messages.error(request, 'Bạn không thể đánh giá sản phẩm này.')
+        messages.error(request, 'You cannot review this product.')
         return redirect('order_detail', order_id=order_id)
     
     if request.method == 'POST':
@@ -2125,10 +2125,10 @@ def create_review(request, order_id, order_item_id):
             # Update store review stats
             update_store_review_stats(order_item.product.store)
             
-            messages.success(request, 'Đã tạo đánh giá thành công!')
+            messages.success(request, 'Review created successfully!')
             return redirect('order_detail', order_id=order_id)
         else:
-            messages.error(request, 'Vui lòng kiểm tra lại thông tin.')
+            messages.error(request, 'Please check the information again.')
     else:
         form = ReviewForm()
     
@@ -2149,7 +2149,7 @@ def add_review_reply(request, review_id):
     if not can_reply_review(request.user, review):
         return JsonResponse({
             'success': False,
-            'message': 'Bạn không có quyền phản hồi đánh giá này hoặc đã phản hồi rồi.'
+            'message': 'You do not have permission to reply to this review or have already replied.'
         })
     
     form = ReviewReplyForm(request.POST)
@@ -2160,14 +2160,14 @@ def add_review_reply(request, review_id):
         
         return JsonResponse({
             'success': True,
-            'message': 'Đã phản hồi đánh giá thành công.',
+            'message': 'Review reply sent successfully.',
             'seller_reply': review.seller_reply,
             'seller_replied_at': review.seller_replied_at.strftime('%d/%m/%Y %H:%M')
         })
     else:
         return JsonResponse({
             'success': False,
-            'message': 'Dữ liệu không hợp lệ.',
+            'message': 'Invalid data.',
             'errors': form.errors
         })
 
@@ -2324,7 +2324,7 @@ def request_password_change_otp(request):
             if result['success']:
                 return JsonResponse({
                     'success': True,
-                    'message': 'Mã OTP đã được gửi đến email của bạn.'
+                    'message': 'OTP code has been sent to your email.'
                 })
             else:
                 return JsonResponse({
@@ -2338,13 +2338,13 @@ def request_password_change_otp(request):
                 errors[field] = field_errors[0]
             return JsonResponse({
                 'success': False,
-                'message': 'Dữ liệu không hợp lệ.',
+                'message': 'Invalid data.',
                 'errors': errors
             })
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'message': 'Có lỗi xảy ra. Vui lòng thử lại.'
+            'message': 'An error occurred. Please try again.'
         })
 
 
@@ -2375,12 +2375,12 @@ def verify_password_change_otp(request):
                     
                     return JsonResponse({
                         'success': True,
-                        'message': 'Đổi mật khẩu thành công!'
+                        'message': 'Password changed successfully!'
                     })
                 else:
                     return JsonResponse({
                         'success': False,
-                        'message': 'Phiên làm việc đã hết hạn. Vui lòng thử lại.'
+                        'message': 'Session has expired. Please try again.'
                     })
             else:
                 return JsonResponse({
@@ -2390,12 +2390,12 @@ def verify_password_change_otp(request):
         else:
             return JsonResponse({
                 'success': False,
-                'message': 'Mã OTP không hợp lệ.'
+                'message': 'Invalid OTP code.'
             })
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'message': 'Có lỗi xảy ra. Vui lòng thử lại.'
+            'message': 'An error occurred. Please try again.'
         })
 
 
@@ -2416,7 +2416,7 @@ def forgot_password(request):
                     request.session['password_reset_user_id'] = user.user_id
                     return JsonResponse({
                         'success': True,
-                        'message': 'Mã OTP đã được gửi đến email của bạn.'
+                        'message': 'OTP code has been sent to your email.'
                     })
                 else:
                     return JsonResponse({
@@ -2426,7 +2426,7 @@ def forgot_password(request):
             except CustomUser.DoesNotExist:
                 return JsonResponse({
                     'success': False,
-                    'message': 'Email không tồn tại trong hệ thống.'
+                    'message': 'Email does not exist in the system.'
                 })
         else:
             errors = {}
@@ -2434,7 +2434,7 @@ def forgot_password(request):
                 errors[field] = field_errors[0]
             return JsonResponse({
                 'success': False,
-                'message': 'Dữ liệu không hợp lệ.',
+                'message': 'Invalid data.',
                 'errors': errors
             })
     else:
@@ -2461,7 +2461,7 @@ def request_password_reset_otp(request):
                 request.session['password_reset_user_id'] = user.user_id
                 return JsonResponse({
                     'success': True,
-                    'message': 'Mã OTP đã được gửi đến email của bạn.'
+                    'message': 'OTP code has been sent to your email.'
                 })
             else:
                 return JsonResponse({
@@ -2474,7 +2474,7 @@ def request_password_reset_otp(request):
                 errors[field] = field_errors[0]
             return JsonResponse({
                 'success': False,
-                'message': 'Dữ liệu không hợp lệ.',
+                'message': 'Invalid data.',
                 'errors': errors
             })
     except CustomUser.DoesNotExist:
@@ -2485,7 +2485,7 @@ def request_password_reset_otp(request):
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'message': 'Có lỗi xảy ra. Vui lòng thử lại.'
+            'message': 'An error occurred. Please try again.'
         })
 
 
@@ -2511,7 +2511,7 @@ def verify_password_reset_otp(request):
             if result['success']:
                 return JsonResponse({
                     'success': True,
-                    'message': 'Xác thực OTP thành công. Vui lòng nhập mật khẩu mới.'
+                    'message': 'OTP verified successfully. Please enter your new password.'
                 })
             else:
                 return JsonResponse({
@@ -2521,12 +2521,12 @@ def verify_password_reset_otp(request):
         else:
             return JsonResponse({
                 'success': False,
-                'message': 'Mã OTP không hợp lệ.'
+                'message': 'Invalid OTP code.'
             })
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'message': 'Có lỗi xảy ra. Vui lòng thử lại.'
+            'message': 'An error occurred. Please try again.'
         })
 
 
@@ -2555,7 +2555,7 @@ def confirm_password_reset(request):
             
             return JsonResponse({
                 'success': True,
-                'message': 'Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới.'
+                'message': 'Password reset successfully! Please login with your new password.'
             })
         else:
             errors = {}
@@ -2563,16 +2563,16 @@ def confirm_password_reset(request):
                 errors[field] = field_errors[0]
             return JsonResponse({
                 'success': False,
-                'message': 'Dữ liệu không hợp lệ.',
+                'message': 'Invalid data.',
                 'errors': errors
             })
     except CustomUser.DoesNotExist:
         return JsonResponse({
             'success': False,
-            'message': 'Người dùng không tồn tại.'
+            'message': 'User does not exist.'
         })
     except Exception as e:
         return JsonResponse({
             'success': False,
-            'message': 'Có lỗi xảy ra. Vui lòng thử lại.'
+            'message': 'An error occurred. Please try again.'
         })

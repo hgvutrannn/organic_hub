@@ -17,9 +17,9 @@ class CustomUserAdmin(UserAdmin):
     
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        ('Thông tin cá nhân', {'fields': ('full_name',)}),
-        ('Quyền hạn', {'fields': ('is_active', 'is_staff', 'is_superuser', 'status')}),
-        ('Thời gian', {'fields': ('last_login', 'created_at')}),
+        ('Personal Information', {'fields': ('full_name',)}),
+        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'status')}),
+        ('Timestamps', {'fields': ('last_login', 'created_at')}),
     )
 
 
@@ -63,33 +63,33 @@ class ProductAdmin(admin.ModelAdmin):
     inlines = [ProductVariantInline]
     
     def variants_count(self, obj):
-        """Hiển thị số lượng variants"""
+        """Display number of variants"""
         count = obj.variants.count()
         if count > 0:
             return f"{count} variants"
         return "0 variants"
-    variants_count.short_description = 'Số phân loại'
+    variants_count.short_description = 'Variants Count'
     
     def variants_count_display(self, obj):
-        """Hiển thị chi tiết variants trong edit form"""
+        """Display variant details in edit form"""
         if obj.pk:
             variants = obj.variants.all()
             if variants.exists():
-                html = f"<strong>Tổng số: {variants.count()}</strong><ul>"
+                html = f"<strong>Total: {variants.count()}</strong><ul>"
                 for v in variants:
                     status = "✓" if v.is_active else "✗"
-                    html += f"<li>{status} {v.variant_name} - {v.price} VNĐ (Stock: {v.stock})</li>"
+                    html += f"<li>{status} {v.variant_name} - £{v.price} (Stock: {v.stock})</li>"
                 html += "</ul>"
                 return html
-            return "Chưa có phân loại nào"
-        return "Lưu sản phẩm trước để thêm phân loại"
-    variants_count_display.short_description = 'Danh sách phân loại'
+            return "No variants yet"
+        return "Save product first to add variants"
+    variants_count_display.short_description = 'Variants List'
     variants_count_display.allow_tags = True
     
     def save_model(self, request, obj, form, change):
-        """Tự động bật has_variants nếu có variants"""
+        """Automatically enable has_variants if variants exist"""
         super().save_model(request, obj, form, change)
-        # Nếu có variants nhưng has_variants=False, tự động bật
+        # If variants exist but has_variants=False, automatically enable
         if obj.variants.exists() and not obj.has_variants:
             obj.has_variants = True
             obj.save(update_fields=['has_variants'])
@@ -146,7 +146,7 @@ class ReviewAdmin(admin.ModelAdmin):
     def content_preview(self, obj):
         """Preview of review content"""
         return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
-    content_preview.short_description = 'Nội dung'
+    content_preview.short_description = 'Content'
 
 
 @admin.register(ReviewMedia)
@@ -204,16 +204,16 @@ class CertificationOrganizationAdmin(admin.ModelAdmin):
     search_fields = ('name', 'abbreviation', 'description')
     readonly_fields = ('created_at', 'updated_at')
     fieldsets = (
-        ('Thông tin cơ bản', {
+        ('Basic Information', {
             'fields': ('name', 'abbreviation', 'description')
         }),
-        ('Thông tin liên hệ', {
+        ('Contact Information', {
             'fields': ('website',)
         }),
-        ('Trạng thái', {
+        ('Status', {
             'fields': ('is_active',)
         }),
-        ('Thời gian', {
+        ('Timestamps', {
             'fields': ('created_at', 'updated_at')
         }),
     )
@@ -238,6 +238,6 @@ class StoreVerificationRequestAdmin(admin.ModelAdmin):
     
     def certifications_count(self, obj):
         return obj.certifications.count()
-    certifications_count.short_description = 'Số chứng nhận'
+    certifications_count.short_description = 'Certifications Count'
 
 

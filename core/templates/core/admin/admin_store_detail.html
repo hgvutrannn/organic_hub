@@ -1,6 +1,6 @@
 {% extends 'core/base.html' %}
 
-{% block title %}Xem chi tiết cửa hàng - {{ store.store_name }}{% endblock %}
+{% block title %}Store Detail - {{ store.store_name }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
@@ -197,7 +197,7 @@
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-header bg-gradient bg-opacity-10 border-0">
                     <h3 class="mb-0 fw-bold">
-                        <i class="fas fa-gavel me-2"></i>Thao tác xác minh
+                        <i class="fas fa-gavel me-2"></i>Verification Actions
                     </h3>
                 </div>
                 <div class="card-body p-4">
@@ -206,36 +206,36 @@
                         <div class="row">
                             <div class="col-md-8">
                                 <div class="mb-4">
-                                    <label class="form-label fw-bold">Hành động</label>
+                                    <label class="form-label fw-bold">Action</label>
                                     <div class="d-flex gap-3">
                                         <div class="form-check">
                                             <input class="form-check-input" type="radio" name="action" id="approve" value="approve" checked>
                                             <label class="form-check-label fw-bold text-success" for="approve">
-                                                <i class="fas fa-check-circle me-1"></i>Phê duyệt cửa hàng
+                                                <i class="fas fa-check-circle me-1"></i>Approve Store
                                             </label>
                                         </div>
                                         <div class="form-check">
                                             <input class="form-check-input" type="radio" name="action" id="reject" value="reject">
                                             <label class="form-check-label fw-bold text-danger" for="reject">
-                                                <i class="fas fa-times-circle me-1"></i>Từ chối cửa hàng
+                                                <i class="fas fa-times-circle me-1"></i>Reject Store
                                             </label>
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div class="mb-4">
-                                    <label for="admin_notes" class="form-label fw-bold">Ghi chú của admin</label>
-                                    <textarea class="form-control" id="admin_notes" name="admin_notes" rows="4" placeholder="Nhập ghi chú (bắt buộc khi từ chối)"></textarea>
-                                    <div class="form-text">Ghi chú này sẽ được hiển thị cho chủ cửa hàng.</div>
+                                    <label for="admin_notes" class="form-label fw-bold">Admin Notes</label>
+                                    <textarea class="form-control" id="admin_notes" name="admin_notes" rows="4" placeholder="Enter notes (required when rejecting)"></textarea>
+                                    <div class="form-text">This note will be displayed to the store owner.</div>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="d-grid gap-2">
                                     <button type="submit" class="btn btn-success btn-lg rounded-pill">
-                                        <i class="fas fa-check me-2"></i>Xác nhận hành động
+                                        <i class="fas fa-check me-2"></i>Confirm Action
                                     </button>
                                     <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary rounded-pill">
-                                        <i class="fas fa-times me-2"></i>Hủy bỏ
+                                        <i class="fas fa-times me-2"></i>Cancel
                                     </a>
                                 </div>
                             </div>

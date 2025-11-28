@@ -29,7 +29,7 @@ class Notification(TimeStampedModel):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='notifications',
-        verbose_name='Người nhận',
+        verbose_name='Recipient',
     )
     order = models.ForeignKey(
         'core.Order',
@@ -37,7 +37,7 @@ class Notification(TimeStampedModel):
         null=True,
         blank=True,
         related_name='notifications',
-        verbose_name='Đơn hàng liên quan',
+        verbose_name='Related Order',
     )
     category = models.CharField(
         max_length=50,
@@ -49,13 +49,13 @@ class Notification(TimeStampedModel):
         choices=SEVERITY_CHOICES,
         default=SEVERITY_INFO,
     )
-    message = models.TextField(verbose_name='Nội dung thông báo')
-    is_read = models.BooleanField(default=False, verbose_name='Đã đọc')
+    message = models.TextField(verbose_name='Message')
+    is_read = models.BooleanField(default=False, verbose_name='Is Read')
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = 'Thông báo'
-        verbose_name_plural = 'Thông báo'
+        verbose_name = 'Notification'
+        verbose_name_plural = 'Notifications'
 
     def __str__(self):
         return f"Notification to {self.recipient_id} ({self.category})"

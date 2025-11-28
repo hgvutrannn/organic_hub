@@ -1,6 +1,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.core.cache import cache
+from django.utils import timezone
 from core.models import Product
 from .models import UserProductView
 
@@ -24,11 +25,11 @@ def track_product_view(product, user=None, session_key=None):
             view, created = UserProductView.objects.get_or_create(
                 user=user,
                 product=product,
-                defaults={'viewed_at': None, 'view_count': 1}
+                defaults={'view_count': 1}
             )
             if not created:
                 view.view_count += 1
-                view.viewed_at = None  # Will be set by default
+                view.viewed_at = timezone.now()  # Update to current time
                 view.save(update_fields=['view_count', 'viewed_at'])
             
             # Invalidate user recommendations cache (delete common limits)
@@ -38,11 +39,11 @@ def track_product_view(product, user=None, session_key=None):
             view, created = UserProductView.objects.get_or_create(
                 session_key=session_key,
                 product=product,
-                defaults={'viewed_at': None, 'view_count': 1}
+                defaults={'view_count': 1}
             )
             if not created:
                 view.view_count += 1
-                view.viewed_at = None
+                view.viewed_at = timezone.now()  # Update to current time
                 view.save(update_fields=['view_count', 'viewed_at'])
             
             # Invalidate session recommendations cache (delete common limits)

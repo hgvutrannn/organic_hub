@@ -108,14 +108,14 @@ function setupEventListeners() {
     if (attachBtn) {
         attachBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            alert('Chức năng đang phát triển');
+            alert('Feature under development');
         });
     }
     
     if (emojiBtn) {
         emojiBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            alert('Chức năng đang phát triển');
+            alert('Feature under development');
         });
     }
     

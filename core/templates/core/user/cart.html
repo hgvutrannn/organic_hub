@@ -5,10 +5,10 @@
 
 {% block extra_css %}
 <style>
-    /* Chỉ giữ lại những CSS cần thiết mà Bootstrap không hỗ trợ mặc định */
+    /* Keep only necessary CSS that Bootstrap doesn't support by default */
     body { background-color: #f8f9fa; }
     
-    .cart-container { padding-bottom: 120px; /* Tránh bị footer che */ }
+    .cart-container { padding-bottom: 120px; /* Avoid footer overlap */ }
     
     .product-img {
         width: 80px; height: 80px; object-fit: cover; border-radius: 6px;
@@ -35,7 +35,7 @@
 {% block content %}
 <div class="container cart-container mt-4">
     {% if stores_dict %}
-        <!-- Header Row (Ẩn trên Mobile) -->
+        <!-- Header Row (Hidden on Mobile) -->
         <div class="card mb-3 shadow-sm border-0 sticky-header d-none d-md-block">
             <div class="card-body py-3">
                 <div class="row align-items-center text-muted fw-bold fs-6">
@@ -489,7 +489,7 @@
         }
     }
 
-    // Sử dụng Form submit ẩn để giữ logic backend cũ
+    // Use hidden form submit to keep old backend logic
     function submitHiddenForm(actionUrl, data) {
         const form = document.createElement('form');
         form.method = 'POST';
@@ -515,26 +515,26 @@
     }
 
     function removeItem(itemId) {
-        if(confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
+        if(confirm('Are you sure you want to remove this product?')) {
             submitHiddenForm(`/remove-from-cart/${itemId}/`, {});
         }
     }
 
     function deleteSelected() {
         const selected = document.querySelectorAll('.item-checkbox:checked');
-        if(selected.length === 0) return alert('Vui lòng chọn sản phẩm để xóa');
+        if(selected.length === 0) return alert('Please select products to remove');
         
         if(confirm(`Delete ${selected.length} selected items?`)) {
-            // Logic xóa nhiều item: Ở đây gọi loop xóa từng cái (đơn giản hóa)
-            // Tốt nhất backend nên có endpoint delete-bulk
+            // Logic to delete multiple items: Here we loop to delete each one (simplified)
+            // Best practice: backend should have a delete-bulk endpoint
             selected.forEach(cb => {
-                // Lưu ý: Cách này sẽ reload trang nhiều lần nếu không dùng AJAX
-                // Để đơn giản cho template, ta chỉ xóa item đầu tiên tìm thấy (demo) hoặc cần backend hỗ trợ bulk delete
-                // Ở đây tôi dùng đệ quy đơn giản hoặc gọi API nếu có.
-                // Với code hiện tại, submit form sẽ reload trang ngay lập tức.
-                // Gợi ý: Gọi removeItem cho item đầu tiên, user sẽ phải bấm xóa tiếp.
+                // Note: This will reload the page multiple times if not using AJAX
+                // For template simplicity, we only delete the first found item (demo) or need backend bulk delete support
+                // Here I use simple recursion or call API if available.
+                // With current code, form submit will reload page immediately.
+                // Suggestion: Call removeItem for first item, user will need to click delete again.
             });
-            // Xóa item đầu tiên trong danh sách đã chọn để trigger reload
+            // Delete first item in selected list to trigger reload
             removeItem(selected[0].dataset.itemId);
         }
     }
@@ -542,7 +542,7 @@
     function checkout() {
         const selectedIds = Array.from(document.querySelectorAll('.item-checkbox:checked'))
                                  .map(cb => cb.dataset.itemId);
-        if(selectedIds.length === 0) return alert('Chưa chọn sản phẩm');
+        if(selectedIds.length === 0) return alert('No products selected');
         
         sessionStorage.setItem('selectedCartItems', JSON.stringify(selectedIds));
         
@@ -593,7 +593,7 @@
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
-                <p class="mt-2 text-muted">Đang tải mã giảm giá...</p>
+                <p class="mt-2 text-muted">Loading discount codes...</p>
             </div>
         `;
         modal.show();
@@ -608,7 +608,7 @@
             listContainer.innerHTML = `
                 <div class="text-center py-4 text-muted">
                     <i class="fas fa-ticket-alt fa-3x mb-3 opacity-25"></i>
-                    <p>Không có mã giảm giá nào khả dụng</p>
+                    <p>No discount codes available</p>
                 </div>
             `;
         } else {
@@ -649,7 +649,7 @@
         const discount = discountCodes[discountIndex];
         
         if (!discount) {
-            alert('Mã giảm giá không hợp lệ');
+            alert('Invalid discount code');
             return;
         }
         
@@ -663,9 +663,9 @@
         
         let discountText = discount.code;
         if (discount.discount_type === 'percentage') {
-            discountText += ` - Giảm ${discount.discount_value}%`;
+            discountText += ` - Discount ${discount.discount_value}%`;
         } else {
-            discountText += ` - Giảm ${discount.discount_value.toLocaleString('en-GB', { style: 'currency', currency: 'GBP' })}`;
+            discountText += ` - Discount ${discount.discount_value.toLocaleString('en-GB', { style: 'currency', currency: 'GBP' })}`;
         }
         
         appliedText.textContent = discountText;
@@ -683,7 +683,7 @@
         updateTotal(); // This will also call updateItemPrices()
         
         // Show success message
-        alert(`Đã áp dụng mã giảm giá: ${discount.code}`);
+        alert(`Discount code applied: ${discount.code}`);
     }
 
     // Load applied discounts on page load
@@ -697,9 +697,9 @@
             if (appliedDiv && appliedText && discount) {
                 let discountText = discount.code;
                 if (discount.discount_type === 'percentage') {
-                    discountText += ` - Giảm ${discount.discount_value}%`;
+                    discountText += ` - Discount ${discount.discount_value}%`;
                 } else {
-                    discountText += ` - Giảm ${discount.discount_value.toLocaleString('en-GB', { style: 'currency', currency: 'GBP' })}`;
+                    discountText += ` - Discount ${discount.discount_value.toLocaleString('en-GB', { style: 'currency', currency: 'GBP' })}`;
                 }
                 
                 appliedText.textContent = discountText;

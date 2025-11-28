@@ -12,13 +12,25 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+def get_required_env(key: str) -> str:
+    """Get required environment variable, raise error if missing"""
+    value = os.getenv(key)
+    if value is None or value == '':
+        raise ValueError(
+            f"Required environment variable '{key}' is not set. "
+            f"Please set it in your .env file."
+        )
+    return value
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-your-secret-key-here'
+SECRET_KEY = get_required_env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = get_required_env('ALLOWED_HOSTS').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -164,9 +176,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'email-smtp.ap-southeast-2.amazonaws.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'AKIAS3JFE6DYIOAM7DZU'
-EMAIL_HOST_PASSWORD = 'BDdu0Gt6j22zmca7neJRW1/o2bbzY3H42j/WLnY1vMCY'
-DEFAULT_FROM_EMAIL = 'vuthgcs220851@fpt.edu.vn'
+EMAIL_HOST_USER = get_required_env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = get_required_env('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = get_required_env('DEFAULT_FROM_EMAIL')
 AWS_SES_REGION_NAME = 'ap-southeast-2'
 
 # OTP Settings
@@ -197,8 +209,6 @@ ELASTICSEARCH_DSL = {
 if ELASTICSEARCH_USE_SSL:
     ELASTICSEARCH_DSL['default']['verify_certs'] = ELASTICSEARCH_VERIFY_CERTS
 
-# Google Gemini AI Configuration
-GOOGLE_GEMINI_API_KEY = os.getenv('GOOGLE_GEMINI_API_KEY', 'AIzaSyAemsSExWGn4orc9YSWtJLbz_fWyfdpXms')
 
 # Logging Configuration
 LOGGING = {

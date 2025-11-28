@@ -69,7 +69,7 @@ class ProductSearchService:
                 
                 # THÊM FILTER NÀY
                 if filters.get('certificate_id'):
-                    # Sử dụng 'terms' query để match với bất kỳ giá trị nào trong array
+                    # Use 'terms' query to match with any value in the array
                     filter_queries.append(
                         Q('terms', certification_organization_ids=[filters['certificate_id']])
                     )
@@ -171,7 +171,7 @@ class ProductSearchService:
             
             # THÊM FILTER NÀY
             if filters.get('certificate_id'):
-                # Filter products có Store với CertificationOrganization này
+                # Filter products with Store having this CertificationOrganization
                 products = products.filter(
                     store__verification_requests__certifications__certification_organization_id=filters['certificate_id']
                 ).distinct()

@@ -168,7 +168,7 @@ function addProductToForm(product) {
                 </div>
                 <div class="col-md-10">
                     <strong>${escapeHtml(product.name)}</strong>
-                    <br><small class="text-muted">Giá: ${product.price.toLocaleString('vi-VN')} VNĐ</small>
+                    <br><small class="text-muted">Price: £${product.price.toFixed(2)}</small>
                 </div>
                 <div class="col-md-1 text-end">
                     <button type="button" class="btn btn-sm btn-outline-danger" 
@@ -196,7 +196,7 @@ function removeProduct(productId) {
         selectedList.innerHTML = `
             <div class="text-center py-4 text-muted">
                 <i class="fas fa-box fa-2x mb-2"></i>
-                <p class="mb-0">Chưa có sản phẩm nào. Nhấn "Thêm sản phẩm" để chọn.</p>
+                <p class="mb-0">No products yet. Click "Add Product" to select.</p>
             </div>
         `;
     }
