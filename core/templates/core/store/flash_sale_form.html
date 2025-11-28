@@ -72,16 +72,22 @@
                                 </div>
                                 {% endif %}
                             </div>
-                            <div class="col-md-4">
-                                <strong>{{ flash_product.product.name }}</strong>
-                                <br><small class="text-muted">Original Price: {{ flash_product.product.price|floatformat:0 }} VNĐ</small>
-                            </div>
                             <div class="col-md-3">
+                                <strong>{{ flash_product.product.name }}</strong>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small">Current Price</label>
+                                <div class="form-control form-control-sm bg-light" style="padding: 0.375rem 0.75rem;">
+                                    £{{ flash_product.product.price|floatformat:2 }}
+                                </div>
+                            </div>
+                            <div class="col-md-2">
                                 <label class="form-label small">Flash Sale Price</label>
                                 <input type="number" class="form-control form-control-sm" 
                                        name="flash_price_{{ flash_product.product.product_id }}"
-                                       value="{{ flash_product.flash_price|floatformat:0 }}"
-                                       min="0" step="1000" required>
+                                       value="{{ flash_product.flash_price|floatformat:2 }}"
+                                       min="0.01" step="0.01" required
+                                       onchange="validateFlashPrice(this, {{ flash_product.product.price }})">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label small">Quantity</label>
@@ -202,7 +208,7 @@ function displayProducts(products) {
                             }
                         </div>
                         <h6 class="card-title mt-2 small">${product.name}</h6>
-                        <p class="card-text small text-primary mb-0">${product.price.toLocaleString('vi-VN')} VNĐ</p>
+                        <p class="card-text small text-primary mb-0">£${product.display_price.toFixed(2)}</p>
                     </div>
                 </div>
             </div>
@@ -271,16 +277,22 @@ function addProductToForm(product) {
                         </div>`
                     }
                 </div>
-                <div class="col-md-4">
-                    <strong>${product.name}</strong>
-                    <br><small class="text-muted">Original Price: £${product.price.toFixed(2)}</small>
-                </div>
                 <div class="col-md-3">
+                    <strong>${product.name}</strong>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Current Price</label>
+                    <div class="form-control form-control-sm bg-light" style="padding: 0.375rem 0.75rem;">
+                        £${product.display_price.toFixed(2)}
+                    </div>
+                </div>
+                <div class="col-md-2">
                     <label class="form-label small">Flash Sale Price</label>
                     <input type="number" class="form-control form-control-sm" 
                            name="flash_price_${product.product_id}"
-                           value="${product.price}"
-                           min="0" step="1000" required>
+                           value="${product.display_price.toFixed(2)}"
+                           min="0.01" step="0.01" required
+                           onchange="validateFlashPrice(this, ${product.display_price})">
                 </div>
                 <div class="col-md-2">
                     <label class="form-label small">Quantity</label>
@@ -324,6 +336,15 @@ function removeProduct(productId) {
 function searchProducts() {
     const search = document.getElementById('productSearchInput').value;
     loadProducts(search);
+}
+
+// Validate flash price input
+function validateFlashPrice(input, originalPrice) {
+    const value = parseFloat(input.value);
+    if (isNaN(value) || value <= 0) {
+        input.value = originalPrice.toFixed(2);
+        alert('Flash Sale Price must be greater than 0. Using original price.');
+    }
 }
 
 // Load products on page load if modal is opened

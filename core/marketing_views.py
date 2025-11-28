@@ -391,6 +391,7 @@ def get_store_products_ajax(request, store_id):
             'product_id': product.product_id,
             'name': product.name,
             'price': float(product.price),
+            'display_price': float(product.display_price),
             'image_url': product.get_primary_image.url if product.get_primary_image else None,
             'stock': product.variants.first().stock if product.has_variants and product.variants.exists() else 0,
         })
