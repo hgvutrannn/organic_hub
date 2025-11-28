@@ -54,63 +54,85 @@
     {% endif %}
 
     {% if products %}
-        <!-- Products List -->
-        <div class="row">
-            {% for product in products %}
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="card border-0 shadow-sm rounded-4 h-100">
-                        <!-- Product Image -->
-                        <div class="position-relative">
-                            {% if product.get_primary_image %}
-                                <img src="{{ product.get_primary_image.url }}" 
-                                     alt="{{ product.name }}" 
-                                     class="card-img-top rounded-top-4 square-image" 
-                                     style="width: 100%; aspect-ratio: 1 / 1; object-fit: cover; object-position: center;">
-                            {% else %}
-                                <div class="bg-light bg-opacity-50 d-flex align-items-center justify-content-center rounded-top-4" 
-                                     style="height: 200px;">
-                                    <div class="text-center">
-                                        <i class="fas fa-image text-muted mb-2" style="font-size: 2rem;"></i>
-                                        <p class="text-muted small mb-0">No Image</p>
-                                    </div>
-                                </div>
-                            {% endif %}
-                            
-                        </div>
-                        
-                        <div class="card-body p-4">
-                            <h5 class="card-title fw-bold mb-2">{{ product.name }}</h5>
-                            
-                            {% if product.description %}
-                                <p class="text-muted small mb-3">{{ product.description|truncatechars:80 }}</p>
-                            {% endif %}
-                            
-                            <div class="row mb-3">
-                                <div class="col-6">
-                                    <h6 class="fw-bold text-muted mb-1">Price</h6>
-                                    <p class="mb-0 fw-bold text-primary">{{ product.price|floatformat:0 }} VNĐ</p>
-                                </div>
-                                <div class="col-6">
-                                    <h6 class="fw-bold text-muted mb-1">Views</h6>
-                                    <p class="mb-0">{{ product.view_count }}</p>
-                                </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <h6 class="fw-bold text-muted mb-1">Category</h6>
-                                <span class="badge bg-light text-dark">{{ product.category.name|default:"Uncategorized" }}</span>
-                            </div>
-                            
-                            <div class="d-grid">
-                                <a href="{% url 'edit_product' store.store_id product.product_id %}" 
-                                   class="btn btn-outline-primary rounded-pill">
-                                    <i class="fas fa-edit me-1"></i>Edit Product
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+        <!-- Products Table -->
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 80px;" class="text-center">Image</th>
+                                <th>Product Name</th>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th class="text-end" style="width: 120px;">Price</th>
+                                <th class="text-center" style="width: 100px;">Views</th>
+                                <th class="text-center" style="width: 150px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products %}
+                            <tr>
+                                <!-- Product Image -->
+                                <td class="text-center">
+                                    {% if product.get_primary_image %}
+                                        <img src="{{ product.get_primary_image.url }}" 
+                                             alt="{{ product.name }}" 
+                                             class="rounded" 
+                                             style="width: 60px; height: 60px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-light bg-opacity-50 d-flex align-items-center justify-content-center rounded mx-auto" 
+                                             style="width: 60px; height: 60px;">
+                                            <i class="fas fa-image text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                
+                                <!-- Product Name -->
+                                <td>
+                                    <div class="fw-bold">{{ product.name }}</div>
+                                    {% if product.SKU %}
+                                        <small class="text-muted">SKU: {{ product.SKU }}</small>
+                                    {% endif %}
+                                </td>
+                                
+                                <!-- Description -->
+                                <td>
+                                    {% if product.description %}
+                                        <p class="text-muted small mb-0">{{ product.description|truncatechars:100 }}</p>
+                                    {% else %}
+                                        <span class="text-muted small">No description</span>
+                                    {% endif %}
+                                </td>
+                                
+                                <!-- Category -->
+                                <td>
+                                    <span class="badge bg-light text-dark">{{ product.category.name|default:"Uncategorized" }}</span>
+                                </td>
+                                
+                                <!-- Price -->
+                                <td class="text-end">
+                                    <span class="fw-bold text-primary">{{ product.price|floatformat:2 }} GBP</span>
+                                </td>
+                                
+                                <!-- Views -->
+                                <td class="text-center">
+                                    <span class="text-muted">{{ product.view_count }}</span>
+                                </td>
+                                
+                                <!-- Actions -->
+                                <td class="text-center">
+                                    <a href="{% url 'edit_product' store.store_id product.product_id %}" 
+                                       class="btn btn-sm btn-outline-primary rounded-pill">
+                                        <i class="fas fa-edit me-1"></i>Edit
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-            {% endfor %}
+            </div>
         </div>
         
         <!-- Pagination -->
