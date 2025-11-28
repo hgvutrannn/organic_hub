@@ -3,7 +3,59 @@
  * Handles product gallery, variant selection, and add to cart functionality
  */
 
-// Send product message to chat
+// Helper to get CSRF token
+function getCsrfToken() {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrftoken') {
+            return value;
+        }
+    }
+    // Fallback: try to get from meta tag
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    if (metaTag) {
+        return metaTag.getAttribute('content');
+    }
+    // Fallback: try to get from form
+    const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    if (csrfInput) {
+        return csrfInput.value;
+    }
+    return '';
+}
+
+// Initialize chat with store and send product inquiry message
+async function initChatWithStore(storeOwnerId, productName) {
+    try {
+        const response = await fetch(`/chat/api/init-room/${storeOwnerId}/?product_name=${encodeURIComponent(productName)}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'Content-Type': 'application/json',
+            },
+            credentials: 'same-origin'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            // Open chat widget with the room
+            if (typeof openChatWidget === 'function') {
+                openChatWidget(storeOwnerId);
+            } else {
+                document.getElementById('chatToggleBtn')?.click();
+            }
+        } else {
+            const error = await response.json().catch(() => ({ error: 'Failed to initialize chat' }));
+            alert(error.error || 'Failed to initialize chat. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error initializing chat:', error);
+        alert('An error occurred. Please try again.');
+    }
+}
+
+// Send product message to chat (kept for backward compatibility)
 function sendProductMessage(productName, storeOwnerId) {
     // Save product information to localStorage for use in chat
     console.log('Saving to localStorage:', productName, storeOwnerId);
@@ -226,6 +278,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Make functions globally available
 window.sendProductMessage = sendProductMessage;
+window.initChatWithStore = initChatWithStore;
+window.getCsrfToken = getCsrfToken;
 window.changeMainImage = changeMainImage;
 window.handleVariantSelection = handleVariantSelection;
 

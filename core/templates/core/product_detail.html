@@ -240,7 +240,7 @@
                         <p>Have questions about this product? Chat directly with the store owner!</p>
                         <a href="#" 
                            class="btn btn-primary"
-                           onclick="sendProductMessage('{{ product.name }}', '{{ product.store.user.user_id }}'); if(typeof openChatWidget === 'function') { openChatWidget({{ product.store.user.user_id }}); } else { document.getElementById('chatToggleBtn')?.click(); } return false;">
+                           onclick="initChatWithStore({{ product.store.user.user_id }}, '{{ product.name|escapejs }}'); return false;">
                             <i class="fas fa-comment-dots"></i> Chat with {{ product.store.store_name }}
                         </a>
                     {% else %}

@@ -149,3 +149,42 @@ def mark_message_read(request, other_user_id):
         'success': True,
         'updated': updated,
     })
+
+
+@login_required
+@require_POST
+def init_chat_room(request, user_id):
+    """Send product inquiry message to store owner and return room info"""
+    store_owner = get_object_or_404(CustomUser, user_id=user_id)
+    current_user = request.user
+    
+    # Prevent chatting with yourself
+    if current_user.user_id == user_id:
+        return JsonResponse({'error': 'Cannot chat with yourself'}, status=400)
+    
+    # Build room name (same format as chat system uses)
+    user_ids = sorted([current_user.user_id, store_owner.user_id])
+    room_name = f"chat_{user_ids[0]}_{user_ids[1]}"
+    
+    # Get product name from query params
+    product_name = request.GET.get('product_name', 'this product')
+    
+    # Always create a new message about the product
+    initial_message = f"Hi, I'm interested about {product_name}. Can you tell me more about this?"
+    Message.objects.create(
+        sender=current_user,
+        recipient=store_owner,
+        content=initial_message,
+        room_name=room_name
+    )
+    
+    return JsonResponse({
+        'success': True,
+        'room_name': room_name,
+        'other_user': {
+            'user_id': store_owner.user_id,
+            'full_name': store_owner.full_name or store_owner.email,
+            'email': store_owner.email,
+            'avatar': store_owner.avatar.url if store_owner.avatar else None,
+        }
+    })
