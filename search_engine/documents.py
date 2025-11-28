@@ -25,7 +25,6 @@ class ProductDocument(Document):
     store_id = fields.IntegerField()
     store_name = fields.KeywordField()
     certification_organization_ids = fields.KeywordField(multi=True)  # Multi-value field
-    is_active = fields.BooleanField()
     created_at = fields.DateField()
     view_count = fields.IntegerField()
 
@@ -100,10 +99,6 @@ class ProductDocument(Document):
                     certification_ids.append(cert.certification_organization.organization_id)
         
         return certification_ids
-        
-    def prepare_is_active(self, instance):
-        """Prepare is_active field"""
-        return instance.is_active
 
     def prepare_created_at(self, instance):
         """Prepare created_at field"""

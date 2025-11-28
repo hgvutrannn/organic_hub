@@ -39,12 +39,6 @@ def create_order_status_notifications(order_id: int, new_status: str, triggered_
     message_template = _('Đơn hàng #{order_id} đã chuyển sang trạng thái "{status}".')
     message = message_template.format(order_id=order.order_id, status=status_display)
 
-    metadata = {
-        'order_id': order.order_id,
-        'status': new_status,
-        'status_display': status_display,
-    }
-
     channel_layer = get_channel_layer()
 
     for recipient_id in recipient_ids:
@@ -54,7 +48,6 @@ def create_order_status_notifications(order_id: int, new_status: str, triggered_
             category=Notification.CATEGORY_ORDER_STATUS,
             severity=severity,
             message=message,
-            metadata=metadata,
         )
 
         if channel_layer is None:
@@ -65,7 +58,6 @@ def create_order_status_notifications(order_id: int, new_status: str, triggered_
             'message': notification.message,
             'category': notification.category,
             'severity': notification.severity,
-            'metadata': notification.metadata,
             'order_id': notification.order_id,
             'created_at': notification.created_at.isoformat(),
             'is_read': notification.is_read,

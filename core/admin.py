@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import (
     CustomUser, Category, Address, Store, Product, CartItem, 
-    Order, OrderItem, Review, ProductComment, ReviewMedia, StoreReviewStats, ProductVariant,
+    Order, OrderItem, Review, ReviewMedia, StoreReviewStats, ProductVariant,
     FlashSale, FlashSaleProduct, DiscountCode, DiscountCodeProduct, CertificationOrganization,
     StoreCertification, StoreVerificationRequest
 )
@@ -55,8 +55,8 @@ class ProductVariantInline(admin.TabularInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'store', 'category', 'price', 'has_variants', 'variants_count', 'is_active', 'view_count', 'created_at')
-    list_filter = ('is_active', 'has_variants', 'category', 'store', 'created_at')
+    list_display = ('name', 'store', 'category', 'price', 'has_variants', 'variants_count', 'view_count', 'created_at')
+    list_filter = ('has_variants', 'category', 'store', 'created_at')
     search_fields = ('name', 'description', 'SKU')
     list_select_related = ('store', 'category')
     readonly_fields = ('view_count', 'created_at', 'variants_count_display')
@@ -149,19 +149,6 @@ class ReviewAdmin(admin.ModelAdmin):
     content_preview.short_description = 'Nội dung'
 
 
-@admin.register(ProductComment)
-class ProductCommentAdmin(admin.ModelAdmin):
-    list_display = ('user', 'product', 'content_preview', 'has_seller_reply', 'is_approved', 'created_at')
-    list_filter = ('is_approved', 'created_at')
-    search_fields = ('user__email', 'user__full_name', 'product__name', 'content')
-    list_select_related = ('user', 'product')
-    
-    def content_preview(self, obj):
-        """Preview of comment content"""
-        return obj.content[:50] + '...' if len(obj.content) > 50 else obj.content
-    content_preview.short_description = 'Nội dung'
-
-
 @admin.register(ReviewMedia)
 class ReviewMediaAdmin(admin.ModelAdmin):
     list_display = ('review', 'media_type', 'order', 'created_at')
@@ -189,15 +176,15 @@ class FlashSaleAdmin(admin.ModelAdmin):
 
 @admin.register(FlashSaleProduct)
 class FlashSaleProductAdmin(admin.ModelAdmin):
-    list_display = ('flash_sale', 'product', 'flash_price', 'flash_stock', 'sort_order')
+    list_display = ('flash_sale', 'product', 'flash_price', 'flash_stock')
     list_filter = ('flash_sale', 'created_at')
     search_fields = ('product__name', 'flash_sale__name')
 
 
 @admin.register(DiscountCode)
 class DiscountCodeAdmin(admin.ModelAdmin):
-    list_display = ('code', 'name', 'store', 'discount_type', 'discount_value', 'scope', 'status', 'start_date', 'end_date', 'used_count', 'max_usage')
-    list_filter = ('discount_type', 'scope', 'status', 'is_active', 'created_at')
+    list_display = ('code', 'name', 'store', 'discount_type', 'discount_value', 'status', 'start_date', 'end_date', 'used_count', 'max_usage')
+    list_filter = ('discount_type', 'status', 'is_active', 'created_at')
     search_fields = ('code', 'name', 'store__store_name')
     readonly_fields = ('used_count', 'created_at', 'updated_at')
     date_hierarchy = 'created_at'
@@ -234,9 +221,9 @@ class CertificationOrganizationAdmin(admin.ModelAdmin):
 
 @admin.register(StoreCertification)
 class StoreCertificationAdmin(admin.ModelAdmin):
-    list_display = ('certification_id', 'verification_request', 'certification_type', 'certification_organization', 'certification_name', 'uploaded_at')
-    list_filter = ('certification_type', 'certification_organization', 'uploaded_at')
-    search_fields = ('certification_name', 'verification_request__store__store_name')
+    list_display = ('certification_id', 'verification_request', 'certification_organization', 'uploaded_at')
+    list_filter = ('certification_organization', 'uploaded_at')
+    search_fields = ('certification_organization__name', 'verification_request__store__store_name')
     readonly_fields = ('uploaded_at',)
     list_select_related = ('verification_request__store', 'certification_organization')
 

@@ -62,12 +62,12 @@
                     <!-- Original Price (Above) -->
                     {% if flash_product.product.price >= flash_product.flash_price %}
                     <span class="text-muted text-decoration-line-through small mb-1">
-                        {{ flash_product.product.price|floatformat:0|intcomma }} VNĐ
+                        £{{ flash_product.product.price|floatformat:2|intcomma }}
                     </span>
                     {% endif %}
                     <!-- Flash Price (Below) -->
                     <span class="h5 fw-bold text-danger mb-0">
-                        {{ flash_product.flash_price|floatformat:0|intcomma }} VNĐ
+                        £{{ flash_product.flash_price|floatformat:2|intcomma }}
                     </span>
                 </div>
             </div>

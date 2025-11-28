@@ -1,9 +1,10 @@
 from django.conf import settings
 from django.db import models
-from django.utils import timezone
+
+from core.models import TimeStampedModel
 
 
-class Notification(models.Model):
+class Notification(TimeStampedModel):
     """Represents a user facing notification persisted for history."""
 
     CATEGORY_ORDER_STATUS = 'order_status'
@@ -49,11 +50,7 @@ class Notification(models.Model):
         default=SEVERITY_INFO,
     )
     message = models.TextField(verbose_name='Nội dung thông báo')
-    metadata = models.JSONField(blank=True, null=True, verbose_name='Metadata bổ sung')
     is_read = models.BooleanField(default=False, verbose_name='Đã đọc')
-    read_at = models.DateTimeField(null=True, blank=True, verbose_name='Thời gian đọc')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Thời gian tạo')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Thời gian cập nhật')
 
     class Meta:
         ordering = ['-created_at']
@@ -67,5 +64,4 @@ class Notification(models.Model):
         """Mark the notification as read."""
         if not self.is_read:
             self.is_read = True
-            self.read_at = timezone.now()
-            self.save(update_fields=['is_read', 'read_at'])
+            self.save(update_fields=['is_read'])

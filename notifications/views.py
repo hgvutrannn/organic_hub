@@ -1,7 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from .models import Notification
@@ -29,7 +28,6 @@ def notification_list(request):
             'message': notification.message,
             'severity': notification.severity,
             'category': notification.category,
-            'metadata': notification.metadata,
             'order_id': notification.order_id,
             'is_read': notification.is_read,
             'created_at': notification.created_at.isoformat(),
@@ -55,8 +53,7 @@ def mark_notification_read(request, pk):
     notification = get_object_or_404(Notification, pk=pk, recipient=request.user)
     if not notification.is_read:
         notification.is_read = True
-        notification.read_at = timezone.now()
-        notification.save(update_fields=['is_read', 'read_at'])
+        notification.save(update_fields=['is_read'])
 
     return JsonResponse({'success': True})
 
@@ -69,7 +66,7 @@ def mark_all_notifications_read(request):
     updated = (
         request.user.notifications
         .filter(is_read=False)
-        .update(is_read=True, read_at=timezone.now())
+        .update(is_read=True)
     )
 
     return JsonResponse({'success': True, 'updated': updated})

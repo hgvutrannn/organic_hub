@@ -18,7 +18,7 @@ function setupDiscountTypeHandler() {
     if (!discountTypeSelect) return;
 
     discountTypeSelect.addEventListener('change', function() {
-        const unit = this.value === 'percentage' ? '%' : 'VNĐ';
+        const unit = this.value === 'percentage' ? '%' : 'GBP';
         const unitElement = document.getElementById('discountUnit');
         const maxDiscountContainer = document.getElementById('maxDiscountContainer');
         
@@ -29,32 +29,6 @@ function setupDiscountTypeHandler() {
             maxDiscountContainer.style.display = this.value === 'percentage' ? 'block' : 'none';
         }
     });
-}
-
-// Handle scope change
-function toggleProductSelection() {
-    const scopeSelect = document.getElementById('scopeSelect');
-    const productsCard = document.getElementById('productsSelectionCard');
-    
-    if (!scopeSelect || !productsCard) return;
-
-    const scope = scopeSelect.value;
-    if (scope === 'products') {
-        productsCard.style.display = 'block';
-    } else {
-        productsCard.style.display = 'none';
-        // Clear selected products
-        selectedProductIds.clear();
-        const selectedList = document.getElementById('selected-products-list');
-        if (selectedList) {
-            selectedList.innerHTML = `
-                <div class="text-center py-4 text-muted">
-                    <i class="fas fa-box fa-2x mb-2"></i>
-                    <p class="mb-0">Chưa có sản phẩm nào. Nhấn "Thêm sản phẩm" để chọn.</p>
-                </div>
-            `;
-        }
-    }
 }
 
 function openProductSelector() {
@@ -254,13 +228,6 @@ document.addEventListener('DOMContentLoaded', function() {
         maxDiscountContainer.style.display = discountTypeSelect.value === 'percentage' ? 'block' : 'none';
     }
     
-    // Initialize products selection card visibility based on current scope
-    const scopeSelect = document.getElementById('scopeSelect');
-    const productsCard = document.getElementById('productsSelectionCard');
-    if (scopeSelect && productsCard) {
-        productsCard.style.display = scopeSelect.value === 'products' ? 'block' : 'none';
-    }
-    
     // Auto-uppercase code input
     const codeInput = document.querySelector('input[name="code"]');
     if (codeInput) {
@@ -268,19 +235,9 @@ document.addEventListener('DOMContentLoaded', function() {
             this.value = this.value.toUpperCase();
         });
     }
-    
-    // Check scope from URL parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('scope') === 'products') {
-        if (scopeSelect) {
-            scopeSelect.value = 'products';
-            toggleProductSelection();
-        }
-    }
 });
 
 // Make functions globally available
-window.toggleProductSelection = toggleProductSelection; // For scope change
 window.toggleProductCardSelection = toggleProductCardSelection; // For product card selection
 window.openProductSelector = openProductSelector;
 window.confirmProductSelection = confirmProductSelection;

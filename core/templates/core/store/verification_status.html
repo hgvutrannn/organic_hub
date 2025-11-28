@@ -136,7 +136,7 @@
                                                 <div class="col-md-6 col-lg-4 mb-3">
                                                     <div class="card border-0 bg-light rounded-3">
                                                         <div class="card-body">
-                                                            <h6 class="fw-bold mb-2">{{ cert.get_certification_type_display }}</h6>
+                                                            <h6 class="fw-bold mb-2">{{ cert.certification_organization.name|default:"Unknown Organization" }}</h6>
                                                             {% if cert.certification_organization %}
                                                             <div class="mb-2">
                                                                 <span class="badge bg-info">
@@ -144,9 +144,6 @@
                                                                 </span>
                                                                 <small class="text-muted d-block mt-1">{{ cert.certification_organization.name }}</small>
                                                             </div>
-                                                            {% endif %}
-                                                            {% if cert.certification_name %}
-                                                            <p class="text-muted small mb-2">{{ cert.certification_name }}</p>
                                                             {% endif %}
                                                             <p class="text-muted small mb-3">
                                                                 <i class="fas fa-calendar me-1"></i>{{ cert.uploaded_at|date:"d/m/Y H:i" }}
@@ -175,11 +172,11 @@
                                                     <div class="modal-dialog modal-lg">
                                                         <div class="modal-content">
                                                             <div class="modal-header">
-                                                                <h5 class="modal-title">{{ cert.get_certification_type_display }}</h5>
+                                                                <h5 class="modal-title">{{ cert.certification_organization.name|default:"Certification" }}</h5>
                                                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                             </div>
                                                             <div class="modal-body text-center">
-                                                                <img src="{{ cert.document.url }}" class="img-fluid rounded" alt="{{ cert.certification_name|default:cert.get_certification_type_display }}">
+                                                                <img src="{{ cert.document.url }}" class="img-fluid rounded" alt="{{ cert.certification_organization.name|default:'Certification' }}">
                                                             </div>
                                                             <div class="modal-footer">
                                                                 <a href="{{ cert.document.url }}" download class="btn btn-primary">

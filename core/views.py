@@ -15,7 +15,7 @@ from .models import (
     CustomUser, Product, 
     Category, CartItem, Order, OrderItem, Review, Address, Store, 
     ProductImage, StoreCertification, StoreVerificationRequest,
-    ProductComment, ReviewMedia, StoreReviewStats, ProductVariant,
+    ReviewMedia, StoreReviewStats, ProductVariant,
     FlashSale, FlashSaleProduct, DiscountCode, DiscountCodeProduct,
     CertificationOrganization
 )
@@ -28,7 +28,7 @@ from .forms import (
     CustomUserRegistrationForm, LoginForm, ProductForm, AddressForm, ReviewForm, SearchForm, ProfileUpdateForm,
     StoreCertificationForm, AdminStoreReviewForm, PasswordChangeForm, ForgotPasswordForm, 
     PasswordResetConfirmForm, OTPVerificationForm,
-    ProductCommentForm, ProductCommentReplyForm, ReviewReplyForm, StoreReviewFilterForm,
+    ReviewReplyForm, StoreReviewFilterForm,
     CategoryForm, CertificationOrganizationForm
 )
 from chat.models import Message
@@ -53,20 +53,6 @@ def get_user_purchased_products(user):
         order_items__order__user=user,
         order_items__order__status='delivered'
     ).distinct()
-
-
-def can_comment_product(user, product):
-    """Check if user can comment on a product"""
-    if not user.is_authenticated:
-        return False
-    return has_user_purchased_product(user, product)
-
-
-def can_reply_comment(user, comment):
-    """Check if user can reply to a comment (must be shop owner)"""
-    if not user.is_authenticated:
-        return False
-    return comment.product.store.user == user
 
 
 def can_create_review(user, order_item):
@@ -154,15 +140,14 @@ def home(request):
     flash_sale_products_queryset = FlashSaleProduct.objects.filter(
         flash_sale__is_active=True,
         flash_sale__start_date__lte=now,
-        flash_sale__end_date__gte=now,
-        product__is_active=True
+        flash_sale__end_date__gte=now
     ).select_related(
         'product', 
         'product__store', 
         'product__category',
         'flash_sale',
         'flash_sale__store'
-    ).order_by('flash_sale__end_date', 'sort_order')[:20]  # Limit to 20 products
+    ).order_by('flash_sale__end_date', 'created_at')[:20]  # Limit to 20 products
     
     # Calculate discount percentage and time remaining for each product
     flash_sale_products = []
@@ -272,8 +257,6 @@ def user_login(request):
                 
                 # Email verified, allow login
                 login(request, user)
-                user.last_login_at = timezone.now()
-                print(user.user_id)
                 user.save()
                 messages.success(request, f'Chào mừng {user.full_name}!')
                 return redirect('home')
@@ -343,7 +326,6 @@ def product_list(request):
                 filters['min_price'] = min_price
             if max_price:
                 filters['max_price'] = max_price
-            filters['is_active'] = True
             
             print(f"🚀 Attempting Elasticsearch search with filters: {filters}")
             
@@ -371,7 +353,7 @@ def product_list(request):
     # Fallback to Django ORM search (original method)
     if not use_elasticsearch or products_queryset is None:
         print(f"🔄 Falling back to Django ORM search")
-        products = Product.objects.filter(is_active=True)
+        products = Product.objects.all()
         
         if query:
             products = products.filter(
@@ -466,7 +448,7 @@ def product_detail(request, product_id):
     from recommendations.services import RecommendationService
     from recommendations.signals import track_product_view
     
-    product = get_object_or_404(Product, pk=product_id, is_active=True)
+    product = get_object_or_404(Product, pk=product_id)
     
     # Tăng view count
     product.view_count += 1
@@ -557,15 +539,14 @@ def product_detail(request, product_id):
 # Cart Views
 @login_required
 def get_store_discount_codes(request, store_id):
-    """API endpoint to get available discount codes for a store (shop scope only, active)"""
+    """API endpoint to get available discount codes for a store (active)"""
     try:
         store = Store.objects.get(store_id=store_id)
         now = timezone.now()
         
-        # Get active discount codes with shop scope only
+        # Get active discount codes
         discount_codes = DiscountCode.objects.filter(
             store=store,
-            scope='shop',
             status='active',
             is_active=True,
             start_date__lte=now,
@@ -583,7 +564,6 @@ def get_store_discount_codes(request, store_id):
                 'discount_type': code.discount_type,
                 'discount_value': float(code.discount_value),
                 'max_discount': float(code.max_discount_amount) if code.max_discount_amount else None,
-                'scope': code.scope,
             })
         
         return JsonResponse({
@@ -689,7 +669,7 @@ def cart(request):
 @require_POST
 def add_to_cart(request, product_id):
     """Thêm sản phẩm vào giỏ hàng"""
-    product = get_object_or_404(Product, pk=product_id, is_active=True)
+    product = get_object_or_404(Product, pk=product_id)
     quantity = int(request.POST.get('quantity', 1))
     variant_id = request.POST.get('variant_id')
     
@@ -850,7 +830,8 @@ def checkout(request):
                 })
             
             from decimal import Decimal
-            shipping_cost = Decimal('30000')
+            # Flat shipping fee in GBP
+            shipping_cost = Decimal('3.00')
             final_total = subtotal - total_discount + shipping_cost
             
             # Load last checkout info from session
@@ -897,7 +878,8 @@ def checkout(request):
                 total_discount += discount_amount
         
         # Tạo đơn hàng cho mỗi store (mỗi store một order riêng)
-        shipping_cost = Decimal('30000')  # Phí ship cố định cho mỗi order
+        # Flat shipping fee in GBP per order
+        shipping_cost = Decimal('3.00')
         notes = request.POST.get('notes', '')
         created_orders = []
         
@@ -1007,7 +989,8 @@ def checkout(request):
     
     # Calculate final total
     from decimal import Decimal
-    shipping_cost = Decimal('30000')
+    # Flat shipping fee in GBP
+    shipping_cost = Decimal('3.00')
     final_total = subtotal - total_discount + shipping_cost
     
     # Load last checkout info from session để pre-fill form
@@ -1190,7 +1173,6 @@ def create_store(request):
                                 'verification_request': verification_request,
                                 'certificate_number': cert_number,
                                 'document': file,
-                                'certification_type': 'other'  # Default value for create_store
                             }
                             
                             # Parse dates
@@ -1620,7 +1602,7 @@ def get_variant_info(request, variant_id):
 @login_required
 def get_product_variants(request, product_id):
     """AJAX endpoint để lấy danh sách variants của sản phẩm"""
-    product = get_object_or_404(Product, pk=product_id, is_active=True)
+    product = get_object_or_404(Product, pk=product_id)
     
     if not product.has_variants:
         return JsonResponse({'success': False, 'message': 'Sản phẩm không có phân loại'})
@@ -1735,11 +1717,9 @@ def verification_management(request, store_id):
         # Handle new verification request
         if can_send_new_request:
             certification_files = request.FILES.getlist('certification_files')
-            certification_types = request.POST.getlist('certification_types')
-            certification_names = request.POST.getlist('certification_names')
             certification_organizations = request.POST.getlist('certification_organizations')
             
-            if certification_files and certification_types:
+            if certification_files:
                 # Create new verification request
                 verification_request = StoreVerificationRequest.objects.create(
                     store=store,
@@ -1747,19 +1727,14 @@ def verification_management(request, store_id):
                 )
                 
                 # Create certification records
-                min_length = min(len(certification_files), len(certification_types))
-                for i in range(min_length):
+                for i in range(len(certification_files)):
                     file = certification_files[i]
-                    cert_type = certification_types[i]
-                    cert_name = certification_names[i] if i < len(certification_names) else ''
                     org_id = certification_organizations[i] if i < len(certification_organizations) and certification_organizations[i] else None
                     
-                    if cert_type and file:
+                    if file:
                         try:
                             cert_data = {
                                 'verification_request': verification_request,
-                                'certification_type': cert_type,
-                                'certification_name': cert_name,
                                 'document': file
                             }
                             # Add organization if provided
@@ -1867,8 +1842,6 @@ def admin_request_detail(request, request_id):
                 # Update store status
                 store = verification_request.store
                 store.is_verified_status = 'verified'
-                store.verified_at = timezone.now()
-                store.verified_by = request.user
                 store.save()
                 
                 messages.success(request, f'Đã phê duyệt yêu cầu xác minh cho cửa hàng "{store.store_name}"')
@@ -1900,8 +1873,6 @@ def admin_approve_store(request, store_id):
     """Approve a store"""
     store = get_object_or_404(Store, store_id=store_id)
     store.is_verified_status = 'verified'
-    store.verified_at = timezone.now()
-    store.verified_by = request.user
     store.save()
     
     # Mark all certifications as verified
@@ -1924,7 +1895,6 @@ def admin_reject_store(request, store_id):
         return redirect('admin_store_detail', store_id=store.store_id)
     
     store.is_verified_status = 'rejected'
-    store.admin_notes = admin_notes
     store.save()
     
     messages.success(request, f'Đã từ chối cửa hàng "{store.store_name}"')
@@ -2104,115 +2074,6 @@ def admin_certification_organization_delete(request, organization_id):
 
 
 # Product Comment Views
-@login_required
-@require_POST
-def add_product_comment(request, product_id):
-    """Add a comment to a product"""
-    product = get_object_or_404(Product, pk=product_id, is_active=True)
-    
-    if not can_comment_product(request.user, product):
-        return JsonResponse({
-            'success': False,
-            'message': 'Bạn cần mua sản phẩm này trước khi bình luận.'
-        })
-    
-    # Get order_item for this product
-    order_item = OrderItem.objects.filter(
-        order__user=request.user,
-        product=product,
-        order__status='delivered'
-    ).first()
-    
-    form = ProductCommentForm(request.POST, user=request.user, product=product)
-    if form.is_valid():
-        comment = form.save(commit=False)
-        comment.product = product
-        comment.user = request.user
-        comment.order_item = order_item
-        comment.save()
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Đã thêm bình luận thành công.',
-            'comment_id': comment.comment_id,
-            'user_name': comment.user.full_name,
-            'content': comment.content,
-            'created_at': comment.created_at.strftime('%d/%m/%Y %H:%M')
-        })
-    else:
-        return JsonResponse({
-            'success': False,
-            'message': 'Dữ liệu không hợp lệ.',
-            'errors': form.errors
-        })
-
-
-def get_product_comments(request, product_id):
-    """Get comments for a product (AJAX)"""
-    product = get_object_or_404(Product, pk=product_id, is_active=True)
-    comments = ProductComment.objects.filter(
-        product=product,
-        is_approved=True
-    ).select_related('user', 'product__store__user').order_by('-created_at')
-    
-    comments_data = []
-    for comment in comments:
-        comments_data.append({
-            'comment_id': comment.comment_id,
-            'user_name': comment.user.full_name,
-            'content': comment.content,
-            'created_at': comment.created_at.strftime('%d/%m/%Y %H:%M'),
-            'has_seller_reply': comment.has_seller_reply,
-            'seller_reply': comment.seller_reply,
-            'seller_replied_at': comment.seller_replied_at.strftime('%d/%m/%Y %H:%M') if comment.seller_replied_at else None,
-            'can_reply': can_reply_comment(request.user, comment) if request.user.is_authenticated else False,
-        })
-    
-    return JsonResponse({
-        'success': True,
-        'comments': comments_data,
-        'can_comment': can_comment_product(request.user, product) if request.user.is_authenticated else False
-    })
-
-
-@login_required
-@require_POST
-def add_comment_reply(request, comment_id):
-    """Add seller reply to a comment"""
-    comment = get_object_or_404(ProductComment, pk=comment_id)
-    
-    if not can_reply_comment(request.user, comment):
-        return JsonResponse({
-            'success': False,
-            'message': 'Bạn không có quyền phản hồi bình luận này.'
-        })
-    
-    if comment.has_seller_reply:
-        return JsonResponse({
-            'success': False,
-            'message': 'Bạn đã phản hồi bình luận này rồi.'
-        })
-    
-    form = ProductCommentReplyForm(request.POST)
-    if form.is_valid():
-        comment.seller_reply = form.cleaned_data['seller_reply']
-        comment.seller_replied_at = timezone.now()
-        comment.save()
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Đã phản hồi bình luận thành công.',
-            'seller_reply': comment.seller_reply,
-            'seller_replied_at': comment.seller_replied_at.strftime('%d/%m/%Y %H:%M')
-        })
-    else:
-        return JsonResponse({
-            'success': False,
-            'message': 'Dữ liệu không hợp lệ.',
-            'errors': form.errors
-        })
-
-
 # Review Views
 @login_required
 def create_review(request, order_id, order_item_id):
@@ -2306,7 +2167,7 @@ def add_review_reply(request, review_id):
 
 def get_reviews_for_product(request, product_id):
     """Get reviews for a product (AJAX)"""
-    product = get_object_or_404(Product, pk=product_id, is_active=True)
+    product = get_object_or_404(Product, pk=product_id)
     reviews = Review.objects.filter(
         product=product,
         is_approved=True

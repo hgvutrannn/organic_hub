@@ -223,7 +223,7 @@
                             {% for store_data in stores_data %}
                                 <div class="mb-4 {% if not forloop.last %}border-bottom pb-4{% endif %}">
                                     <!-- Store Header -->
-                                    <div class="d-flex align-items-center mb-3">
+                                <div class="d-flex align-items-center mb-3">
                                         <i class="fas fa-store text-primary me-2"></i>
                                         <h6 class="fw-bold mb-0">{{ store_data.store.store_name }}</h6>
                                     </div>
@@ -231,25 +231,25 @@
                                     <!-- Store Items -->
                                     {% for item in store_data.items %}
                                         <div class="d-flex align-items-center mb-3 ms-3">
-                                            <div class="me-3">
-                                                {% if item.product.get_primary_image %}
-                                                    <img src="{{ item.product.get_primary_image.url }}" 
-                                                         alt="{{ item.product.name }}" 
-                                                         class="rounded-3" 
-                                                         style="width: 50px; height: 50px; object-fit: cover;">
-                                                {% else %}
-                                                    <img src="/static/images/no-image.jpg" 
-                                                         alt="{{ item.product.name }}" 
-                                                         class="rounded-3" 
-                                                         style="width: 50px; height: 50px; object-fit: cover;">
-                                                {% endif %}
-                                            </div>
-                                            <div class="flex-grow-1">
+                                    <div class="me-3">
+                                        {% if item.product.get_primary_image %}
+                                            <img src="{{ item.product.get_primary_image.url }}" 
+                                                 alt="{{ item.product.name }}" 
+                                                 class="rounded-3" 
+                                                 style="width: 50px; height: 50px; object-fit: cover;">
+                                        {% else %}
+                                            <img src="/static/images/no-image.jpg" 
+                                                 alt="{{ item.product.name }}" 
+                                                 class="rounded-3" 
+                                                 style="width: 50px; height: 50px; object-fit: cover;">
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex-grow-1">
                                                 <h6 class="fw-bold mb-1 small">{{ item.product.name|truncatechars:30 }}</h6>
-                                                <small class="text-muted">{{ item.quantity }} x {{ item.unit_price|floatformat:0 }}₫</small>
-                                            </div>
-                                            <div class="text-end">
-                                                <span class="fw-bold small">{{ item.total_price|floatformat:0 }}₫</span>
+                                                <small class="text-muted">{{ item.quantity }} x £{{ item.unit_price|floatformat:2 }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                                <span class="fw-bold small">£{{ item.total_price|floatformat:2 }}</span>
                                             </div>
                                         </div>
                                     {% endfor %}
@@ -258,7 +258,7 @@
                                     <div class="ms-3 mt-2">
                                         <div class="d-flex justify-content-between small text-muted mb-1">
                                             <span>Store Subtotal:</span>
-                                            <span>{{ store_data.subtotal|floatformat:0 }}₫</span>
+                                            <span>£{{ store_data.subtotal|floatformat:2 }}</span>
                                         </div>
                                         {% if store_data.discount > 0 %}
                                         <div class="d-flex justify-content-between small text-success mb-1">
@@ -275,28 +275,28 @@
                         <div class="border-top p-4">
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Subtotal:</span>
-                                <span>{{ subtotal|floatformat:0 }}₫</span>
+                                <span>£{{ subtotal|floatformat:2 }}</span>
                             </div>
                             {% if total_discount > 0 %}
                             <div class="d-flex justify-content-between mb-2 text-success">
                                 <span><i class="fas fa-tag me-1"></i>Discount:</span>
-                                <span>-{{ total_discount|floatformat:0 }}₫</span>
+                                <span>-£{{ total_discount|floatformat:2 }}</span>
                             </div>
                             {% endif %}
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Shipping Fee:</span>
-                                <span>30,000₫</span>
+                                <span>£3.00</span>
                             </div>
                             <hr>
                             <div class="d-flex justify-content-between mb-3">
                                 <span class="h5 fw-bold">Total:</span>
                                 <span class="h5 fw-bold text-success" id="finalTotal">
-                                    {{ final_total|floatformat:0 }}₫
+                                    £{{ final_total|floatformat:2 }}
                                 </span>
                             </div>
                             <small class="text-muted">
                                 <i class="fas fa-info-circle me-1"></i>
-                                Includes shipping fee 30,000₫
+                                Includes shipping fee £3.00
                             </small>
                         </div>
                     </div>
@@ -355,7 +355,7 @@
                             </h6>
                             <div class="mb-2">
                                 <span class="h6 fw-bold text-success mb-0 small">
-                                    {{ product.min_price|floatformat:0 }}₫
+                                    £{{ product.min_price|floatformat:2 }}
                                 </span>
                             </div>
                         </div>

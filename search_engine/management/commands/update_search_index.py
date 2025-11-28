@@ -41,27 +41,9 @@ class Command(BaseCommand):
             # Update single product
             try:
                 product = Product.objects.get(product_id=product_id)
-                if product.is_active:
                     ProductDocument().update(product)
                     self.stdout.write(
                         self.style.SUCCESS(f'Successfully updated product {product_id} in index.')
-                    )
-                else:
-                    # Delete product from index using Elasticsearch client
-                    try:
-                        es = Elasticsearch([ELASTICSEARCH_URL], timeout=5)
-                        index_name = ProductDocument._index._name
-                        es.delete(
-                            index=index_name,
-                            id=str(product_id),
-                            ignore=[404]
-                        )
-                        self.stdout.write(
-                            self.style.SUCCESS(f'Successfully removed product {product_id} from index.')
-                        )
-                    except Exception as e:
-                        self.stdout.write(
-                            self.style.ERROR(f'Error removing product {product_id} from index: {str(e)}')
                         )
             except Product.DoesNotExist:
                 self.stdout.write(
@@ -76,7 +58,7 @@ class Command(BaseCommand):
             # Update all products
             self.stdout.write('Updating all products in index...')
             
-            products = Product.objects.filter(is_active=True).select_related('category', 'store')
+            products = Product.objects.all().select_related('category', 'store')
             total = products.count()
             
             if total == 0:

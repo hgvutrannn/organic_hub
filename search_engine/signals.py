@@ -39,13 +39,9 @@ def index_product(sender, instance, **kwargs):
     Auto-index product when created or updated
     """
     try:
-        # Only index active products
-        if instance.is_active:
+        # Index all products (is_active field removed)
             ProductDocument().update(instance)
             logger.debug(f"Indexed product: {instance.product_id}")
-        else:
-            # Remove from index if product is deactivated
-            delete_product_document(instance.product_id)
     except Exception as e:
         logger.error(f"Error indexing product {instance.product_id}: {str(e)}", exc_info=True)
 

@@ -97,7 +97,7 @@
                         <!-- Unit Price -->
                         <div class="col-4 col-md-2 text-center text-md-center">
                             <span class="d-md-none text-muted small">Unit Price: </span>
-                            {{ item.unit_price|floatformat:0|intcomma }}₫
+                            £{{ item.unit_price|floatformat:2|intcomma }}
                         </div>
 
                         <!-- Quantity -->
@@ -115,7 +115,7 @@
                         <div class="col-4 col-md-1 text-center text-danger fw-bold amount-display" data-item-id="{{ item.cart_item_id }}" data-store-id="{{ store_id }}">
                             <!-- Original Price (shown by default) -->
                             <div class="original-item-price">
-                                {{ item.total_price|floatformat:0|intcomma }}₫
+                                £{{ item.total_price|floatformat:2|intcomma }}
                             </div>
                             <!-- Discounted Price (hidden by default) -->
                             <div class="discounted-item-price" style="display: none;">
@@ -139,7 +139,7 @@
             <div class="card-footer bg-light py-2">
                 <div class="d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center text-primary small cursor-pointer" onclick="showShopVouchers({{ store_id }})">
-                        <i class="fas fa-ticket-alt me-2"></i>
+                    <i class="fas fa-ticket-alt me-2"></i>
                         <span>Add Shop Discount Code</span>
                     </div>
                     <div id="applied-discount-{{ store_id }}" class="text-success small" style="display: none;">
@@ -168,11 +168,11 @@
                     <div class="col-12 col-md-6 d-flex align-items-center justify-content-between justify-content-md-end gap-3">
                         <div class="text-end">
                             <div class="text-muted small">Total Payment (<span id="totalItems">0</span> items):</div>
-                            <div class="text-muted small text-decoration-line-through" id="originalTotalAmount" style="display: none;">0₫</div>
+                            <div class="text-muted small text-decoration-line-through" id="originalTotalAmount" style="display: none;">£0.00</div>
                             <div id="discountInfo" class="text-success small mb-1" style="display: none;">
-                                <i class="fas fa-tag me-1"></i>Discount: -<span id="discountAmount">0</span>₫
+                                <i class="fas fa-tag me-1"></i>Discount: -<span id="discountAmount">£0.00</span>
                             </div>
-                            <div class="text-danger fs-4 fw-bold" id="totalAmount">0₫</div>
+                            <div class="text-danger fs-4 fw-bold" id="totalAmount">£0.00</div>
                         </div>
                         <button class="btn btn-danger px-4 py-2 fw-bold" id="buyButton" onclick="checkout()" disabled>
                             Checkout
@@ -243,7 +243,7 @@
                             </h5>
                             <div class="mb-3">
                                 <span class="h5 fw-bold text-success mb-0">
-                                    {{ product.min_price|floatformat:0 }} VNĐ
+                                    £{{ product.min_price|floatformat:2 }}
                                 </span>
                             </div>
                             {% if product.description %}
@@ -379,12 +379,12 @@
                 }
                 
                 const finalPrice = Math.max(0, rawPrice - itemDiscount);
-                const formatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+                const formatter = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' });
                 
                 // Show discounted price
                 originalPriceDiv.style.display = 'none';
-                originalPriceDisplay.textContent = formatter.format(rawPrice).replace('₫', '') + '₫';
-                finalPriceDisplay.textContent = formatter.format(finalPrice).replace('₫', '') + '₫';
+                originalPriceDisplay.textContent = formatter.format(rawPrice);
+                finalPriceDisplay.textContent = formatter.format(finalPrice);
                 discountedPriceDiv.style.display = 'block';
             } else {
                 // No discount, show original price
@@ -411,10 +411,10 @@
             let storeOriginalTotal = 0;
             
             storeSection.querySelectorAll('.item-checkbox:checked').forEach(cb => {
-                count++;
-                const itemRow = cb.closest('.product-item');
+            count++;
+            const itemRow = cb.closest('.product-item');
                 // Always use original price (rawPrice) for discount calculation
-                const rawPrice = parseFloat(itemRow.querySelector('.amount-raw').innerText);
+            const rawPrice = parseFloat(itemRow.querySelector('.amount-raw').innerText);
                 
                 if (!isNaN(rawPrice)) {
                     storeOriginalTotal += rawPrice;
@@ -445,8 +445,8 @@
             }
         });
 
-        // Format Currency VN
-        const formatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' });
+        // Format Currency (GBP)
+        const formatter = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' });
         
         const finalTotal = Math.max(0, total - totalDiscount);
         
@@ -459,15 +459,15 @@
         const discountAmountEl = document.getElementById('discountAmount');
         
         if (totalDiscount > 0) {
-            originalTotalEl.textContent = formatter.format(total).replace('₫', '') + '₫';
+            originalTotalEl.textContent = formatter.format(total);
             originalTotalEl.style.display = 'block';
-            discountAmountEl.textContent = formatter.format(totalDiscount).replace('₫', '').replace(/\s/g, '');
+            discountAmountEl.textContent = formatter.format(totalDiscount);
             discountInfoEl.style.display = 'block';
-            document.getElementById('totalAmount').textContent = formatter.format(finalTotal).replace('₫', '') + '₫';
+            document.getElementById('totalAmount').textContent = formatter.format(finalTotal);
         } else {
             originalTotalEl.style.display = 'none';
             discountInfoEl.style.display = 'none';
-            document.getElementById('totalAmount').textContent = formatter.format(total).replace('₫', '') + '₫';
+            document.getElementById('totalAmount').textContent = formatter.format(total);
         }
         
         const buyBtn = document.getElementById('buyButton');
@@ -622,7 +622,7 @@
                                 <span class="badge bg-primary me-2">${discount.code}</span>
                                 ${discount.discount_type === 'percentage' 
                                     ? `<span class="badge bg-success">-${discount.discount_value}%</span>` 
-                                    : `<span class="badge bg-success">-${discount.discount_value.toLocaleString('vi-VN')}₫</span>`
+                                    : `<span class="badge bg-success">-${discount.discount_value.toLocaleString('en-GB', { style: 'currency', currency: 'GBP' })}</span>`
                                 }
                             </div>
                             <p class="mb-1 small text-muted">${discount.description || discount.name}</p>
@@ -665,7 +665,7 @@
         if (discount.discount_type === 'percentage') {
             discountText += ` - Giảm ${discount.discount_value}%`;
         } else {
-            discountText += ` - Giảm ${discount.discount_value.toLocaleString('vi-VN')}₫`;
+            discountText += ` - Giảm ${discount.discount_value.toLocaleString('en-GB', { style: 'currency', currency: 'GBP' })}`;
         }
         
         appliedText.textContent = discountText;
@@ -699,7 +699,7 @@
                 if (discount.discount_type === 'percentage') {
                     discountText += ` - Giảm ${discount.discount_value}%`;
                 } else {
-                    discountText += ` - Giảm ${discount.discount_value.toLocaleString('vi-VN')}₫`;
+                    discountText += ` - Giảm ${discount.discount_value.toLocaleString('en-GB', { style: 'currency', currency: 'GBP' })}`;
                 }
                 
                 appliedText.textContent = discountText;

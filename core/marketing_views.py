@@ -103,7 +103,7 @@ def store_flash_sale_create(request, store_id):
                 messages.error(request, f'Có lỗi xảy ra: {str(e)}')
     
     # Get store products
-    products = Product.objects.filter(store=store, is_active=True).order_by('-created_at')
+    products = Product.objects.filter(store=store).order_by('-created_at')
     
     context = {
         'store': store,
@@ -178,7 +178,7 @@ def store_flash_sale_edit(request, store_id, flash_sale_id):
         return redirect('store_flash_sale_list', store_id=store.store_id)
     
     # Get store products and selected products
-    products = Product.objects.filter(store=store, is_active=True).order_by('-created_at')
+    products = Product.objects.filter(store=store).order_by('-created_at')
     selected_products = flash_sale.products.all()
     selected_product_ids = [p.product_id for p in selected_products]
     
@@ -294,7 +294,6 @@ def store_discount_code_create(request, store_id):
                         discount_value=Decimal(discount_value),
                         min_order_amount=Decimal('0'),  # Default to 0, field kept for backward compatibility
                         max_discount_amount=Decimal(max_discount_amount) if max_discount_amount else None,
-                        scope='shop',  # Always shop scope
                         start_date=start_dt,
                         end_date=end_dt,
                         max_usage=int(max_usage) if max_usage else 0,
@@ -327,7 +326,6 @@ def store_discount_code_edit(request, store_id, discount_code_id):
         discount_code.discount_value = Decimal(discount_value) if discount_value else discount_code.discount_value
         max_discount_amount = request.POST.get('max_discount_amount') or None
         discount_code.max_discount_amount = Decimal(max_discount_amount) if max_discount_amount else None
-        discount_code.scope = 'shop'  # Always shop scope
         start_date = request.POST.get('start_date')
         end_date = request.POST.get('end_date')
         discount_code.max_usage = int(request.POST.get('max_usage', 0)) if request.POST.get('max_usage') else 0
@@ -381,7 +379,7 @@ def store_discount_code_delete(request, store_id, discount_code_id):
 def get_store_products_ajax(request, store_id):
     """Get store products for AJAX product selection modal"""
     store = get_object_or_404(Store, store_id=store_id, user=request.user)
-    products = Product.objects.filter(store=store, is_active=True).order_by('-created_at')
+    products = Product.objects.filter(store=store).order_by('-created_at')
     
     search_query = request.GET.get('search', '')
     if search_query:

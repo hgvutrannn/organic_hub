@@ -35,7 +35,6 @@ class ProductSearchService:
                 - min_price: Minimum price
                 - max_price: Maximum price
                 - store_id: Filter by store
-                - is_active: Filter by active status
             size: Maximum number of results
         
         Returns:
@@ -78,11 +77,6 @@ class ProductSearchService:
                 if filters.get('store_id'):
                     filter_queries.append(
                         Q('term', store_id=filters['store_id'])
-                    )
-                
-                if filters.get('is_active') is not None:
-                    filter_queries.append(
-                        Q('term', is_active=filters['is_active'])
                     )
                 
                 if filters.get('min_price') is not None or filters.get('max_price') is not None:
@@ -162,7 +156,7 @@ class ProductSearchService:
         """
         from django.db.models import Q
         
-        products = Product.objects.filter(is_active=True)
+        products = Product.objects.all()
         
         # Apply text search
         if query:
@@ -184,9 +178,6 @@ class ProductSearchService:
             
             if filters.get('store_id'):
                 products = products.filter(store_id=filters['store_id'])
-            
-            if filters.get('is_active') is not None:
-                products = products.filter(is_active=filters['is_active'])
             
             if filters.get('min_price') is not None:
                 products = products.filter(price__gte=filters['min_price'])

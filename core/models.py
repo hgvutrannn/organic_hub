@@ -4,6 +4,16 @@ from django.utils import timezone
 from django.core.validators import RegexValidator
 
 
+# Abstract Base Model với created_at và updated_at
+class TimeStampedModel(models.Model):
+    """Abstract base model với created_at và updated_at tự động"""
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
+    
+    class Meta:
+        abstract = True
+
+
 # Custom User Manager
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, full_name=None, **extra_fields):
@@ -34,12 +44,11 @@ class CustomUserManager(BaseUserManager):
 
 
 # Custom User Model
-class CustomUser(AbstractBaseUser, PermissionsMixin):
+class CustomUser(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     user_id = models.AutoField(primary_key=True)
     full_name = models.CharField(max_length=100, verbose_name='Họ và tên')
     email = models.EmailField(max_length=255, unique=True, verbose_name='Email')
     email_verified = models.BooleanField(default=False, verbose_name='Email đã xác thực')
-    created_at = models.DateTimeField(default=timezone.now)
     status = models.CharField(
         max_length=50,
         default='active',
@@ -49,7 +58,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
             ('blocked', 'Bị chặn'),
         ]
     )
-    last_login_at = models.DateTimeField(null=True, blank=True)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True, verbose_name='Ảnh đại diện')
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -89,7 +97,7 @@ class Category(models.Model):
 
 
 # Address Model
-class Address(models.Model):
+class Address(TimeStampedModel):
     address_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='addresses')
     street = models.CharField(max_length=255, verbose_name='Địa chỉ')
@@ -99,7 +107,6 @@ class Address(models.Model):
     contact_phone = models.CharField(max_length=20, verbose_name='Số điện thoại liên hệ')
     contact_person = models.CharField(max_length=100, verbose_name='Người liên hệ')
     is_default = models.BooleanField(default=False, verbose_name='Địa chỉ mặc định')
-    created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         verbose_name = 'Địa chỉ'
@@ -110,13 +117,12 @@ class Address(models.Model):
 
 
 # Store Model
-class Store(models.Model):
+class Store(TimeStampedModel):
     store_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='stores')
     store_name = models.CharField(max_length=255, verbose_name='Tên cửa hàng')
     store_description = models.TextField(blank=True, null=True, verbose_name='Mô tả cửa hàng')
     store_address = models.OneToOneField(Address, on_delete=models.SET_NULL, null=True, blank=True, related_name='store_of')
-    created_at = models.DateTimeField(default=timezone.now)
     is_verified_status = models.CharField(
         max_length=50, 
         default='pending', 
@@ -127,16 +133,6 @@ class Store(models.Model):
         ],
         verbose_name='Trạng thái xác minh'
     )
-    admin_notes = models.TextField(blank=True, null=True, verbose_name='Ghi chú của admin')
-    verified_at = models.DateTimeField(null=True, blank=True, verbose_name='Thời gian xác minh')
-    verified_by = models.ForeignKey(
-        CustomUser, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
-        related_name='verified_stores',
-        verbose_name='Xác minh bởi'
-    )
 
     class Meta:
         verbose_name = 'Cửa hàng'
@@ -144,6 +140,24 @@ class Store(models.Model):
 
     def __str__(self):
         return self.store_name
+    
+    @property
+    def admin_notes(self):
+        """Lấy admin notes từ verification request mới nhất"""
+        if not hasattr(self, '_admin_notes_cache'):
+            latest_request = self.verification_requests.first()
+            self._admin_notes_cache = latest_request.admin_notes if latest_request else None
+        return self._admin_notes_cache
+    
+    @property
+    def verified_at(self):
+        """Lấy thời gian verified từ request approved gần nhất"""
+        if not hasattr(self, '_verified_at_cache'):
+            approved_request = self.verification_requests.filter(
+                status='approved'
+            ).first()
+            self._verified_at_cache = approved_request.reviewed_at if approved_request else None
+        return self._verified_at_cache
 
 
 # Store Verification Request Model
@@ -189,7 +203,7 @@ class StoreVerificationRequest(models.Model):
 
 
 # Certification Organization Model
-class CertificationOrganization(models.Model):
+class CertificationOrganization(TimeStampedModel):
     """Tổ chức cấp phép chứng nhận hữu cơ"""
     organization_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255, unique=True, verbose_name='Tên tổ chức')
@@ -197,8 +211,6 @@ class CertificationOrganization(models.Model):
     description = models.TextField(blank=True, null=True, verbose_name='Mô tả')
     website = models.URLField(blank=True, null=True, verbose_name='Website')
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
     
     class Meta:
         verbose_name = 'Tổ chức cấp phép'
@@ -211,24 +223,8 @@ class CertificationOrganization(models.Model):
 
 # Store Certification Model
 class StoreCertification(models.Model):
-    CERTIFICATION_TYPES = [
-        ('vietgap', 'VietGAP'),
-        ('organic', 'Chứng nhận hữu cơ'),
-        ('fairtrade', 'Fair Trade'),
-        ('halal', 'Halal'),
-        ('kosher', 'Kosher'),
-        ('other', 'Chứng nhận khác'),
-    ]
-    
     certification_id = models.AutoField(primary_key=True)
     verification_request = models.ForeignKey(StoreVerificationRequest, on_delete=models.CASCADE, related_name='certifications', verbose_name='Yêu cầu xác minh', null=True, blank=True)
-    certification_type = models.CharField(
-        max_length=50, 
-        choices=CERTIFICATION_TYPES, 
-        verbose_name='Loại chứng nhận',
-        blank=True,
-        null=True
-    )
     certification_organization = models.ForeignKey(
         CertificationOrganization,
         on_delete=models.SET_NULL,
@@ -237,7 +233,6 @@ class StoreCertification(models.Model):
         related_name='certifications',
         verbose_name='Tổ chức cấp phép'
     )
-    certification_name = models.CharField(max_length=255, blank=True, null=True, verbose_name='Tên chứng nhận')
     certificate_number = models.CharField(max_length=255, blank=True, null=True, verbose_name='Mã số chứng chỉ')
     issue_date = models.DateField(null=True, blank=True, verbose_name='Ngày cấp')
     expiry_date = models.DateField(null=True, blank=True, verbose_name='Ngày hết hạn')
@@ -250,7 +245,9 @@ class StoreCertification(models.Model):
         ordering = ['-uploaded_at']
     
     def __str__(self):
-        return f"{self.verification_request.store.store_name} - {self.get_certification_type_display()}"
+        org_name = self.certification_organization.name if self.certification_organization else "Unknown"
+        store_name = self.verification_request.store.store_name if self.verification_request and self.verification_request.store else "Unknown"
+        return f"{store_name} - {org_name}"
     
     @property
     def file_extension(self):
@@ -266,19 +263,17 @@ class StoreCertification(models.Model):
         return self.file_extension in image_extensions
 
 # Legacy Product Model (for backward compatibility during migration)
-class Product(models.Model):
+class Product(TimeStampedModel):
     product_id = models.AutoField(primary_key=True)
     store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='products', verbose_name='Cửa hàng')
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='products', verbose_name='Danh mục')
     name = models.CharField(max_length=255, verbose_name='Tên sản phẩm')
     description = models.TextField(blank=True, null=True, verbose_name='Mô tả')
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Giá')
-    base_unit = models.CharField(max_length=50, verbose_name='Đơn vị')
+    base_unit = models.CharField(max_length=50, blank=True, null=True, verbose_name='Đơn vị')
     stock = models.IntegerField(default=0, verbose_name='Số lượng tồn kho', help_text='Chỉ áp dụng cho sản phẩm không có biến thể')
     SKU = models.CharField(max_length=255, unique=True, blank=True, null=True, verbose_name='Mã SKU')
-    is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
     view_count = models.PositiveIntegerField(default=0, verbose_name='Số lượt xem')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
     
     # Variant support fields
     has_variants = models.BooleanField(default=False, verbose_name='Có phân loại')
@@ -343,13 +338,12 @@ class Product(models.Model):
         return None
 
 
-class ProductImage(models.Model):
+class ProductImage(TimeStampedModel):
     product_image_id = models.AutoField(primary_key=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images', verbose_name='Sản phẩm')
     image = models.ImageField(upload_to='products/gallery/', verbose_name='Hình ảnh')
     alt_text = models.CharField(max_length=255, blank=True, null=True, verbose_name='Mô tả ảnh')
     order = models.PositiveIntegerField(default=0, verbose_name='Thứ tự', help_text='Ảnh có order=0 sẽ là ảnh chính')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
 
     class Meta:
         verbose_name = 'Hình ảnh sản phẩm'
@@ -361,7 +355,7 @@ class ProductImage(models.Model):
 
 
 # Product Variant Model (SKU)
-class ProductVariant(models.Model):
+class ProductVariant(TimeStampedModel):
     variant_id = models.AutoField(primary_key=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants', verbose_name='Sản phẩm')
     variant_name = models.CharField(max_length=255, verbose_name='Tên phân loại', help_text='Ví dụ: 500g, 1kg, Size M - Màu Đỏ')
@@ -371,8 +365,6 @@ class ProductVariant(models.Model):
     stock = models.IntegerField(default=0, verbose_name='Số lượng tồn kho')
     image = models.ImageField(upload_to='products/variants/', null=True, blank=True, verbose_name='Hình ảnh phân loại')
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
 
     class Meta:
         verbose_name = 'Phân loại sản phẩm'
@@ -413,13 +405,12 @@ class ProductVariant(models.Model):
 
 
 # Cart Item Model
-class CartItem(models.Model):
+class CartItem(TimeStampedModel):
     cart_item_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='cart_items', verbose_name='Người dùng')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='cart_items', verbose_name='Sản phẩm')
     variant = models.ForeignKey('ProductVariant', on_delete=models.CASCADE, related_name='cart_items', null=True, blank=True, verbose_name='Phân loại')
     quantity = models.IntegerField(default=1, verbose_name='Số lượng')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày thêm')
 
     class Meta:
         verbose_name = 'Mục giỏ hàng'
@@ -443,7 +434,7 @@ class CartItem(models.Model):
 
 
 # Order Model
-class Order(models.Model):
+class Order(TimeStampedModel):
     STATUS_CHOICES = [
         ('pending', 'Đang chờ xác nhận'),
         ('waiting_pickup', 'Đang chờ shipper đến lấy hàng'),
@@ -483,8 +474,6 @@ class Order(models.Model):
         verbose_name='Trạng thái thanh toán'
     )
     
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
     paid_at = models.DateTimeField(null=True, blank=True, verbose_name='Thời gian thanh toán')
     notes = models.TextField(blank=True, null=True, verbose_name='Ghi chú')
     
@@ -527,7 +516,7 @@ class OrderItem(models.Model):
 
 
 # Review Model
-class Review(models.Model):
+class Review(TimeStampedModel):
     review_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='reviews', verbose_name='Người dùng')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews', verbose_name='Sản phẩm')
@@ -549,9 +538,6 @@ class Review(models.Model):
     is_verified_purchase = models.BooleanField(default=True, verbose_name='Xác minh mua hàng')
     is_approved = models.BooleanField(default=True, verbose_name='Đã duyệt')
     
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
-    
     class Meta:
         verbose_name = 'Đánh giá sản phẩm'
         verbose_name_plural = 'Đánh giá sản phẩm'
@@ -568,7 +554,7 @@ class Review(models.Model):
 
 
 # Review Media Model
-class ReviewMedia(models.Model):
+class ReviewMedia(TimeStampedModel):
     MEDIA_TYPE_CHOICES = [
         ('image', 'Hình ảnh'),
         ('video', 'Video'),
@@ -579,7 +565,6 @@ class ReviewMedia(models.Model):
     file = models.FileField(upload_to='reviews/media/', verbose_name='File')
     media_type = models.CharField(max_length=10, choices=MEDIA_TYPE_CHOICES, verbose_name='Loại media')
     order = models.PositiveIntegerField(default=0, verbose_name='Thứ tự')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
     
     class Meta:
         verbose_name = 'Media đánh giá'
@@ -591,43 +576,14 @@ class ReviewMedia(models.Model):
 
 
 # Product Comment Model
-class ProductComment(models.Model):
-    comment_id = models.AutoField(primary_key=True)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='comments', verbose_name='Sản phẩm')
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='product_comments', verbose_name='Người dùng')
-    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, related_name='comments', verbose_name='Chi tiết đơn hàng', null=True, blank=True)
-    content = models.TextField(verbose_name='Nội dung bình luận')
-    
-    seller_reply = models.TextField(blank=True, null=True, verbose_name='Phản hồi của cửa hàng')
-    seller_replied_at = models.DateTimeField(null=True, blank=True, verbose_name='Thời gian phản hồi')
-    
-    is_approved = models.BooleanField(default=True, verbose_name='Đã duyệt')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
-    
-    class Meta:
-        verbose_name = 'Bình luận sản phẩm'
-        verbose_name_plural = 'Bình luận sản phẩm'
-        ordering = ['-created_at']
-    
-    def __str__(self):
-        return f"Bình luận của {self.user.full_name} cho {self.product.name}"
-    
-    @property
-    def has_seller_reply(self):
-        """Check if comment has seller reply"""
-        return bool(self.seller_reply)
-
-
 # Store Review Stats Model - Cache thống kê
-class StoreReviewStats(models.Model):
+class StoreReviewStats(TimeStampedModel):
     store = models.OneToOneField(Store, on_delete=models.CASCADE, related_name='review_stats', verbose_name='Cửa hàng')
     last_accessed_at = models.DateTimeField(null=True, blank=True, verbose_name='Lần truy cập cuối')
     total_reviews_30d = models.IntegerField(default=0, verbose_name='Tổng đánh giá 30 ngày')
     avg_rating_30d = models.DecimalField(max_digits=3, decimal_places=2, default=0.00, verbose_name='Đánh giá trung bình 30 ngày')
     good_reviews_count = models.IntegerField(default=0, verbose_name='Số đánh giá tốt (4-5 sao)')
     negative_reviews_count = models.IntegerField(default=0, verbose_name='Số đánh giá tiêu cực (1-2 sao)')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
     
     class Meta:
         verbose_name = 'Thống kê đánh giá cửa hàng'
@@ -638,7 +594,7 @@ class StoreReviewStats(models.Model):
 
 
 # Flash Sale Model
-class FlashSale(models.Model):
+class FlashSale(TimeStampedModel):
     STATUS_CHOICES = [
         ('draft', 'Nháp'),
         ('upcoming', 'Sắp diễn ra'),
@@ -654,8 +610,6 @@ class FlashSale(models.Model):
     end_date = models.DateTimeField(verbose_name='Ngày kết thúc')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft', verbose_name='Trạng thái')
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
     
     class Meta:
         verbose_name = 'Flash Sale'
@@ -685,35 +639,28 @@ class FlashSale(models.Model):
 
 
 # Flash Sale Product Model
-class FlashSaleProduct(models.Model):
+class FlashSaleProduct(TimeStampedModel):
     flash_sale_product_id = models.AutoField(primary_key=True)
     flash_sale = models.ForeignKey(FlashSale, on_delete=models.CASCADE, related_name='products', verbose_name='Flash Sale')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='flash_sales', verbose_name='Sản phẩm')
     flash_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Giá Flash Sale')
     flash_stock = models.IntegerField(default=0, verbose_name='Số lượng Flash Sale')
-    sort_order = models.IntegerField(default=0, verbose_name='Thứ tự hiển thị')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
     
     class Meta:
         verbose_name = 'Sản phẩm Flash Sale'
         verbose_name_plural = 'Sản phẩm Flash Sale'
         unique_together = ('flash_sale', 'product')
-        ordering = ['sort_order', 'created_at']
+        ordering = ['created_at']
     
     def __str__(self):
         return f"{self.product.name} - {self.flash_sale.name}"
 
 
 # Discount Code Model
-class DiscountCode(models.Model):
+class DiscountCode(TimeStampedModel):
     DISCOUNT_TYPE_CHOICES = [
         ('percentage', 'Phần trăm (%)'),
         ('fixed', 'Số tiền cố định (VNĐ)'),
-    ]
-    
-    SCOPE_CHOICES = [
-        ('shop', 'Toàn Shop'),
-        ('products', 'Sản phẩm cụ thể'),
     ]
     
     STATUS_CHOICES = [
@@ -732,15 +679,12 @@ class DiscountCode(models.Model):
     discount_value = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Giá trị giảm giá')
     min_order_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='Đơn hàng tối thiểu')
     max_discount_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='Giảm tối đa')
-    scope = models.CharField(max_length=20, choices=SCOPE_CHOICES, default='shop', verbose_name='Phạm vi áp dụng')
     start_date = models.DateTimeField(verbose_name='Ngày bắt đầu')
     end_date = models.DateTimeField(verbose_name='Ngày kết thúc')
     max_usage = models.IntegerField(default=0, verbose_name='Số lượt sử dụng tối đa (0 = không giới hạn)')
     used_count = models.IntegerField(default=0, verbose_name='Số lượt đã sử dụng')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft', verbose_name='Trạng thái')
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')
     
     class Meta:
         verbose_name = 'Mã giảm giá'
@@ -775,11 +719,10 @@ class DiscountCode(models.Model):
 
 
 # Discount Code Product Model
-class DiscountCodeProduct(models.Model):
+class DiscountCodeProduct(TimeStampedModel):
     discount_code_product_id = models.AutoField(primary_key=True)
     discount_code = models.ForeignKey(DiscountCode, on_delete=models.CASCADE, related_name='products', verbose_name='Mã giảm giá')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='discount_codes', verbose_name='Sản phẩm')
-    created_at = models.DateTimeField(default=timezone.now, verbose_name='Ngày tạo')
     
     class Meta:
         verbose_name = 'Sản phẩm áp dụng mã giảm giá'

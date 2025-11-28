@@ -98,7 +98,7 @@
                                 </div>
                             </div>
                             
-                            {% if user.last_login_at %}
+                            {% if user.last_login %}
                             <div class="col-12">
                                 <div class="d-flex align-items-center">
                                     <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
@@ -106,7 +106,7 @@
                                     </div>
                                     <div>
                                         <small class="text-muted d-block">Last Login</small>
-                                        <strong>{{ user.last_login_at|date:"d/m/Y H:i" }}</strong>
+                                        <strong>{{ user.last_login|date:"d/m/Y H:i" }}</strong>
                                     </div>
                                 </div>
                             </div>

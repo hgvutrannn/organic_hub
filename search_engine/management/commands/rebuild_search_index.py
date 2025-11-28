@@ -37,8 +37,8 @@ class Command(BaseCommand):
         
         self.stdout.write('Indexing products...')
         
-        # Get all active products
-        products = Product.objects.filter(is_active=True).select_related('category', 'store')
+        # Get all products
+        products = Product.objects.all().select_related('category', 'store')
         total = products.count()
         
         if total == 0:

@@ -18,10 +18,6 @@ urlpatterns = [
     path('products/<int:product_id>/variants/', views.get_product_variants, name='get_product_variants'),
     path('variants/<int:variant_id>/info/', views.get_variant_info, name='get_variant_info'),
     
-    # Product Comments
-    path('products/<int:product_id>/comments/', views.get_product_comments, name='product_comments'),
-    path('products/<int:product_id>/comments/add/', views.add_product_comment, name='add_product_comment'),
-    path('comments/<int:comment_id>/reply/', views.add_comment_reply, name='add_comment_reply'),
     
     # Cart
     path('cart/', views.cart, name='cart'),

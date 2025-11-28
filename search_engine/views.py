@@ -32,7 +32,6 @@ def search_api(request):
         filters['min_price'] = float(min_price)
     if max_price:
         filters['max_price'] = float(max_price)
-    filters['is_active'] = True
     
     try:
         products = ProductSearchService.search_with_fallback(query, filters, size=size)
@@ -83,19 +82,19 @@ def test_search(request):
         if use_elasticsearch:
             # Try Elasticsearch first
             try:
-                products = ProductSearchService.search(query, {'is_active': True}, size=100)
+                products = ProductSearchService.search(query, {}, size=100)
                 result['search_method'] = 'Elasticsearch'
                 result['results_count'] = len(products)
             except Exception as e:
                 logger.warning(f"Elasticsearch failed: {str(e)}")
                 # Fallback to Django ORM
-                products = ProductSearchService._fallback_search(query, {'is_active': True}, size=100)
+                products = ProductSearchService._fallback_search(query, {}, size=100)
                 result['search_method'] = 'Django ORM (Fallback)'
                 result['results_count'] = len(products)
                 result['error'] = f'Elasticsearch error: {str(e)}'
         else:
             # Use Django ORM directly
-            products = ProductSearchService._fallback_search(query, {'is_active': True}, size=100)
+            products = ProductSearchService._fallback_search(query, {}, size=100)
             result['search_method'] = 'Django ORM (Elasticsearch disabled)'
             result['results_count'] = len(products)
         

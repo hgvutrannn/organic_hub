@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
-from .models import CustomUser, Product, Order, Review, Address, ProductImage, StoreCertification, ProductComment, OrderItem, ProductVariant, Category, CertificationOrganization
+from .models import CustomUser, Product, Order, Review, Address, ProductImage, StoreCertification, OrderItem, ProductVariant, Category, CertificationOrganization
 
 
 class CustomUserRegistrationForm(UserCreationForm):
@@ -170,11 +170,9 @@ class SearchForm(forms.Form):
 class StoreCertificationForm(forms.ModelForm):
     class Meta:
         model = StoreCertification
-        fields = ['certification_type', 'certification_organization', 'certification_name', 'document']
+        fields = ['certification_organization', 'document']
         widgets = {
-            'certification_type': forms.Select(attrs={'class': 'form-select form-select-lg rounded-3'}),
             'certification_organization': forms.Select(attrs={'class': 'form-select form-select-lg rounded-3'}),
-            'certification_name': forms.TextInput(attrs={'placeholder': 'Tên chứng nhận (tùy chọn)', 'class': 'form-control rounded-3'}),
             'document': forms.FileInput(attrs={
                 'accept': 'image/*,.pdf',
                 'class': 'form-control form-control-lg rounded-3',
@@ -184,7 +182,6 @@ class StoreCertificationForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['certification_name'].required = False
         self.fields['certification_organization'].required = False
         self.fields['certification_organization'].queryset = CertificationOrganization.objects.filter(is_active=True).order_by('name')
         self.fields['certification_organization'].empty_label = 'Chọn tổ chức cấp phép (tùy chọn)'
@@ -343,50 +340,6 @@ class OTPVerificationForm(forms.Form):
         if otp_code and not otp_code.isdigit():
             raise forms.ValidationError('Mã OTP chỉ chứa số.')
         return otp_code
-
-
-# Product Comment Forms
-class ProductCommentForm(forms.ModelForm):
-    class Meta:
-        model = ProductComment
-        fields = ['content']
-        widgets = {
-            'content': forms.Textarea(attrs={
-                'rows': 3,
-                'placeholder': 'Viết bình luận của bạn...',
-                'class': 'form-control'
-            }),
-        }
-    
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
-        self.product = kwargs.pop('product', None)
-        super().__init__(*args, **kwargs)
-    
-    def clean(self):
-        cleaned_data = super().clean()
-        if self.user and self.product:
-            # Check if user has purchased this product
-            from .models import OrderItem
-            has_purchased = OrderItem.objects.filter(
-                order__user=self.user,
-                product=self.product,
-                order__status='delivered'
-            ).exists()
-            if not has_purchased:
-                raise forms.ValidationError('Bạn cần mua sản phẩm này trước khi bình luận.')
-        return cleaned_data
-
-
-class ProductCommentReplyForm(forms.Form):
-    seller_reply = forms.CharField(
-        widget=forms.Textarea(attrs={
-            'rows': 3,
-            'placeholder': 'Viết phản hồi của cửa hàng...',
-            'class': 'form-control'
-        }),
-        label='Phản hồi'
-    )
 
 
 # Review Forms

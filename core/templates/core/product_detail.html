@@ -153,14 +153,6 @@
                             <strong>Category:</strong><br>
                             <span class="badge bg-secondary">{{ product.category.name|default:"Uncategorized" }}</span>
                         </div>
-                        <div class="col-6">
-                            <strong>Status:</strong><br>
-                            {% if product.is_active %}
-                                <span class="badge bg-success">Available</span>
-                            {% else %}
-                                <span class="badge bg-danger">Discontinued</span>
-                            {% endif %}
-                        </div>
                     </div>
                     
                     <div class="row mb-3">
