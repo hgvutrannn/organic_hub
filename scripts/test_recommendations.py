@@ -302,23 +302,11 @@ def test_recommendations():
         print(f"   {i}. {product.name}")
     print()
     
-    # Test 6: Session recommendations (anonymous user)
-    print("6. Testing get_session_recommendations:")
-    session_key = "test_session_123"
-    
-    # Create some views for this session
-    for product in products[:3]:
-        UserProductView.objects.get_or_create(
-            session_key=session_key,
-            product=product,
-            defaults={'view_count': 1, 'viewed_at': timezone.now()}
-        )
-    
-    session_recs = RecommendationService.get_session_recommendations(session_key, limit=6)
-    print(f"   Session: {session_key}")
-    print(f"   Found {len(session_recs)} recommendations:")
-    for i, product in enumerate(session_recs, 1):
-        print(f"   {i}. {product.name} (Category: {product.category.name if product.category else 'None'})")
+    # Test 6: Session recommendations (anonymous user) - REMOVED
+    # Session recommendations feature has been removed from the project
+    # Anonymous users now get best selling products instead
+    print("6. Session recommendations test - REMOVED (feature no longer exists)")
+    print("   Anonymous users now receive best selling products.")
     print()
     
     print("="*60)

@@ -343,34 +343,13 @@ def test_enhanced_recommendations():
                 print(f"    {j}. {p.name}")
         break  # Just test one
     
-    # Test 4: Session recommendations với nhiều sessions
-    print("\n\n4. TESTING SESSION RECOMMENDATIONS:")
+    # Test 4: Session recommendations - REMOVED
+    # Session recommendations feature has been removed from the project
+    # Anonymous users now get best selling products instead
+    print("\n\n4. TESTING SESSION RECOMMENDATIONS: REMOVED")
     print("-" * 60)
-    
-    session_keys = ['session_alpha', 'session_beta', 'session_gamma']
-    for session_key in session_keys:
-        # Create views for this session
-        viewed_products = random.sample(list(products), min(5, len(products)))
-        for product in viewed_products:
-            UserProductView.objects.get_or_create(
-                session_key=session_key,
-                product=product,
-                defaults={'view_count': 1, 'viewed_at': timezone.now()}
-            )
-        
-        cache.delete(f'rec:session:{session_key}:6')
-        recs = RecommendationService.get_session_recommendations(session_key, limit=6)
-        
-        viewed_ids = {v.product.product_id for v in UserProductView.objects.filter(session_key=session_key)}
-        viewed_in_recs = [p for p in recs if p.product_id in viewed_ids]
-        duplicates = len(recs) - len(set(p.product_id for p in recs))
-        
-        print(f"\nSession: {session_key}")
-        print(f"  - Viewed products: {len(viewed_ids)}")
-        print(f"  - Recommendations: {len(recs)}")
-        print(f"  - Viewed in recs: {len(viewed_in_recs)} {'❌' if viewed_in_recs else '✅'}")
-        print(f"  - Duplicates: {duplicates} {'❌' if duplicates > 0 else '✅'}")
-        break  # Just test one
+    print("Session recommendations feature has been removed.")
+    print("Anonymous users now receive best selling products.")
     
     # Test 5: Best selling
     print("\n\n5. TESTING BEST SELLING PRODUCTS:")

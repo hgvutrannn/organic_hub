@@ -453,3 +453,50 @@
     }
 }
 
+/* ============================================
+   Compact Mode for Split Screen Demo
+   ============================================ */
+
+/* Auto compact widget when screen width is less than 1400px (split screen scenario) */
+@media (max-width: 1400px) {
+    .chat-window {
+        width: 300px !important;
+        height: 500px !important;
+        max-width: calc(50vw - 40px) !important;
+        max-height: calc(100vh - 100px) !important;
+    }
+    
+    .chat-item-avatar,
+    .chat-item-avatar-placeholder {
+        width: 40px !important;
+        height: 40px !important;
+    }
+    
+    .chat-item {
+        padding: 0.625rem !important;
+    }
+    
+    .chat-message-avatar,
+    .chat-message-avatar-placeholder {
+        width: 38px !important;
+        height: 38px !important;
+    }
+    
+    .chat-header {
+        padding: 0.875rem !important;
+    }
+    
+    .chat-header h6 {
+        font-size: 0.95rem !important;
+    }
+    
+    .chat-messages {
+        padding: 0.875rem !important;
+    }
+    
+    .chat-input-area {
+        padding: 0.875rem !important;
+    }
+}
+
+

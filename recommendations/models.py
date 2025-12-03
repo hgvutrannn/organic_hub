@@ -5,7 +5,7 @@ from django.conf import settings
 
 
 class UserProductView(models.Model):
-    """Track product views per user/session for recommendation system"""
+    """Track product views per user for recommendation system"""
     view_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,

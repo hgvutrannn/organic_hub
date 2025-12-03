@@ -1,7 +1,7 @@
 import re
 import uuid
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.core.paginator import Paginator
@@ -10,6 +10,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+import json 
 
 from .models import (
     CustomUser, Product, 
@@ -185,26 +186,24 @@ def home(request):
         })
     
     # Get personalized recommendations
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
         if request.user.is_authenticated:
             suggested_products = RecommendationService.get_personalized_recommendations(
                 request.user, limit=12
             )
+            logger.info("[HOME DEBUG] PERSONALIZED recommendations used")
         else:
-            # Get session key for anonymous users
-            session_key = request.session.session_key
-            if not session_key:
-                request.session.create()
-                session_key = request.session.session_key
-            suggested_products = RecommendationService.get_session_recommendations(
-                session_key, limit=12
-            )
+            # Anonymous users always get best selling products
+            suggested_products = RecommendationService.get_best_selling_products()
+            logger.info("[HOME DEBUG] BEST SELLING recommendations used (anonymous user)")
     except Exception as e:
-        import logging
-        logger = logging.getLogger(__name__)
         logger.error(f"Error getting recommendations in home view: {e}", exc_info=True)
         # Fallback to best selling
-        suggested_products = RecommendationService.get_best_selling_products(limit=12)
+        suggested_products = RecommendationService.get_best_selling_products(limit=6)
+        logger.warning("[HOME DEBUG] FALLBACK to best selling products")
     
     context = {
         'categories': categories,
@@ -454,16 +453,10 @@ def product_detail(request, product_id):
     product.view_count += 1
     product.save()
     
-    # Track product view for recommendations
+    # Track product view for recommendations (only for authenticated users)
     try:
         if request.user.is_authenticated:
             track_product_view(product, user=request.user)
-        else:
-            session_key = request.session.session_key
-            if not session_key:
-                request.session.create()
-                session_key = request.session.session_key
-            track_product_view(product, session_key=session_key)
     except Exception as e:
         import logging
         logger = logging.getLogger(__name__)
@@ -657,7 +650,6 @@ def cart(request):
         recommendations = RecommendationService.get_best_selling_products(limit=8)
     
     context = {
-        'cart_items': cart_items,
         'stores_dict': stores_dict,
         'total': total,
         'recommendations': recommendations,
@@ -726,48 +718,98 @@ def update_cart_quantity(request, cart_item_id):
 
 # Order Views
 @login_required
+@require_POST
+def checkout_select(request):
+    """Nhận các cart items được chọn từ trang giỏ hàng và lưu vào session, sau đó chuyển sang trang checkout."""
+    raw_ids = request.POST.getlist('selected_items')
+    if not raw_ids:
+        messages.warning(request, 'No items selected for checkout.')
+        return redirect('cart')
+    
+    try:
+        selected_ids = [int(x) for x in raw_ids]
+    except ValueError:
+        messages.warning(request, 'Invalid selected items.')
+        return redirect('cart')
+    
+    # Đảm bảo các cart item thuộc về user hiện tại
+    valid_ids = list(
+        CartItem.objects.filter(
+            user=request.user,
+            cart_item_id__in=selected_ids
+        ).values_list('cart_item_id', flat=True)
+    )
+    if not valid_ids:
+        messages.warning(request, 'Selected items not found in cart.')
+        return redirect('cart')
+    
+    # Read applied discounts JSON from form (per-store discounts)
+    applied_discounts_str = request.POST.get('applied_discounts', '{}')
+    try:
+        applied_discounts = json.loads(applied_discounts_str)
+    except (ValueError, TypeError):
+        applied_discounts = {}
+    
+    request.session['selected_cart_items'] = valid_ids
+    request.session['applied_discounts'] = applied_discounts
+    request.session.modified = True
+    
+    return redirect('checkout')
+
+
+@login_required
 def checkout(request):
     """Checkout"""
-    cart_items = CartItem.objects.filter(user=request.user).select_related('product', 'product__store', 'variant')
+    # Đọc danh sách cart items đã chọn từ session
+    selected_ids = request.session.get('selected_cart_items')
+    if not selected_ids:
+        messages.warning(request, 'No items selected for checkout.')
+        return redirect('cart')
+    
+    cart_items = CartItem.objects.filter(
+        user=request.user,
+        cart_item_id__in=selected_ids,
+    ).select_related('product', 'product__store', 'variant')
     
     if not cart_items.exists():
-        messages.warning(request, 'Cart is empty.')
+        messages.warning(request, 'Selected items not found in cart.')
         return redirect('cart')
     
     addresses = Address.objects.filter(user=request.user)
     
-    # Group cart items by store
+    # Group cart items by store, calculate subtotals, and discounts in one go
+    from decimal import Decimal
+    
+    applied_discounts = request.session.get('applied_discounts', {})
     stores_dict = {}
+    store_subtotals = {}
+    store_discounts = {}
+    subtotal = Decimal('0')
+    total_discount = Decimal('0')
+    
+    # Step 4 + 5: Nhóm items và tính subtotals cùng lúc
     for item in cart_items:
         store = item.product.store
-        if store.store_id not in stores_dict:
-            stores_dict[store.store_id] = {
+        store_id = store.store_id
+        
+        # Nhóm items theo store
+        if store_id not in stores_dict:
+            stores_dict[store_id] = {
                 'store': store,
                 'items': []
             }
-        stores_dict[store.store_id]['items'].append(item)
+            store_subtotals[store_id] = Decimal('0')
+            store_discounts[store_id] = Decimal('0')
+        
+        stores_dict[store_id]['items'].append(item)
+        
+        # Tính subtotals
+        item_total = Decimal(str(item.total_price))
+        store_subtotals[store_id] += item_total
+        subtotal += item_total
     
-    # Calculate totals and store subtotals
-    subtotal = sum(item.total_price for item in cart_items)
-    store_subtotals = {}
-    for store_id, store_data in stores_dict.items():
-        store_subtotals[store_id] = sum(item.total_price for item in store_data['items'])
-    
-    # Get applied discounts from request.GET (passed from cart via JavaScript)
-    import json
-    applied_discounts = {}
-    if request.method == 'GET':
-        discount_data = request.GET.get('discounts', '{}')
-        try:
-            applied_discounts = json.loads(discount_data)
-        except:
-            applied_discounts = {}
-    
-    # Calculate discount for each store
-    from decimal import Decimal
-    total_discount = Decimal('0')
-    store_discounts = {}
-    for store_id, store_data in stores_dict.items():
+    # Step 7: Tính discounts cho từng store
+    for store_id in stores_dict.keys():
         store_id_str = str(store_id)
         if store_id_str in applied_discounts:
             discount = applied_discounts[store_id_str]
@@ -775,15 +817,19 @@ def checkout(request):
             
             discount_amount = Decimal('0')
             if discount.get('discount_type') == 'percentage':
-                discount_amount = Decimal(str(store_total)) * Decimal(str(discount.get('discount_value', 0))) / Decimal('100')
+                discount_amount = store_total * Decimal(str(discount.get('discount_value', 0))) / Decimal('100')
                 if discount.get('max_discount') and discount_amount > Decimal(str(discount.get('max_discount'))):
                     discount_amount = Decimal(str(discount.get('max_discount')))
             elif discount.get('discount_type') == 'fixed':
                 discount_amount = Decimal(str(discount.get('discount_value', 0)))
             
-            store_discounts[store_id] = float(discount_amount)  # Store as float for template
+            store_discounts[store_id] = float(discount_amount)
             total_discount += discount_amount
+        else:
+            store_discounts[store_id] = 0.0  # Không có discount
     
+    print(applied_discounts)
+    print(store_discounts)
     if request.method == 'POST':
         shipping_address_id = request.POST.get('shipping_address')
         payment_method = request.POST.get('payment_method', 'cod')
@@ -830,8 +876,10 @@ def checkout(request):
                 })
             
             from decimal import Decimal
-            # Flat shipping fee in GBP
-            shipping_cost = Decimal('3.00')
+            # Flat shipping fee in GBP per store
+            num_stores = len(stores_dict)
+            shipping_cost_per_store = Decimal('3.00')
+            shipping_cost = shipping_cost_per_store * num_stores
             final_total = subtotal - total_discount + shipping_cost
             
             # Load last checkout info from session
@@ -934,63 +982,24 @@ def checkout(request):
             # Redirect to order list
             return redirect('orders')
     
-    # Get frequently bought together recommendations
-    from recommendations.services import RecommendationService
-    
-    try:
-        # Get products from cart
-        cart_product_ids = [item.product.product_id for item in cart_items]
-        
-        # Get frequently bought together products
-        recommended_products = []
-        for item in cart_items[:3]:  # Check first 3 products
-            together = RecommendationService.get_frequently_bought_together(
-                item.product, limit=4
-            )
-            recommended_products.extend(together)
-        
-        # Remove duplicates and products already in cart
-        seen = set(cart_product_ids)
-        unique_recommended = []
-        for p in recommended_products:
-            if p.product_id not in seen:
-                seen.add(p.product_id)
-                unique_recommended.append(p)
-            if len(unique_recommended) >= 6:
-                break
-        
-        # If not enough, fill with best selling
-        if len(unique_recommended) < 6:
-            remaining = 6 - len(unique_recommended)
-            best_selling = RecommendationService.get_best_selling_products(limit=remaining)
-            for p in best_selling:
-                if p.product_id not in seen:
-                    unique_recommended.append(p)
-                if len(unique_recommended) >= 6:
-                    break
-        
-        recommendations = unique_recommended[:6]
-    except Exception as e:
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.error(f"Error getting recommendations in checkout view: {e}", exc_info=True)
-        # Fallback to best selling
-        recommendations = RecommendationService.get_best_selling_products(limit=6)
-    
     # Prepare store data with subtotals and discounts for template
     stores_data = []
     for store_id, store_data in stores_dict.items():
+        print(store_id)
+        print(store_discounts.get(store_id, 0))
         stores_data.append({
             'store': store_data['store'],
             'items': store_data['items'],
             'subtotal': store_subtotals.get(store_id, 0),
             'discount': store_discounts.get(store_id, 0),
         })
-    
+    print(stores_data)
     # Calculate final total
     from decimal import Decimal
-    # Flat shipping fee in GBP
-    shipping_cost = Decimal('3.00')
+    # Flat shipping fee in GBP per store
+    num_stores = len(stores_dict)
+    shipping_cost_per_store = Decimal('3.00')
+    shipping_cost = shipping_cost_per_store * num_stores
     final_total = subtotal - total_discount + shipping_cost
     
     # Load last checkout info from session to pre-fill form
@@ -1008,7 +1017,6 @@ def checkout(request):
         'total_discount': total_discount,
         'shipping_cost': shipping_cost,
         'final_total': final_total,
-        'recommendations': recommendations,
         'default_address_id': default_address_id,
         'default_payment_method': default_payment_method,
         'default_notes': default_notes,
@@ -1063,6 +1071,7 @@ def order_detail(request, order_id):
             'store': store_data['store'],
             'items_with_reviews': store_items_with_reviews,
             'subtotal': store_subtotal,
+            'discount': order.discount_amount,  # Each order has one store, so order.discount_amount is the store discount
         })
     
     context = {
@@ -2368,6 +2377,8 @@ def verify_password_change_otp(request):
                     # Change password
                     request.user.set_password(new_password)
                     request.user.save()
+                    
+                    update_session_auth_hash(request, request.user)
                     
                     # Clear session
                     if 'new_password' in request.session:

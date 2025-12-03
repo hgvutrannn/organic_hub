@@ -1,6 +1,5 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.core.cache import cache
 from django.utils import timezone
 from core.models import Product
 from .models import UserProductView
@@ -18,6 +17,7 @@ def track_product_view_signal(sender, instance, created, **kwargs):
 def track_product_view(product, user=None, session_key=None):
     """
     Track a product view for recommendation system.
+    Only tracks for authenticated users now.
     Called from product_detail view.
     """
     try:
@@ -31,24 +31,6 @@ def track_product_view(product, user=None, session_key=None):
                 view.view_count += 1
                 view.viewed_at = timezone.now()  # Update to current time
                 view.save(update_fields=['view_count', 'viewed_at'])
-            
-            # Invalidate user recommendations cache (delete common limits)
-            for limit in [8, 12, 16, 20]:
-                cache.delete(f'rec:user:{user.user_id}:{limit}')
-        elif session_key:
-            view, created = UserProductView.objects.get_or_create(
-                session_key=session_key,
-                product=product,
-                defaults={'view_count': 1}
-            )
-            if not created:
-                view.view_count += 1
-                view.viewed_at = timezone.now()  # Update to current time
-                view.save(update_fields=['view_count', 'viewed_at'])
-            
-            # Invalidate session recommendations cache (delete common limits)
-            for limit in [8, 12, 16, 20]:
-                cache.delete(f'rec:session:{session_key}:{limit}')
     except Exception as e:
         import logging
         logger = logging.getLogger(__name__)

@@ -1,8 +1,6 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
-
 {% block title %}Cart - Organic Hub{% endblock %}
-
 {% block extra_css %}
 <style>
     /* Keep only necessary CSS that Bootstrap doesn't support by default */
@@ -22,20 +20,16 @@
     .sticky-header {
         position: sticky; top: 0; z-index: 980;
     }
-
     .sticky-footer {
         box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
     }
-
     .chat-widget {
         display: none !important;
     }
-
     a { text-decoration: none; color: inherit; }
     a:hover { color: var(--bs-primary); }
 </style>
 {% endblock %}
-
 {% block content %}
 <div class="container cart-container mt-4">
     {% if stores_dict %}
@@ -56,7 +50,9 @@
                 </div>
             </div>
         </div>
-
+        <form id="checkoutForm" method="post" action="{% url 'checkout_select' %}"> 
+            {% csrf_token %}
+            <input type="hidden" name="applied_discounts" id="appliedDiscountsField" value="">
         <!-- Store Loop -->
         {% for store_id, store_data in stores_dict.items %}
         <div class="card mb-3 shadow-sm border-0 store-section" data-store-id="{{ store_id }}">
@@ -70,7 +66,6 @@
                     </a>
                 </div>
             </div>
-
             <!-- Products List -->
             <div class="list-group list-group-flush">
                 {% for item in store_data.items %}
@@ -79,7 +74,10 @@
                         <!-- Product Info (Col-6 on Desktop, Col-12 on Mobile) -->
                         <div class="col-12 col-md-6 mb-3 mb-md-0">
                             <div class="d-flex align-items-center">
-                                <input class="form-check-input me-3 item-checkbox" type="checkbox" 
+                                <input class="form-check-input me-3 item-checkbox" 
+                                        type="checkbox" 
+                                        name="selected_items"
+                                        value="{{ item.cart_item_id }}"
                                        data-item-id="{{ item.cart_item_id }}" 
                                        data-store-id="{{ store_id }}" 
                                        onchange="updateTotal()">
@@ -97,24 +95,26 @@
                                 </div>
                             </div>
                         </div>
-
                         <!-- Unit Price -->
                         <div class="col-4 col-md-2 text-center text-md-center">
                             <span class="d-md-none text-muted small">Unit Price: </span>
                             £{{ item.unit_price|floatformat:2|intcomma }}
                         </div>
-
                         <!-- Quantity -->
                         <div class="col-4 col-md-2 d-flex justify-content-center">
                             <div class="input-group input-group-sm" style="width: 110px;">
-                                <button class="btn btn-outline-secondary" onclick="updateQuantity({{ item.cart_item_id }}, -1)">-</button>
-                                <input type="number" class="form-control quantity-input" value="{{ item.quantity }}" 
-                                       min="1" max="99" data-item-id="{{ item.cart_item_id }}"
-                                       onchange="updateQuantityInput({{ item.cart_item_id }}, this.value)">
-                                <button class="btn btn-outline-secondary" onclick="updateQuantity({{ item.cart_item_id }}, 1)">+</button>
+                                <button class="btn btn-outline-secondary quantity-decrease" 
+                                        data-item-id="{{ item.cart_item_id }}" 
+                                        data-change="-1">-</button>
+                                <input type="number" class="form-control quantity-input" 
+                                       value="{{ item.quantity }}" 
+                                       min="1" max="99" 
+                                       data-item-id="{{ item.cart_item_id }}">
+                                <button class="btn btn-outline-secondary quantity-increase" 
+                                        data-item-id="{{ item.cart_item_id }}" 
+                                        data-change="1">+</button>
                             </div>
                         </div>
-
                         <!-- Total Amount & Delete (Combined on Mobile) -->
                         <div class="col-4 col-md-1 text-center text-danger fw-bold amount-display" data-item-id="{{ item.cart_item_id }}" data-store-id="{{ store_id }}">
                             <!-- Original Price (shown by default) -->
@@ -129,10 +129,9 @@
                             <!-- Hidden raw value for JS calculation -->
                             <span class="d-none amount-raw">{{ item.total_price }}</span>
                         </div>
-
                         <div class="col-12 col-md-1 text-end mt-2 mt-md-0">
-                            <button class="btn btn-link text-danger p-0 text-decoration-none small" 
-                                    onclick="removeItem({{ item.cart_item_id }})">Delete</button>
+                            <button class="btn btn-link text-danger p-0 text-decoration-none small remove-item-btn" 
+                                    data-item-id="{{ item.cart_item_id }}">Delete</button>
                         </div>
                     </div>
                 </div>
@@ -142,8 +141,9 @@
             <!-- Shop Voucher -->
             <div class="card-footer bg-light py-2">
                 <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center text-primary small cursor-pointer" onclick="showShopVouchers({{ store_id }})">
-                    <i class="fas fa-ticket-alt me-2"></i>
+                    <div class="d-flex align-items-center text-primary small cursor-pointer show-vouchers-btn" 
+                         data-store-id="{{ store_id }}">
+                        <i class="fas fa-ticket-alt me-2"></i>
                         <span>Add Shop Discount Code</span>
                     </div>
                     <div id="applied-discount-{{ store_id }}" class="text-success small" style="display: none;">
@@ -154,7 +154,6 @@
             </div>
         </div>
         {% endfor %}
-
         <!-- Fixed Bottom Footer -->
         <div class="fixed-bottom bg-white sticky-footer border-top p-3">
             <div class="container">
@@ -167,7 +166,6 @@
                         </div>
                         <button class="btn btn-link text-danger text-decoration-none p-0" onclick="deleteSelected()">Delete Selected</button>
                     </div>
-
                     <!-- Right: Total & Buy Button -->
                     <div class="col-12 col-md-6 d-flex align-items-center justify-content-between justify-content-md-end gap-3">
                         <div class="text-end">
@@ -178,14 +176,14 @@
                             </div>
                             <div class="text-danger fs-4 fw-bold" id="totalAmount">£0.00</div>
                         </div>
-                        <button class="btn btn-danger px-4 py-2 fw-bold" id="buyButton" onclick="checkout()" disabled>
-                            Checkout
+                        <button class="btn btn-danger px-4 py-2 fw-bold" id="buyButton" type="submit" disabled>
+                                Checkout
                         </button>
                     </div>
                 </div>
             </div>
         </div>
-
+        </form>
     {% else %}
         <!-- Empty Cart -->
         <div class="text-center py-5">
@@ -198,7 +196,6 @@
             </a>
         </div>
     {% endif %}
-
     <!-- Recommendations Section -->
     {% if recommendations %}
     <div class="row mt-5 mb-4">
@@ -264,7 +261,6 @@
     </div>
     {% endif %}
 </div>
-
 <!-- Discount Code Modal -->
 <div class="modal fade" id="discountCodeModal" tabindex="-1" aria-labelledby="discountCodeModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -283,436 +279,14 @@
         </div>
     </div>
 </div>
-
+{% endblock %}
 {% csrf_token %}
-
-<script>
-    document.addEventListener('DOMContentLoaded', updateTotal);
-
-    // --- Selection Logic ---
-    function toggleSelectAll() {
-        const isChecked = event.target.checked;
-        // Sync header/footer checkboxes
-        document.getElementById('selectAll').checked = isChecked;
-        if(document.getElementById('selectAllFooter')) 
-            document.getElementById('selectAllFooter').checked = isChecked;
-
-        // Toggle all items & stores
-        document.querySelectorAll('.item-checkbox, .store-checkbox').forEach(cb => cb.checked = isChecked);
-        updateTotal();
-    }
-
-    function toggleStoreItems(storeCb) {
-        const storeSection = document.querySelector(`.store-section[data-store-id="${storeCb.dataset.storeId}"]`);
-        storeSection.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = storeCb.checked);
-        updateTotal();
-    }
-
-    function updateStoreAndMasterCheckboxes() {
-        const stores = document.querySelectorAll('.store-section');
-        let allItemsChecked = true;
-        let hasItems = false;
-
-        stores.forEach(store => {
-            const items = store.querySelectorAll('.item-checkbox');
-            const storeCb = store.querySelector('.store-checkbox');
-            if(items.length > 0) {
-                hasItems = true;
-                const allStoreItemsChecked = Array.from(items).every(cb => cb.checked);
-                storeCb.checked = allStoreItemsChecked;
-                if(!allStoreItemsChecked) allItemsChecked = false;
-            }
-        });
-
-        const selectAllState = hasItems && allItemsChecked;
-        document.getElementById('selectAll').checked = selectAllState;
-        if(document.getElementById('selectAllFooter'))
-            document.getElementById('selectAllFooter').checked = selectAllState;
-    }
-
-    // --- Update Individual Item Prices ---
-    function updateItemPrices() {
-        const appliedDiscounts = JSON.parse(sessionStorage.getItem('appliedDiscounts') || '{}');
-        
-        // Calculate store totals first (only for checked items)
-        const storeTotals = {};
-        document.querySelectorAll('.store-section').forEach(storeSection => {
-            const storeId = storeSection.dataset.storeId;
-            let storeTotal = 0;
-            
-            storeSection.querySelectorAll('.item-checkbox:checked').forEach(cb => {
-                const itemRow = cb.closest('.product-item');
-                const rawPrice = parseFloat(itemRow.querySelector('.amount-raw').innerText);
-                if (!isNaN(rawPrice)) {
-                    storeTotal += rawPrice;
-                }
-            });
-            
-            storeTotals[storeId] = storeTotal;
-        });
-        
-        // Update each item's price display
-        document.querySelectorAll('.product-item').forEach(itemRow => {
-            const storeSection = itemRow.closest('.store-section');
-            const storeId = storeSection.dataset.storeId;
-            const discount = appliedDiscounts[storeId];
-            const amountDisplay = itemRow.querySelector('.amount-display');
-            const originalPriceDiv = amountDisplay.querySelector('.original-item-price');
-            const discountedPriceDiv = amountDisplay.querySelector('.discounted-item-price');
-            const originalPriceDisplay = discountedPriceDiv.querySelector('.original-price-display');
-            const finalPriceDisplay = discountedPriceDiv.querySelector('.final-price-display');
-            
-            const rawPrice = parseFloat(itemRow.querySelector('.amount-raw').innerText);
-            const isChecked = itemRow.querySelector('.item-checkbox').checked;
-            
-            if (discount && isChecked && storeTotals[storeId] > 0) {
-                // Calculate discount for this item proportionally
-                let itemDiscount = 0;
-                if (discount.discount_type === 'percentage') {
-                    // Distribute discount proportionally
-                    const itemRatio = rawPrice / storeTotals[storeId];
-                    let storeDiscount = (storeTotals[storeId] * discount.discount_value) / 100;
-                    if (discount.max_discount && storeDiscount > discount.max_discount) {
-                        storeDiscount = discount.max_discount;
-                    }
-                    itemDiscount = storeDiscount * itemRatio;
-                } else if (discount.discount_type === 'fixed') {
-                    // Distribute fixed discount proportionally
-                    const itemRatio = rawPrice / storeTotals[storeId];
-                    itemDiscount = discount.discount_value * itemRatio;
-                }
-                
-                const finalPrice = Math.max(0, rawPrice - itemDiscount);
-                const formatter = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' });
-                
-                // Show discounted price
-                originalPriceDiv.style.display = 'none';
-                originalPriceDisplay.textContent = formatter.format(rawPrice);
-                finalPriceDisplay.textContent = formatter.format(finalPrice);
-                discountedPriceDiv.style.display = 'block';
-            } else {
-                // No discount, show original price
-                originalPriceDiv.style.display = 'block';
-                discountedPriceDiv.style.display = 'none';
-            }
-        });
-    }
-
-    // --- Calculation Logic ---
-    function updateTotal() {
-        let total = 0;
-        let count = 0;
-        let totalDiscount = 0;
-        
-        // Calculate total for each store separately (for store-specific discounts)
-        const storeTotals = {};
-        const appliedDiscounts = JSON.parse(sessionStorage.getItem('appliedDiscounts') || '{}');
-        
-        // Calculate original totals (before discount) for each store
-        const storeOriginalTotals = {};
-        document.querySelectorAll('.store-section').forEach(storeSection => {
-            const storeId = storeSection.dataset.storeId;
-            let storeOriginalTotal = 0;
-            
-            storeSection.querySelectorAll('.item-checkbox:checked').forEach(cb => {
-            count++;
-            const itemRow = cb.closest('.product-item');
-                // Always use original price (rawPrice) for discount calculation
-            const rawPrice = parseFloat(itemRow.querySelector('.amount-raw').innerText);
-                
-                if (!isNaN(rawPrice)) {
-                    storeOriginalTotal += rawPrice;
-                    total += rawPrice;
-                }
-            });
-            
-            storeOriginalTotals[storeId] = storeOriginalTotal;
-        });
-
-        // Calculate discount for each store (based on original total)
-        Object.keys(storeOriginalTotals).forEach(storeId => {
-            const discount = appliedDiscounts[storeId];
-            if (discount && storeOriginalTotals[storeId] > 0) {
-                let discountAmount = 0;
-                if (discount.discount_type === 'percentage') {
-                    discountAmount = (storeOriginalTotals[storeId] * discount.discount_value) / 100;
-                    // Apply max discount if specified (only for percentage type)
-                    if (discount.max_discount && discountAmount > discount.max_discount) {
-                        discountAmount = discount.max_discount;
-                    }
-                } else if (discount.discount_type === 'fixed') {
-                    // For fixed type, use discount_value directly (no max_discount limit)
-                    discountAmount = discount.discount_value;
-                }
-                
-                totalDiscount += discountAmount;
-            }
-        });
-
-        // Format Currency (GBP)
-        const formatter = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' });
-        
-        const finalTotal = Math.max(0, total - totalDiscount);
-        
-        document.getElementById('selectedCount').innerText = count;
-        document.getElementById('totalItems').innerText = count;
-        
-        // Show/hide original total and discount info
-        const originalTotalEl = document.getElementById('originalTotalAmount');
-        const discountInfoEl = document.getElementById('discountInfo');
-        const discountAmountEl = document.getElementById('discountAmount');
-        
-        if (totalDiscount > 0) {
-            originalTotalEl.textContent = formatter.format(total);
-            originalTotalEl.style.display = 'block';
-            discountAmountEl.textContent = formatter.format(totalDiscount);
-            discountInfoEl.style.display = 'block';
-            document.getElementById('totalAmount').textContent = formatter.format(finalTotal);
-        } else {
-            originalTotalEl.style.display = 'none';
-            discountInfoEl.style.display = 'none';
-            document.getElementById('totalAmount').textContent = formatter.format(total);
-        }
-        
-        const buyBtn = document.getElementById('buyButton');
-        if(buyBtn) buyBtn.disabled = count === 0;
-
-        updateStoreAndMasterCheckboxes();
-        
-        // Update individual item prices
-        updateItemPrices();
-    }
-
-    // --- Quantity & Actions ---
-    function updateQuantity(itemId, change) {
-        const input = document.querySelector(`.quantity-input[data-item-id="${itemId}"]`);
-        let newVal = parseInt(input.value) + change;
-        if (newVal >= 1 && newVal <= 99) {
-            input.value = newVal;
-            updateQuantityInput(itemId, newVal);
-        }
-    }
-
-    // Use hidden form submit to keep old backend logic
-    function submitHiddenForm(actionUrl, data) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = actionUrl;
-        
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden'; csrfInput.name = 'csrfmiddlewaretoken'; csrfInput.value = csrfToken;
-        form.appendChild(csrfInput);
-
-        for (const [key, value] of Object.entries(data)) {
-            const input = document.createElement('input');
-            input.type = 'hidden'; input.name = key; input.value = value;
-            form.appendChild(input);
-        }
-        
-        document.body.appendChild(form);
-        form.submit();
-    }
-
-    function updateQuantityInput(itemId, val) {
-        submitHiddenForm(`/update-cart/${itemId}/`, { quantity: val });
-    }
-
-    function removeItem(itemId) {
-        if(confirm('Are you sure you want to remove this product?')) {
-            submitHiddenForm(`/remove-from-cart/${itemId}/`, {});
-        }
-    }
-
-    function deleteSelected() {
-        const selected = document.querySelectorAll('.item-checkbox:checked');
-        if(selected.length === 0) return alert('Please select products to remove');
-        
-        if(confirm(`Delete ${selected.length} selected items?`)) {
-            // Logic to delete multiple items: Here we loop to delete each one (simplified)
-            // Best practice: backend should have a delete-bulk endpoint
-            selected.forEach(cb => {
-                // Note: This will reload the page multiple times if not using AJAX
-                // For template simplicity, we only delete the first found item (demo) or need backend bulk delete support
-                // Here I use simple recursion or call API if available.
-                // With current code, form submit will reload page immediately.
-                // Suggestion: Call removeItem for first item, user will need to click delete again.
-            });
-            // Delete first item in selected list to trigger reload
-            removeItem(selected[0].dataset.itemId);
-        }
-    }
-
-    function checkout() {
-        const selectedIds = Array.from(document.querySelectorAll('.item-checkbox:checked'))
-                                 .map(cb => cb.dataset.itemId);
-        if(selectedIds.length === 0) return alert('No products selected');
-        
-        sessionStorage.setItem('selectedCartItems', JSON.stringify(selectedIds));
-        
-        // Get applied discounts from sessionStorage
-        const appliedDiscounts = JSON.parse(sessionStorage.getItem('appliedDiscounts') || '{}');
-        if (Object.keys(appliedDiscounts).length > 0) {
-            // Store in sessionStorage for checkout page to read
-            sessionStorage.setItem('checkout_discounts', JSON.stringify(appliedDiscounts));
-        }
-        
-        window.location.href = "{% url 'checkout' %}";
-    }
-
-    // --- Discount Code Logic ---
-    // Cache for discount codes by store
-    const discountCodesCache = {};
-    
-    async function loadDiscountCodes(storeId) {
-        // Check cache first
-        if (discountCodesCache[storeId]) {
-            return discountCodesCache[storeId];
-        }
-        
-        try {
-            const response = await fetch(`/api/store/${storeId}/discount-codes/`);
-            const data = await response.json();
-            
-            if (data.success) {
-                discountCodesCache[storeId] = data.discount_codes;
-                return data.discount_codes;
-            } else {
-                console.error('Error loading discount codes:', data.error);
-                return [];
-            }
-        } catch (error) {
-            console.error('Error fetching discount codes:', error);
-            return [];
-        }
-    }
-
-    async function showShopVouchers(storeId) {
-        const modal = new bootstrap.Modal(document.getElementById('discountCodeModal'));
-        const listContainer = document.getElementById('discountCodeList');
-        
-        // Show loading
-        listContainer.innerHTML = `
-            <div class="text-center py-4">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2 text-muted">Loading discount codes...</p>
-            </div>
-        `;
-        modal.show();
-        
-        // Load discount codes from API
-        const discountCodes = await loadDiscountCodes(storeId);
-        
-        // Clear and update content
-        listContainer.innerHTML = '';
-        
-        if (discountCodes.length === 0) {
-            listContainer.innerHTML = `
-                <div class="text-center py-4 text-muted">
-                    <i class="fas fa-ticket-alt fa-3x mb-3 opacity-25"></i>
-                    <p>No discount codes available</p>
-                </div>
-            `;
-        } else {
-            discountCodes.forEach((discount, index) => {
-                const discountItem = document.createElement('div');
-                discountItem.className = 'list-group-item';
-                discountItem.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="flex-grow-1">
-                            <div class="d-flex align-items-center mb-2">
-                                <span class="badge bg-primary me-2">${discount.code}</span>
-                                ${discount.discount_type === 'percentage' 
-                                    ? `<span class="badge bg-success">-${discount.discount_value}%</span>` 
-                                    : `<span class="badge bg-success">-${discount.discount_value.toLocaleString('en-GB', { style: 'currency', currency: 'GBP' })}</span>`
-                                }
-                            </div>
-                            <p class="mb-1 small text-muted">${discount.description || discount.name}</p>
-                        </div>
-                        <button class="btn btn-primary btn-sm ms-3" onclick="applyDiscountCode(${storeId}, ${index})">
-                            <i class="fas fa-check me-1"></i>Apply
-                        </button>
-                    </div>
-                `;
-                discountItem.dataset.storeId = storeId;
-                discountItem.dataset.discountIndex = index;
-                listContainer.appendChild(discountItem);
-            });
-        }
-        
-        // Store current store ID and discount codes for apply function
-        listContainer.dataset.currentStoreId = storeId;
-        listContainer.dataset.discountCodes = JSON.stringify(discountCodes);
-    }
-
-    function applyDiscountCode(storeId, discountIndex) {
-        const listContainer = document.getElementById('discountCodeList');
-        const discountCodes = JSON.parse(listContainer.dataset.discountCodes || '[]');
-        const discount = discountCodes[discountIndex];
-        
-        if (!discount) {
-            alert('Invalid discount code');
-            return;
-        }
-        
-        // Close modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('discountCodeModal'));
-        modal.hide();
-        
-        // Show applied discount in UI
-        const appliedDiv = document.getElementById(`applied-discount-${storeId}`);
-        const appliedText = document.getElementById(`applied-discount-text-${storeId}`);
-        
-        let discountText = discount.code;
-        if (discount.discount_type === 'percentage') {
-            discountText += ` - Discount ${discount.discount_value}%`;
-        } else {
-            discountText += ` - Discount ${discount.discount_value.toLocaleString('en-GB', { style: 'currency', currency: 'GBP' })}`;
-        }
-        
-        appliedText.textContent = discountText;
-        appliedDiv.style.display = 'block';
-        
-        // Store applied discount in sessionStorage
-        if (!sessionStorage.getItem('appliedDiscounts')) {
-            sessionStorage.setItem('appliedDiscounts', JSON.stringify({}));
-        }
-        const appliedDiscounts = JSON.parse(sessionStorage.getItem('appliedDiscounts'));
-        appliedDiscounts[storeId] = discount;
-        sessionStorage.setItem('appliedDiscounts', JSON.stringify(appliedDiscounts));
-        
-        // Update total and item prices to reflect discount
-        updateTotal(); // This will also call updateItemPrices()
-        
-        // Show success message
-        alert(`Discount code applied: ${discount.code}`);
-    }
-
-    // Load applied discounts on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        const appliedDiscounts = JSON.parse(sessionStorage.getItem('appliedDiscounts') || '{}');
-        Object.keys(appliedDiscounts).forEach(storeId => {
-            const discount = appliedDiscounts[storeId];
-            const appliedDiv = document.getElementById(`applied-discount-${storeId}`);
-            const appliedText = document.getElementById(`applied-discount-text-${storeId}`);
-            
-            if (appliedDiv && appliedText && discount) {
-                let discountText = discount.code;
-                if (discount.discount_type === 'percentage') {
-                    discountText += ` - Discount ${discount.discount_value}%`;
-                } else {
-                    discountText += ` - Discount ${discount.discount_value.toLocaleString('en-GB', { style: 'currency', currency: 'GBP' })}`;
-                }
-                
-                appliedText.textContent = discountText;
-                appliedDiv.style.display = 'block';
-            }
-        });
-        
-        // Update total after loading discounts
-        updateTotal();
-    });
-</script>
+{% load static %}
+{% block extra_js %}
+<!-- Cart JavaScript Modules -->
+<script src="{% static 'core/js/cart/cart-utils.js' %}"></script>
+<script src="{% static 'core/js/cart/cart-discount.js' %}"></script>
+<script src="{% static 'core/js/cart/cart-ui.js' %}"></script>
+<script src="{% static 'core/js/cart/cart-events.js' %}"></script>
+<script src="{% static 'core/js/cart/cart.js' %}"></script>
 {% endblock %}

@@ -286,12 +286,18 @@
                             {% endwith %}
                                 {% endfor %}
                                 
-                                <!-- Store Subtotal -->
+                                <!-- Store Subtotal and Discount -->
                                 <div class="ms-3 mt-3 pt-3 border-top">
-                                    <div class="d-flex justify-content-between">
-                                        <span class="fw-bold">Store Subtotal:</span>
-                                        <span class="fw-bold">£{{ store_data.subtotal|floatformat:2 }}</span>
+                                    <div class="d-flex justify-content-between small text-muted mb-1">
+                                        <span>Store Subtotal:</span>
+                                        <span>£{{ store_data.subtotal|floatformat:2 }}</span>
                                     </div>
+                                    {% if store_data.discount > 0 %}
+                                    <div class="d-flex justify-content-between small text-success mb-1">
+                                        <span><i class="fas fa-tag me-1"></i>Discount:</span>
+                                        <span>-£{{ store_data.discount|floatformat:2 }}</span>
+                                    </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         {% endfor %}
